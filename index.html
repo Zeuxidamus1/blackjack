@@ -214,6 +214,9 @@ html{background:#170f12}body{background:radial-gradient(ellipse at top,#41262b,#
 .table #playerHands .cards{display:flex;flex-wrap:wrap;gap:1px;justify-content:center}
 .table #playerHands .card{width:40px;height:58px;font-size:18px}
 @media(max-width:760px){.table .betting{gap:3px}.table .betspot{flex-basis:59px;height:63px;border-width:3px}.table .betspot.main-spot{flex-basis:66px;height:71px}.table .betspot small{font-size:8px}.table .betspot strong{font-size:12px}.table #playerHands .card{width:33px;height:49px;font-size:15px}.table #playerHands .hand{min-width:78px}.table #playerHands .label{font-size:9px}}
+.table #playerHands .hand{flex:0 1 auto}
+.table #playerHands .hand.active{box-shadow:0 0 0 2px #f9d4764a}
+@media(min-width:761px){.table #playerHands{gap:clamp(8px,2vw,30px)}}
 </style></head><body><main class="wrap" id="app">
 <header class="top"><h1>♠ BLACKJACK</h1><div class="pill">BANKROLL: <strong id="bankroll">$500</strong></div><div class="pill">SHOE: <span id="remaining">312</span> cards</div></header>
 <div class="game-layout"><div class="game-main"><div class="table"><div class="dealer-rack" aria-hidden="true"><div class="rack-row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="rack-plaque">CASINO · 6 DECK BLACKJACK</div></div><div class="shoe-stack" id="shoeStack" aria-label="Dealer shoe"></div><div class="label">DEALER</div><div class="cards" id="dealerCards"></div><div class="score" id="dealerScore"></div><div class="rule">BLACKJACK PAYS 3 TO 2 <span>♦</span> DEALER STANDS ON ALL 17s</div><div class="insurance-arc">INSURANCE PAYS 2 TO 1</div><div class="label">PLAYER</div><div class="hands" id="playerHands"></div><div class="betting"><button class="betspot bust-spot" data-spot="bust"><small>DEALER BUST</small><strong id="bustAmount">$0</strong></button><button class="betspot main-spot" data-spot="main2"><small>HAND 2</small><strong id="main2Amount">$0</strong></button><button class="betspot selected main-spot" data-spot="main"><small>HAND 1</small><strong id="mainAmount">$0</strong></button><button class="betspot main-spot" data-spot="main3"><small>HAND 3</small><strong id="main3Amount">$0</strong></button><button class="betspot trilux-spot" data-spot="trilux"><small>TRILUX</small><strong id="triluxAmount">$0</strong></button></div><div class="felt-signature">THE SIX DECK TABLE <span>♠</span> 21</div></div>
@@ -302,7 +305,7 @@ async function dealerTurn(){lock(true);await flipHole();const dn=natural(dealer)
 function advance(){hands[active].done=true;let next=active+1;while(next<hands.length&&(hands[next].done||hands[next].splitAces||natural(hands[next].cards)&&!hands[next].split))next++;if(next<hands.length){active=next;render();return}dealerTurn()}
 function checkNaturals(){if(natural(dealer)){dealerTurn();return}for(const h of hands){if(natural(h.cards)&&!h.split)h.done=true}const i=hands.findIndex(h=>!h.done);if(i<0){dealerTurn();return}active=i;phase="play";selected="bust";render()}
 async function start(){
-const seats=[["main",1],["main2",2],["main3",3]].filter(([spot])=>bets[spot]>0);
+const seats=[["main2",2],["main",1],["main3",3]].filter(([spot])=>bets[spot]>0);
 if(!seats.length){text("Place a bet on at least one main hand.");return}
 if((bets.bust>0&&bets.bust<10)||(bets.trilux>0&&bets.trilux<10)){text("Side bets must be at least $10.");return}
 const due=Object.values(bets).reduce((a,b)=>a+b,0);if(due>bank){text("Insufficient bankroll.");return}
@@ -312,7 +315,7 @@ winningBets={main:false,main2:false,main3:false,bust:false,trilux:false};losingB
 dealer=[];hands=seats.map(([spot,seat])=>({cards:[],bet:bets[spot],spot,seat,done:false,split:false}));active=0;phase="deal";lock(true);render();
 for(let i=0;i<hands.length;i++){await drawToPlayer(i);await delay(130)}await drawToDealer();await delay(170);
 for(let i=0;i<hands.length;i++){await drawToPlayer(i);await delay(130)}await drawToDealer();
-triluxResult=scoreTrilux([...hands[0].cards,dealer[0]]);
+const triluxHand=hands.find(h=>h.spot==="main")||hands[0];triluxResult=scoreTrilux([...triluxHand.cards,dealer[0]]);
 winningBets.trilux=!!(triluxResult&&bets.trilux);losingBets.trilux=bets.trilux>0&&!triluxResult;
 if(triluxResult&&bets.trilux){payout(bets.trilux,bets.trilux*8);stats.triluxWins++}
 if(dealer[0].rank==="A"&&hands.some(h=>!natural(h.cards))){const cost=hands[0].bet/2;$("takeInsurance").disabled=bank<cost;$("insuranceOverlay").classList.remove("hide");lock(false)}
