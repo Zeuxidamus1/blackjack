@@ -74,18 +74,82 @@
 @media(hover:hover){.chips .chip:hover:not(:disabled){transform:translateY(-3px);box-shadow:inset 0 2px 3px #fff6,inset 0 -5px 7px #0008,0 8px 0 #091912,0 12px 12px #0005}}
 @media(max-width:760px){.game-main{perspective:none}.table{transform:none;border-width:8px;border-radius:100px 100px 38px 38px;padding:18px 7px 14px}.table:after{height:72px}.chips .chip{width:53px;height:53px;font-size:12px}.chips .chip::after{inset:12px}.table .betting{gap:7px}}
 @media(prefers-reduced-motion:reduce){.chips .chip{transition:none}.table .betspot.winner{animation:none}}
+
+/* Player-eye casino felt - original unbranded layout */
+html{background:#170f12}body{background:radial-gradient(ellipse at top,#41262b,#100d0e 72%);color:#fff5e7}
+.wrap{max-width:1580px;padding:10px 15px}.top{min-height:45px}.top h1{font-family:Georgia,serif;font-size:23px;color:#f4dfbc;letter-spacing:3px}.pill{background:#35232b;border-color:#927264;color:#fce8d4}
+.game-layout{grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}
+.game-main{perspective:1400px}
+.table{transform:perspective(1500px) rotateX(5deg);transform-origin:50% 80%;min-height:0;isolation:isolate;overflow:hidden;border:13px solid #442219;border-radius:100px 100px 40px 40px;padding:65px 18px 25px;background:radial-gradient(ellipse at 50% 33%,#b74756 0%,#8d3043 49%,#6c2036 82%,#56192c 100%);box-shadow:inset 0 0 0 4px #b98955,inset 0 0 0 8px #6b2932,inset 0 20px 60px #ffffff12,inset 0 -15px 55px #21061466,0 14px 24px #0009}
+.table:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(28deg,#ffffff09 0 1px,transparent 1px 4px);opacity:.27;z-index:-1}
+.table:after{content:"";position:absolute;left:8%;right:8%;top:38%;height:43%;border:3px solid #efcdbb9c;border-radius:0 0 50% 50%;border-top:0;z-index:-1;pointer-events:none}
+.dealer-rack{position:absolute;top:0;left:7%;right:7%;height:53px;border-radius:0 0 27px 27px;background:linear-gradient(#14171b,#33383a 20%,#1a1a1f 85%,#dfc9b3 89%,#805b4a);box-shadow:0 3px 7px #14070b77;display:flex;align-items:flex-start;justify-content:center;z-index:2}
+.rack-row{display:flex;gap:3px;padding-top:4px;height:31px;max-width:86%;overflow:hidden}
+.rack-row i{display:block;width:31px;min-width:25px;height:25px;border-radius:50%;border:5px dashed #f4eddf;box-shadow:0 2px 2px #0008}
+.rack-row i:nth-child(5n+1){background:#ac2734}.rack-row i:nth-child(5n+2){background:#165ba4}.rack-row i:nth-child(5n+3){background:#21794b}.rack-row i:nth-child(5n+4){background:#ac7a25}.rack-row i:nth-child(5n){background:#29262f}
+.rack-plaque{position:absolute;bottom:2px;font-size:9px;letter-spacing:3px;color:#e6ccac}
+.table .shoe-stack{top:59px;right:21px;transform:rotate(-8deg);width:47px;height:66px}
+.table .label{font-family:Georgia,serif;color:#f7e6d7;letter-spacing:3px;font-size:12px}
+.table #dealerCards{transform:scale(.86);min-height:65px;margin:-7px 0 -5px}
+.table #playerHands{min-height:101px;transform:none}
+.table .hand{background:#5c12223b}
+.table .hand.active{background:#f7d6c518;border-color:#f3cb75}
+.table .rule{margin:5px 0 3px;color:#fff0db;font-family:Georgia,serif;font-weight:900;font-size:clamp(10px,1.25vw,17px);letter-spacing:1.2px;text-shadow:1px 2px 0 #58192a,0 0 4px #250d14}
+.table .rule span{color:#ebba85;margin:0 8px}
+.insurance-arc{margin:0 auto 13px;width:78%;padding:5px 3px 6px;border-bottom:3px double #f7d8beaa;border-radius:0 0 50% 50%;font:900 clamp(11px,1.35vw,18px) Georgia,serif;letter-spacing:3px;color:#f9e6d0}
+.table .score{color:#ffdc89;font-size:24px}
+.table .betting{margin-top:15px;gap:clamp(7px,2vw,30px);align-items:center}
+.table .betspot{width:112px;height:105px;border:5px solid #322227;outline:1px solid #d9bca7;background:radial-gradient(circle,#b54454 0 46%,#a33043 47% 68%,#572433 69%);box-shadow:0 4px 10px #22081788,inset 0 0 0 3px #d8998588;font-size:11px;font-weight:900;color:#fff8ec}
+.table .betspot small{display:block;font-size:10px;line-height:1.3;letter-spacing:.6px;font-weight:900;max-width:95px}
+.table .betspot strong{font-size:20px;margin-top:5px}
+.table .betspot.main-spot{width:127px;height:114px;background:linear-gradient(145deg,#f8bd45,#f6a922);border-radius:27% 27% 40% 40%;color:#58242c;text-shadow:none;transform:translateY(8px)}
+.table .betspot.main-spot strong{color:#421c23}
+.table .betspot.trilux-spot{background:radial-gradient(circle,#ce683c 0 52%,#8b342a 55% 72%,#4a1d2c 73%)}
+.table .betspot.selected{outline:3px solid #ffe799;outline-offset:3px}
+.table .betspot.winner{border-color:#f5d878!important;background:#236947!important;color:white!important;box-shadow:0 0 0 3px #f9de71,0 0 20px 6px #f9da67aa,inset 0 0 18px #d9f4a655!important;animation:winPulse 1.25s ease-in-out infinite}
+.table .betspot.loser{border-color:#ff8f8f!important;background:#8d202c!important;color:white!important;box-shadow:0 0 0 3px #f45d65,0 0 21px 5px #e539477d,inset 0 0 14px #ff767655!important}
+.table .betspot.winner strong,.table .betspot.loser strong{color:white}
+.felt-signature{margin:20px 0 0;font:900 clamp(13px,2vw,23px) Georgia,serif;letter-spacing:2px;color:#f6d6bb;text-shadow:2px 2px 1px #4c1526}
+.felt-signature span{color:#e9af72}
+.chip-area{border-radius:16px;border:1px solid #765147;background:linear-gradient(#362329,#1a161b);padding:8px 10px 12px;margin-top:5px}
+.tray-caption{text-align:center;font-size:10px;letter-spacing:1.5px;color:#e8c9ac}
+.chips{gap:clamp(5px,1.1vw,15px);padding:6px 0 2px}
+.chips .chip{position:relative;touch-action:pan-y;user-select:none;cursor:grab;height:64px;width:64px;font-size:13px;border:0;box-shadow:inset 0 3px 4px #ffffff5c,inset 0 -7px 5px #0007,0 4px 0 #121016,0 8px 9px #0009}
+.chips .chip:active{cursor:grabbing}
+.chips .chip::before{border-width:6px}
+.chips .chip::after{inset:15px;background:#0004}
+.chips .chip span{position:relative;z-index:2}
+.chips .chip .chip-count{position:absolute;top:-5px;right:-5px;z-index:4;border-radius:50%;min-width:21px;height:21px;padding:2px;background:#f0dfbf;color:#2d1d23;line-height:17px;font-size:10px;box-shadow:0 2px 4px #0006}
+.chips .chip[data-chip="250"]{background:radial-gradient(circle at 30% 25%,#efc070,#c58323 65%,#684017)}
+.chips .chip[data-chip="500"]{background:radial-gradient(circle at 30% 25%,#eea4a4,#b4505f 65%,#602333)}
+.chips .chip:disabled{opacity:.34;cursor:not-allowed}
+.drag-ghost{position:fixed;pointer-events:none;z-index:999;transform:translate(-50%,-50%);opacity:.9}
+.betspot.drag-target{outline:5px solid #fff2a6!important;outline-offset:3px;filter:brightness(1.25)}
+.stats{background:linear-gradient(#38242b,#1e1920);border-color:#9f7469;box-shadow:0 8px 18px #0006}
+.stats h3{color:#f8d4a5}.stats dt{color:#edcfc8}
+.message{color:#ffe1aa}
+.buy-help{font-size:12px;color:#ddc8b6}.buy-chip-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:13px 0}
+.buy-denom{border:1px solid #99716d;border-radius:9px;padding:6px 3px;background:#2a2227}
+.buy-denom label{display:block;font-size:12px;color:#f7d1a8;font-weight:800}
+.buy-denom input{width:100%;min-width:0;padding:7px 4px;margin:4px 0 0;border-radius:6px;font-size:16px;text-align:center}
+.buy-total{font-weight:900;margin:6px 0;color:#f7dba0}.buy-total span{font-size:12px;font-weight:400}
+.buy-error{min-height:20px;color:#ffc1aa;margin-top:8px;font-size:12px}
+#buyOverlay .dialog{width:min(94vw,550px);max-height:92vh;overflow-y:auto;background:linear-gradient(#4e2b38,#2c1d27)}
+@media(max-width:760px){.game-main{perspective:none}.table{transform:none;border-width:8px;padding:62px 6px 15px;border-radius:95px 95px 36px 36px}.table .betspot{width:88px;height:82px;border-width:4px}.table .betspot.main-spot{width:95px;height:91px}.table .betspot small{font-size:9px}.table .betspot strong{font-size:15px}.chips .chip{width:49px;height:49px;font-size:11px}.chips .chip::after{inset:12px}.table .rule{font-size:11px}.insurance-arc{letter-spacing:1.5px}.felt-signature{margin-top:12px}.buy-chip-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:380px){.chips{gap:3px}.chips .chip{width:42px;height:42px;font-size:10px}.chips .chip::before{border-width:4px}.chips .chip::after{inset:10px}}
+@media(prefers-reduced-motion:reduce){.table .betspot.winner{animation:none}}
 </style></head><body><main class="wrap" id="app">
 <header class="top"><h1>♠ BLACKJACK</h1><div class="pill">BANKROLL: <strong id="bankroll">$500</strong></div><div class="pill">SHOE: <span id="remaining">312</span> cards</div></header>
-<div class="game-layout"><div class="game-main"><div class="table"><div class="shoe-stack" id="shoeStack" aria-label="Dealer shoe"></div><div class="label">DEALER</div><div class="cards" id="dealerCards"></div><div class="score" id="dealerScore"></div><div class="rule">BLACKJACK PAYS 3 TO 2 · DEALER STANDS ON SOFT 17</div><div class="label">PLAYER</div><div class="hands" id="playerHands"></div><div class="betting"><button class="betspot" data-spot="bust">DEALER BUST<strong id="bustAmount">$0</strong></button><button class="betspot selected" data-spot="main">BLACKJACK<strong id="mainAmount">$0</strong></button><button class="betspot" data-spot="trilux">TRILUX<strong id="triluxAmount">$0</strong></button></div></div>
+<div class="game-layout"><div class="game-main"><div class="table"><div class="dealer-rack" aria-hidden="true"><div class="rack-row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="rack-plaque">CASINO · 6 DECK BLACKJACK</div></div><div class="shoe-stack" id="shoeStack" aria-label="Dealer shoe"></div><div class="label">DEALER</div><div class="cards" id="dealerCards"></div><div class="score" id="dealerScore"></div><div class="rule">BLACKJACK PAYS 3 TO 2 <span>♦</span> DEALER STANDS ON ALL 17s</div><div class="insurance-arc">INSURANCE PAYS 2 TO 1</div><div class="label">PLAYER</div><div class="hands" id="playerHands"></div><div class="betting"><button class="betspot bust-spot" data-spot="bust"><small>DEALER BUST</small><strong id="bustAmount">$0</strong></button><button class="betspot selected main-spot" data-spot="main"><small>BLACKJACK</small><strong id="mainAmount">$0</strong></button><button class="betspot trilux-spot" data-spot="trilux"><small>TRILUX</small><strong id="triluxAmount">$0</strong></button></div><div class="felt-signature">THE SIX DECK TABLE <span>♠</span> 21</div></div>
 <div class="message" id="message" aria-live="polite">Select a chip to place your bet.</div>
-<div class="chips" id="chips"><button class="chip" data-chip="5"><span>$5</span></button><button class="chip" data-chip="10"><span>$10</span></button><button class="chip" data-chip="25"><span>$25</span></button><button class="chip" data-chip="50"><span>$50</span></button><button class="chip" data-chip="100"><span>$100</span></button></div>
+<div class="chip-area"><div class="tray-caption">YOUR CHIP TRAY · DRAG TO A BETTING SPOT OR TAP A CHIP</div><div class="chips" id="chips"><button class="chip" data-chip="5"><span>$5</span></button><button class="chip" data-chip="10"><span>$10</span></button><button class="chip" data-chip="25"><span>$25</span></button><button class="chip" data-chip="50"><span>$50</span></button><button class="chip" data-chip="100"><span>$100</span></button><button class="chip" data-chip="250"><span>$250</span></button><button class="chip" data-chip="500"><span>$500</span></button></div></div>
 <div class="controls" id="removeControls"><button class="secondary" id="undoChip">REMOVE LAST CHIP</button><button class="secondary" id="removeSelected">REMOVE SELECTED BET</button></div>
 <div class="controls" id="betControls"><button class="secondary" id="clearOne">CLEAR SELECTED</button><button class="secondary" id="clearAll">CLEAR ALL</button><button class="secondary" id="repeat">REPEAT BET</button><button class="primary" id="deal">DEAL</button></div>
 <div class="controls hide" id="playControls"><button class="primary" id="hit">HIT</button><button class="secondary" id="stand">STAND</button><button class="secondary" id="double">DOUBLE DOWN</button><button class="secondary" id="split">SPLIT</button></div>
 <div class="controls hide" id="nextControls"><button class="primary" id="next">NEXT HAND</button></div>
 </div><aside class="stats"><h3>SESSION STATISTICS</h3><dl><dt>Wins</dt><dd id="wins">0</dd><dt>Losses</dt><dd id="losses">0</dd><dt>Pushes</dt><dd id="pushes">0</dd><dt>Dealer Bust Wins</dt><dd id="bustWins">0</dd><dt>TriLux Wins</dt><dd id="triluxWins">0</dd><dt>Hands Played</dt><dd id="played">0</dd><dt>Outstanding Debt</dt><dd id="debt">$0</dd><dt>Total Borrowed</dt><dd id="loansTaken">$0</dd><dt>Net Profit</dt><dd id="profit">$0</dd></dl></aside></div>
 </main>
-<div class="overlay" id="buyOverlay"><div class="dialog"><h2>WELCOME TO BLACKJACK</h2><p>Six decks · Real shuffled shoe · Play chips only</p><label for="buyInput">Starting buy-in</label><input id="buyInput" type="number" min="5" max="1000000" step="5" value="500"><button class="primary" id="buyButton">BUY IN</button></div></div>
+<div class="overlay" id="buyOverlay"><div class="dialog"><h2>WELCOME TO BLACKJACK</h2><p>Six-deck blackjack · Play-money chips</p><label for="buyInput">Starting buy-in</label><input id="buyInput" type="number" min="5" max="1000000" step="5" value="500"><p class="buy-help">Choose how many chips you want in your rack. The chip total must equal your buy-in.</p><div class="buy-chip-grid" id="buyChipGrid"></div><div class="buy-total">SELECTED CHIPS: <b id="buyTotal">$500</b> <span id="buyRemaining"></span></div><div class="controls"><button type="button" class="secondary" id="autoChips">AUTO DISTRIBUTE</button><button class="primary" id="buyButton">BUY IN</button></div><div id="buyError" class="buy-error" aria-live="polite"></div></div></div>
 <div class="overlay hide" id="cautionOverlay"><div class="dialog"><h2>⚠ STRATEGY CAUTION</h2><p id="cautionText"></p><p class="muted">Basic strategy is guidance, not a guarantee. Cards and odds are never changed.</p><div class="controls"><button class="danger" id="continueCaution">CONTINUE ANYWAY</button><button class="primary" id="cancelCaution">CANCEL</button></div></div></div>
 <div class="overlay hide" id="doubleOverlay"><div class="dialog"><h2>DOUBLE DOWN</h2><p>How would you like your card dealt?</p><div class="controls"><button class="primary" id="faceUp">FACE UP</button><button class="secondary" id="faceDown">FACE DOWN</button><button class="danger" id="cancelDouble">CANCEL</button></div></div></div>
 <div class="overlay hide" id="loanOverlay"><div class="dialog"><h2>BORROW FROM BANK?</h2><p id="loanText"></p><p class="muted">No interest. Your future winnings repay the outstanding debt before becoming available chips.</p><div class="controls"><button class="primary" id="acceptLoan">BORROW & CONTINUE</button><button class="danger" id="cancelLoan">CANCEL</button></div></div></div>
