@@ -29,3 +29,12 @@ npm run test:e2e
 Tests mock backend values rather than spending actual GP. GitHub Actions runs desktop and mobile-width Playwright checks on changes.
 
 This is a fan game with digital, nonredeemable GP. No real-money purchases, real-world cash-out or links to RuneScape accounts.
+
+
+## Premium pack-opening / reward review (2026-11-14)
+
+Single purchases use a fullscreen OSRS item reveal with Sell / Vault. Purchases of two to five packs begin with an animated seal, then individual 3D-flip cards and a selectable reward grid. The totals, item artwork and Sell All / Vault All controls update as rewards are selected or handled; tapping the pack speeds up opening, and there is a Skip Animation button.
+
+Reward decisions are persistent and owner-authorized. New rewards stay \`pending\` until they become \`vaulted\` or \`sold\`. Pending items are kept out of the ordinary market/inventory actions and cannot be bypass-sold. Exact server-side inventory instances are tracked; multi-reward selling is one atomic, idempotent database transaction that uses current, validated Grand Exchange quotes, while vaulting preserves the item. Closing or reloading the page does not delete unreviewed rewards: use **Resume opening** to continue.
+
+Implementation: \`reveal.js\` + \`reveal.css\`; database migrations \`20261114070000_premium_reward_sessions.sql\` and \`20261114071000_protect_pending_rewards.sql\`. Playwright tests in \`tests/reveal.spec.js\` exercise all quantity layouts, single and partial settlement flows, reload/resume and mobile widths with a simulated backend. Live account purchases are not used during browser tests.
