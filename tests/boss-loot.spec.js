@@ -33,7 +33,7 @@ async function setup(page,gp=1000000000){
    window.supabase={createClient:()=>({
      auth:{getSession:async()=>({data:{session:{access_token:'mock'}}}),signOut:async()=>({})},
      functions:{invoke:async()=>({data:{status:'fresh'}})},
-     rpc:async(action,{payload}={})=>{
+     rpc:async(_name,{action,payload}={})=>{
        const state={id:'test',name:'Playwright',gp,items:[],market:[],pulls:{},
          nextDailyAt:new Date(Date.now()+86400000).toISOString(),serverTime:new Date().toISOString()};
        const values={
