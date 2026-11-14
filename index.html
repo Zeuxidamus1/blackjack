@@ -323,7 +323,7 @@ function renderBossShop(resume) {
  carousel.selectCase=snap;
 }
 function showInside() {
- const entry=selected;if(!entry)return;
+ const entry=selected;if(!entry||!entry.rewards?.length)return;
  const rows=entry.rewards.map(r=>({r,item:catalog.get(r.id)})).filter(x=>x.item).sort((a,b)=>estimate(a.item)-estimate(b.item));
  const groups=[
    ['Common Drops',x=>x.r.weight>=50000],
@@ -343,7 +343,7 @@ function showInside() {
    '<p>Values shown are the latest available Grand Exchange guides. The server determines sale prices. Odds below reflect the active pack configuration (v'+Number(entry.configVersion||1)+').</p>'+
    groups.filter(([label,test])=>rows.some(test)).map(([label,test])=>
      '<section class="inside-group"><h3>'+label+'</h3><div class="inside-grid">'+rows.filter(test).map(({r,item})=>
-       '<article class="inside-item"><div class="inside-icon"><img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+' .png" alt="'+safe(item.name)+'" onerror="this.replaceWith(document.createTextNode(\'⚔\'))"></div>'+
+       '<article class="inside-item"><div class="inside-icon"><img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+'.png" alt="'+safe(item.name)+'" onerror="this.replaceWith(document.createTextNode(\'⚔\'))"></div>'+
        '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
        '<small>Drop chance · '+pct(r.weight)+'</small><small>'+safe(guideValue(item))+'</small></div></article>'
      ).join('')+'</div></section>').join('')+'</div>');
@@ -522,6 +522,7 @@ async function reveal(slot){
 for(const pack of packs) el('filter').add(new Option(pack.name,pack.id));
 el('filter').onchange=render;
 modal.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
+ modal.addEventListener('close',()=>modal.classList.remove('boss-inside'));
 el('auth-mode').onclick=()=>{
   const submit=el('auth-submit');
   const signup=submit.value==='login';
