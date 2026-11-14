@@ -23,7 +23,23 @@ const mockCatalog=weights.map((weight,index)=>({
  ge:1155+index,guide:(index+1)*1000,guideTime:new Date().toISOString(),
  found:3,circulation:5,salvage:0
 }));
-async function setup(page,gp=1000000000){
+async function setup(page,gp=1000000000,{large=false}={}){
+ const catalogForTest=large?Array.from({length:49},(_,i)=>({
+  id:'pool_item_'+i,pack:'boss',name:i===48?'Twisted bow':'OSRS Item '+i,
+  ge:i===48?20997:1100+i,
+  guide:i===48?1375875485:(i<23?200+i*25:1200+(i-23)*200),
+  guideTime:new Date().toISOString(),found:0,circulation:0
+ })):mockCatalog;
+ const ordinaryLow=Math.floor(840000000000/23);
+ const winTotal=160000000000-10000;
+ const ordinaryWin=Math.floor(winTotal/25);
+ const oddsForTest=Array.from({length:49},(_,i)=>
+  i===48?10000:i<23?(i===22?840000000000-ordinaryLow*22:ordinaryLow):
+  (i===47?winTotal-ordinaryWin*24:ordinaryWin));
+ const casesForTest=large?[{...mockCases[0],rewards:catalogForTest.map((item,i)=>({
+  id:item.id,weight:oddsForTest[i],chase:i===48
+ }))},...mockCases.slice(1)]:mockCases;
+
  const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
@@ -44,7 +60,7 @@ async function setup(page,gp=1000000000){
        return {data:values[action]??{},error:null};
      }
    })};
- },{catalog:mockCatalog,cases:mockCases,gp});
+ },{catalog:catalogForTest,cases:casesForTest,gp});
  await page.goto('/');
  await expect(page.locator('.boss-carousel')).toBeVisible();
  await expect(page.locator('.boss-slide')).toHaveCount(10);
@@ -110,5 +126,22 @@ test('premium Boss Loot is the default after login and other categories stay acc
  await expect(page.locator('.premium-category')).toHaveCount(3);
  await page.getByRole('button',{name:'Open Boss Loot'}).click();
  await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
+ expect(errors).toEqual([]);
+});
+
+
+test('49-item rewards show true combined profit odds and ultra-rare jackpot precision',async({page})=>{
+ const errors=await setup(page,1000000000,{large:true});
+ await page.locator('#boss-details [data-act="inside"]').click();
+ await expect(page.locator('dialog.boss-inside')).toBeVisible();
+ await expect(page.locator('.inside-item')).toHaveCount(49);
+ await expect(page.locator('.inside-profit-stats')).toContainText('26 / 49');
+ await expect(page.locator('.inside-profit-stats')).toContainText('16%');
+ await expect(page.locator('.inside-item-details').last()).toContainText('0.000001%');
+ await expect(page.locator('dialog')).toContainText('Profit Drops');
+ await expect(page.locator('dialog')).toContainText('Big Wins');
+ await expect(page.locator('dialog')).toContainText('Grails / Ultra-Rare Jackpots');
+ const smallest=await page.locator('.inside-item-details').first().textContent();
+ expect(smallest).toContain('200 GP');
  expect(errors).toEqual([]);
 });
