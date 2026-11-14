@@ -26,9 +26,9 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 <button id="auth-submit" class="primary" name="mode" value="login">Sign in</button>
 </form><button id="auth-mode" type="button" class="quiet">Create account</button>
 <p id="status" role="status"></p></div></section>
-<div id="storefront" hidden><header><div class="bar"><div class="brand">GIELINOR<span> RIPS</span></div><div class="balance" id="balance"></div></div></header>
+<div id="storefront" hidden><header><div class="bar"><div class="brand">CHALLENGER<span> RIPS</span></div><div class="balance" id="balance"></div></div></header>
 <main>
-<section class="hero"><div><h1>Rip. Collect. <span class="accent">Flex.</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><button class="primary" id="daily">Claim daily GP</button></section>
+<section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button><span id="daily-timer"></span></div></section>
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="market">Market</button><button data-view="showcase">Showcase</button></nav>
 <div id="game-status"></div>
 <section id="account" class="empty"></section>
@@ -39,30 +39,23 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 <section id="showcase" hidden><div class="section"><h2>Your showcase</h2><button id="share" class="primary">Copy showcase link</button></div><p class="empty" id="shareHint">Pin up to five items from your inventory.</p><div class="grid" id="pins"></div></section>
 <section id="shared" hidden><div class="section"><h2>Shared showcase</h2></div><p class="empty">Current shelf shared by another player.</p><div class="grid" id="sharedItems"></div></section>
 </main>
-<footer>Free fan game. Drops are game collectibles only. Odds are specific to Gielinor Rips. Multiplayer beta · 500M starter GP · Daily reset at midnight UTC.</footer></div>
+<footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 500M starter GP · Daily claim resets 24 hours after each claim.</footer></div>
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.js"></script>
 <script>
 const packs = [
-  {id:'boss', name:'Boss Loot', icon:'⚔️', color:'#823ac6', note:'Boss drops and iconic weapons', loot:[
-    ['bones','Dragon bones','🦴',6700],['rune','Rune platebody','🛡️',2400],['whip','Abyssal whip','🟣',800],['visage','Draconic visage','🐉',98],['bow','Twisted bow','🏹',1],['ely','Elysian spirit shield','🛡️',1]]},
-  {id:'clue', name:'Clue Casket', icon:'🧰', color:'#1d7c88', note:'Treasure Trails rewards', loot:[
-    ['sweets','Purple sweets','🍬',6700],['trim','Rune platebody (t)','🔰',2400],['boots','Ranger boots','🥾',800],['gilded','Gilded scimitar','🗡️',99],['pick','3rd age pickaxe','⛏️',1]]},
-  {id:'pets', name:'Pet Hunt', icon:'🐾', color:'#bd5c37', note:'Skilling relics and tiny companions', loot:[
-    ['fish','Raw shark','🦈',6700],['log','Magic logs','🪵',2400],['squirrel','Giant Squirrel','🐿️',800],['vorki','Vorki','🐲',99],['olm','Olmlet','🦎',1]]}
+  {id:'boss', name:'Boss Loot', icon:'⚔️', color:'#823ac6', note:'Armor progression and rare gear'},
+  {id:'clue', name:'Clue Casket', icon:'🧰', color:'#1d7c88', note:'Rewards from Beginner through Master clues'},
+  {id:'pets', name:'Pet Hunt', icon:'🐾', color:'#bd5c37', note:'Boss, skilling and companion pets'}
 ];
+const catalog = new Map();
 const tiers = [['Common','#b7afca'],['Uncommon','#7eeac2'],['Rare','#82c8ff'],['Epic','#d2a3ff'],['Legendary','#ffc966']];
-const catalog = new Map(packs.flatMap(pack => pack.loot.map(([id,name,icon,weight],i) =>
-  [id,{id,name,icon,weight,pack:pack.id,tier:tiers[Math.min(i,4)][0],color:tiers[Math.min(i,4)][1]}])));
 const db = window.supabase?.createClient('https://iopjjrbjyscqsydbypzp.supabase.co','sb_publishable_9WNxEa3-YQx_689pMkKpOw_gnDZ-smG');
 const el = id => document.getElementById(id);
 const modal = el('modal');
 const price = gp => Number(gp).toLocaleString()+' GP';
-const odds = item => (item.weight / 100)+'%';
+const odds = item => (item.weight / item.total * 100).toFixed(6).replace(/\.?0+$/, '')+'%';
 const cost = {boss:1000000,clue:5000000,pets:5000000};
-const guide = {bones:150000,rune:400000,whip:3000000,visage:15000000,bow:300000000,ely:500000000,
-  sweets:150000,trim:400000,boots:6000000,gilded:20000000,pick:500000000,
-  fish:150000,log:400000,squirrel:10000000,vorki:35000000,olm:400000000};
 const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sharedId = new URLSearchParams(location.search).get('shelf');
 let session, state, shared, busy=false;
@@ -73,8 +66,61 @@ async function rpc(action,payload={}) {
   if(error) throw error;
   return data;
 }
+let clockOffset=0;
+let livePrices={};
+const priceCacheKey='challenger-ge-prices-v1';
+try { livePrices=JSON.parse(localStorage.getItem(priceCacheKey)) || {}; } catch {}
+async function refreshPrices(){
+  try {
+    const response=await fetch('https://prices.runescape.wiki/api/v1/osrs/latest',{signal:AbortSignal.timeout(8000)});
+    if(!response.ok) return;
+    const {data}=await response.json();
+    for(const item of catalog.values()){
+      const quote=data[item.ge];
+      if(!quote) continue;
+      const trades=['high','low'].filter(side=>quote[side]>0 && quote[side+'Time']>0);
+      if(!trades.length) continue;
+      const time=Math.min(...trades.map(side=>quote[side+'Time']))*1000;
+      if(time<(livePrices[item.ge]?.time || 0)) continue;
+      livePrices[item.ge]={time,value:Math.round(trades.reduce((sum,side)=>sum+quote[side],0)/trades.length)};
+    }
+    localStorage.setItem(priceCacheKey,JSON.stringify(livePrices));
+  } catch {}
+}
+function guideValue(item){
+  if(!item.ge) return 'Custom guide · '+price(item.guide);
+  const snapshot={value:item.guide,time:Date.parse(item.guideTime)};
+  const cached=livePrices[item.ge];
+  const value=cached && cached.time>(snapshot.time || 0)?cached:snapshot;
+  if(!value.value || !value.time) return 'GE guide unavailable';
+  const stale=Date.now()-value.time>24*60*60*1000;
+  return 'GE guide · '+price(value.value)+' · '+new Date(value.time).toLocaleString()+(stale?' (stale)':'');
+}
+async function loadCatalog(){
+  const rows=await rpc('catalog');
+  const totals=new Map();
+  for(const row of rows) totals.set(row.pack,(totals.get(row.pack)||0)+row.weight);
+  catalog.clear();
+  for(const row of rows){
+    const total=totals.get(row.pack);
+    const share=row.weight/total;
+    const [tier,color]=tiers[share<0.0005?4:share<0.002?3:share<0.008?2:share<0.02?1:0];
+    catalog.set(row.id,{...row,total,tier,color,icon:packs.find(pack=>pack.id===row.pack).icon});
+  }
+}
+function renderDaily(){
+  const remaining=state?.nextDailyAt?Date.parse(state.nextDailyAt)-Date.now()-clockOffset:0;
+  const minutes=Math.max(1,Math.ceil(remaining/60000));
+  el('daily').hidden=!state||remaining>0;
+  el('daily-timer').textContent=state&&remaining>0?'Next claim in '+Math.floor(minutes/60)+'h '+minutes%60+'m':'';
+}
+setInterval(renderDaily,1000);
 async function load() {
   state=session ? await rpc('state') : null;
+  if(state){
+    clockOffset=Date.parse(state.serverTime)-Date.now();
+    if(!catalog.size){await loadCatalog();void refreshPrices();}
+  }
   if(session && sharedId) shared=await rpc('showcase',{id:sharedId});
 }
 function packArt(pack,shake=false) {
@@ -91,12 +137,10 @@ function render() {
   el('login-screen').hidden=Boolean(session);
   el('storefront').hidden=!session;
   (session ? el('game-status') : el('auth-mode').parentElement).append(el('status'));
-  const ready=Boolean(state && !state.needsProfile);
-  el('balance').textContent=ready?price(state.gp):'Gielinor GP';
-  el('daily').disabled=!ready||!state.daily;
-  el('daily').textContent=ready&&!state.daily?'Daily GP claimed':'Claim 2M daily GP';
-  el('account').innerHTML=!ready?'<form id="profile"><h2>Create your player</h2><div class="actions"><input name="name" aria-label="Display name" placeholder="Display name" required minlength="2" maxlength="24"><button class="primary">Join with 500M GP</button>'+button('Sign out','logout')+'</div></form>':
-    '<div class="section"><strong>'+safe(state.name)+'</strong>'+button('Sign out','logout')+'</div>';
+  const ready=Boolean(state);
+  el('balance').textContent=ready?price(state.gp):'Loading GP…';
+  renderDaily();
+  el('account').innerHTML=!ready?'':'<div class="section"><strong>'+safe(state.name)+'</strong>'+button('Sign out','logout')+'</div>';
   for(const id of ['shop','collection','inventory','market','showcase','shared']) el(id).hidden=id!==view;
   document.querySelectorAll('[data-view]').forEach(b=>b.dataset.view===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   if(view==='shop') el('shop').innerHTML=packs.map(pack=>'<article class="tile">'+packArt(pack)+'<h2>'+pack.name+'</h2><p>'+pack.note+'</p><div class="actions">'+button('Open · '+price(cost[pack.id]),'open',pack.id,true,!ready||state.gp<cost[pack.id])+button('Odds','odds',pack.id)+'</div></article>').join('');
@@ -113,7 +157,7 @@ function render() {
     const actions=asset.listing?button('Cancel listing','cancel',asset.listing):
       button(asset.pinned?'Unpin':'Pin to shelf','pin',asset.id)+button('List for sale','list',asset.id)+
       (duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
-    return card(item,(asset.pulled?'Personally pulled':'Bought on the market')+' · Guide '+price(guide[item.id]),'<div class="actions">'+actions+'</div>');
+    return card(item,(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item),'<div class="actions">'+actions+'</div>');
   }).join('')||empty('Open a pack or buy a listing to fill your inventory.');
   if(view==='market') el('listings').innerHTML=state?.market?.map(listing=>card(catalog.get(listing.item),
     listing.name+' · Asking '+price(listing.price)+' · '+(listing.recent?'Last sale '+price(listing.recent):'Guide '+price(listing.guide)),
@@ -146,7 +190,7 @@ async function openPack(pack) {
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches) await new Promise(resolve=>setTimeout(resolve,620));
   const item=catalog.get(pull.item);
   showModal('<div class="reveal"><h2 id="modalTitle">'+(pull.count>1?'Duplicate pull':'New collection entry')+'</h2>'+
-    card(item,'Guide '+price(guide[item.id]))+(pull.bonus?'<p>Milestone bonus · '+price(pull.bonus)+'</p>':'')+
+    card(item,guideValue(item))+(pull.bonus?'<p>Milestone bonus · '+price(pull.bonus)+'</p>':'')+
     button('Done','close','','true')+'</div>');
   state=await rpc('state');
 }
@@ -193,7 +237,6 @@ document.addEventListener('submit',event=>{
     await load();
     if(signup&&!session) { el('auth-mode').click(); notice('Check your email to confirm your account, then sign in.'); }
   });
-  if(event.target.id==='profile') run(async()=>{await rpc('join',{name:data.get('name')});await load();});
   if(event.target.id==='listForm') run(async()=>{
     await rpc('list',{id:data.get('id'),price:Number(data.get('price'))});
     modal.close();await load();notice('Listing posted.');
@@ -207,8 +250,14 @@ document.addEventListener('click',event=>{
   if(act==='close') {modal.close();return;}
   if(act==='odds') {
     const pack=packs.find(p=>p.id===id);
-    showModal('<h2 id="modalTitle">'+pack.name+' odds</h2><ul class="odds">'+pack.loot.map(([item])=>
-      '<li><span>'+catalog.get(item).name+'</span><strong>'+odds(catalog.get(item))+'</strong></li>').join('')+'</ul>'+button('Done','close'));
+    run(async()=>{
+      await Promise.all([loadCatalog(),refreshPrices()]);
+      const rewards=[...catalog.values()].filter(item=>item.pack===pack.id);
+      showModal('<h2 id="modalTitle">'+pack.name+' odds</h2><ul class="odds">'+rewards.map(item=>
+        '<li><div><strong>'+safe(item.name)+'</strong><br><small>'+safe(guideValue(item))+
+        '<br>Total found: '+item.found.toLocaleString()+' · In circulation: '+item.circulation.toLocaleString()+
+        '</small></div><strong>'+odds(item)+'</strong></li>').join('')+'</ul>'+button('Done','close'));
+    });
     return;
   }
   if(act==='list') {
@@ -222,7 +271,7 @@ document.addEventListener('click',event=>{
     run(async()=>{await rpc(act,{id});await load();notice(({buy:'Purchase complete. Find it in your inventory.',cancel:'Listing canceled.',pin:'Showcase updated.',salvage:'Duplicate salvaged.'})[act]);});
   }
 });
-el('daily').onclick=()=>run(async()=>{await rpc('daily');await load();notice('Added 2M GP.');});
+el('daily').onclick=()=>run(async()=>{await rpc('daily');await load();notice('Added 50,000 GP.');});
 el('refresh').onclick=()=>session&&run(load);
 el('share').onclick=async()=>{
   const url=new URL(location.pathname,location.origin);
