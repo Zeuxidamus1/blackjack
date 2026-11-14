@@ -1,9 +1,17 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#071014">
 <title>Challenger Rips</title>
+<meta name="description" content="Old School RuneScape loot packs, collectibles and GP rewards.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Challenger Rips">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" sizes="180x180">
 <style>
 :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#100d19;color:#fff;--muted:#b7afca;--panel:#20192d;--line:#3d304e;--accent:#c6a4ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 55% 9%,#291844,transparent 52%) fixed;min-height:100vh}button{font:inherit;cursor:pointer;color:inherit}button:disabled{cursor:default;opacity:.55}button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
@@ -250,6 +258,18 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 
 .inside-jackpot{color:#f7c179!important;font-weight:850}
 
+
+/* App installation entry point; no changes to pack or reveal styles */
+#pwa-install[hidden]{display:none!important}
+.pwa-install-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;background:#153c32;color:#b5f6db;border:1px solid #76cea7;border-radius:99px;font-size:.8rem;font-weight:850;padding:8px 12px;white-space:nowrap}
+#pwa-install-dialog{background:#0a1a1e;color:#f5f9f7;border:1px solid #54716f;border-radius:20px;width:min(420px,calc(100vw - 30px));padding:24px;box-shadow:0 25px 65px #000b}
+#pwa-install-dialog::backdrop{background:#000a}
+#pwa-install-dialog h2{font-size:1.35rem;margin:0 0 14px}
+#pwa-install-dialog p{font-size:.92rem;color:#b9d2cd;line-height:1.5;margin:0 0 14px}
+#pwa-install-dialog button{width:100%;border:0;border-radius:12px;padding:12px;background:#8adcb5;color:#09231c;font-weight:850}
+@media(max-width:600px){.pwa-install-button{width:36px;height:36px;padding:0;font-size:1.15rem}.pwa-install-button span{display:none}}
+@media(max-width:400px){.bar-right:has(.pwa-install-button:not([hidden])) .header-signout{display:none}}
+@media(display-mode:standalone){#pwa-install{display:none!important}header{padding-top:env(safe-area-inset-top)}footer{padding-bottom:env(safe-area-inset-bottom)}}
 </style>
 <link rel="stylesheet" href="./reveal.css?v=2">
 <section id="login-screen"><div class="login-card">
@@ -260,7 +280,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <button id="auth-submit" class="primary" name="mode" value="login">Sign in</button>
 </form><button id="auth-mode" type="button" class="quiet">Create account</button>
 <p id="status" role="status"></p></div></section>
-<div id="storefront" hidden><header><div class="bar"><div class="brand">CHALLENGER<span> RIPS</span></div><div class="bar-right"><div class="balance" id="balance"></div><button class="quiet header-signout" data-act="logout">Sign out</button></div></div></header>
+<div id="storefront" hidden><header><div class="bar"><div class="brand">CHALLENGER<span> RIPS</span></div><div class="bar-right"><div class="balance" id="balance"></div><button id="pwa-install" type="button" class="pwa-install-button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install</span></button><button class="quiet header-signout" data-act="logout">Sign out</button></div></div></header>
 <main>
 <section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button><span id="daily-timer"></span></div></section>
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="market">Market</button><button data-view="showcase">Showcase</button></nav>
@@ -277,6 +297,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.js"></script>
 <script src="./reveal.js?v=2"></script>
+<script defer src="./app-install.js"></script>
 <script>
 const packs = [
   {id:'boss', name:'Boss Loot', icon:'⚔️', color:'#823ac6', note:'Armor progression and rare gear'},
