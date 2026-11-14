@@ -248,14 +248,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 }
 
 
-/* Reward-pool insights match the existing premium What's Inside visual style */
-.inside-profit-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 17px}
-.inside-profit-stats>div{min-width:0;padding:16px;border-radius:14px;background:#17352e77;border:1px solid #67ba9377}
-.inside-profit-stats small{display:block;font-size:.75rem;color:#a5cabe;margin-bottom:8px}
-.inside-profit-stats strong{font-size:clamp(1.1rem,3vw,1.65rem);font-weight:900;color:#a3f3c9;font-variant-numeric:tabular-nums}
-.inside-source-note{margin:14px 0;font-size:.8rem;line-height:1.55;color:#a2b7bb}
 .inside-jackpot{color:#f7c179!important;font-weight:850}
-@media(max-width:500px){.inside-profit-stats>div{padding:11px}.inside-profit-stats small{font-size:.69rem}.inside-profit-stats strong{font-size:1.1rem}}
 
 </style>
 <link rel="stylesheet" href="./reveal.css?v=2">
@@ -486,8 +479,6 @@ function showInside() {
    .filter(x=>x.item && Number(x.item.guide)>0)
    .sort((a,b)=>estimate(a.item)-estimate(b.item));
  const total=entry.rewards.reduce((sum,r)=>sum+Number(r.weight),0);
- const profitable=rows.filter(x=>estimate(x.item)>entry.price);
- const profitTickets=profitable.reduce((sum,x)=>sum+Number(x.r.weight),0);
  const groups=[
    ['Common Drops',x=>!x.r.chase&&estimate(x.item)<entry.price*.5],
    ['Uncommon Drops',x=>!x.r.chase&&estimate(x.item)>=entry.price*.5&&estimate(x.item)<=entry.price],
@@ -504,9 +495,6 @@ function showInside() {
    '<div><small>Minimum</small><strong>'+price(Math.min(...vals))+'</strong></div>'+
    '<div><small>Maximum</small><strong>'+price(Math.max(...vals))+'</strong></div>'+
    '<div><small>Possible rewards</small><strong>'+rows.length+'</strong></div></div>'+
-   '<div class="inside-profit-stats"><div><small>Rewards worth more than the pack</small><strong>'+profitable.length+' / '+rows.length+'</strong></div>'+
-   '<div><small>Combined chance of profit</small><strong>'+pct(profitTickets,total)+'</strong></div></div>'+
-   '<p class="inside-source-note">Values reflect the server Grand Exchange guides. Selling is validated at the time of sale. Profit chance sums actual reward weights, not the item count. Current odds version: '+Number(entry.configVersion||1)+'.</p>'+
    groups.filter(([label,test])=>rows.some(test)).map(([label,test])=>
      '<section class="inside-group"><h3>'+label+'</h3><div class="inside-grid">'+rows.filter(test).map(({r,item})=>
        '<article class="inside-item"><div class="inside-icon"><img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+'.png" alt="'+safe(item.name)+'" onerror="this.replaceWith(document.createTextNode(\'⚔\'))"></div>'+
