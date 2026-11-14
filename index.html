@@ -34,6 +34,83 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .case-buy button{min-width:40px}
 .odds li{gap:12px;padding:10px 0}
 .odds li>strong{white-space:nowrap}
+
+/* Boss Loot collectible pack storefront */
+#shop.boss-shop{display:block;min-width:0}
+.boss-shell{overflow:hidden;position:relative;border:1px solid #34454a;border-radius:24px;background:radial-gradient(ellipse at 50% 12%,#1b4548 0%,#101d23 43%,#080e13 85%);padding:18px 0 28px;box-shadow:0 28px 65px #0007}
+.boss-top{display:flex;justify-content:space-between;align-items:center;padding:0 20px;gap:10px}
+.boss-top .quiet{background:#ffffff0e;border-color:#ffffff2a}
+.boss-kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8fdac0;font-weight:900}
+.boss-heading{text-align:center;margin:14px 12px 0;font-size:clamp(1.25rem,3vw,1.9rem);letter-spacing:-.04em}
+.boss-caption{text-align:center;margin:6px 15px 2px;font-size:.88rem;color:#a3b8b9}
+.boss-carousel{width:100%;overflow-x:auto;display:flex;gap:clamp(18px,4vw,54px);padding:28px max(12px,calc((100% - min(72vw,300px))/2)) 20px;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x;cursor:grab;user-select:none;overscroll-behavior-inline:contain}
+.boss-carousel::-webkit-scrollbar{display:none}
+.boss-carousel.dragging{scroll-snap-type:none;cursor:grabbing}
+.boss-slide{flex:0 0 min(72vw,300px);scroll-snap-align:center;display:flex;justify-content:center;align-items:center;transition:transform .3s,filter .3s;transform:scale(.85);filter:brightness(.63)}
+.boss-slide.is-active{transform:scale(1);filter:brightness(1)}
+.boss-slide button{border:0;background:transparent;padding:0;width:100%;display:block}
+.boss-foil{--foil:#ce834d;--deep:#46301f;position:relative;margin:auto;width:min(100%,276px);height:370px;background:linear-gradient(130deg,#ffffff35,transparent 24%,#ffffff13 48%,transparent 62%),repeating-linear-gradient(130deg,#ffffff06 0 1px,transparent 1px 14px),linear-gradient(145deg,#1f252b 0%,var(--deep) 56%,#0a0e14 100%);border:2px solid var(--foil);border-radius:11px;box-shadow:0 12px 36px #000b,0 0 35px color-mix(in srgb,var(--foil),transparent 75%),inset 0 0 30px #0008;display:flex;flex-direction:column;justify-content:space-around;align-items:center;text-align:center;overflow:hidden;color:#fff;isolation:isolate}
+.boss-foil::before,.boss-foil::after{content:"";position:absolute;left:0;right:0;height:19px;background:repeating-linear-gradient(90deg,#0004 0 2px,#ffffff52 2px 4px,transparent 4px 7px),linear-gradient(180deg,var(--foil),#433326);z-index:2}
+.boss-foil::before{top:0;border-bottom:2px solid #ffffff42}
+.boss-foil::after{bottom:0;border-top:2px solid #ffffff42}
+.foil-lines{position:absolute;inset:30px 14px;border:1px solid #ffffff27;clip-path:polygon(0 0,100% 0,100% 88%,90% 100%,0 100%);pointer-events:none}
+.foil-crest{font-weight:950;font-size:.8rem;letter-spacing:.19em;margin-top:28px;color:var(--foil)}
+.foil-emblem{font-size:5.1rem;line-height:1;filter:drop-shadow(0 0 17px var(--foil));font-weight:800}
+.foil-rune{position:absolute;inset:32% -4% auto;color:var(--foil);opacity:.12;font-size:8rem;font-weight:900;letter-spacing:.1em}
+.foil-title{font-weight:1000;font-size:clamp(1.25rem,3vw,1.7rem);letter-spacing:.06em;text-shadow:0 3px 12px #000}
+.foil-footer{letter-spacing:.22em;color:var(--foil);font-size:.64rem;font-weight:1000;margin-bottom:25px}
+.boss-foil[data-theme="divine"]{background:radial-gradient(circle at 50% 46%,#93752c77,transparent 60%),linear-gradient(125deg,#4b3215,#0d141b 45%,#4e3c1f)}
+.boss-foil[data-theme="infernal"]{background:radial-gradient(circle at 50% 53%,#cb3b0e99,transparent 66%),linear-gradient(135deg,#2b1111,#0b0d18 65%,#451f0e)}
+.boss-foil[data-theme="dragon"]{background:linear-gradient(120deg,#751e24,#0f1720 60%,#481113)}
+.boss-foil[data-theme="ancient"]{background:radial-gradient(circle,#433166,#0a1320 70%)}
+.boss-foil[data-theme="rune"]{background:linear-gradient(130deg,#254d84,#0d1421 60%,#18365e)}
+.boss-foil[data-theme="adamant"]{background:linear-gradient(130deg,#194c37,#0d1720 60%,#153c2d)}
+.boss-foil[data-theme="mithril"]{background:linear-gradient(130deg,#195b60,#091620 60%,#184149)}
+.boss-foil[data-theme="steel"]{background:linear-gradient(130deg,#244656,#0c111b 60%,#243e4c)}
+.boss-foil[data-theme="iron"]{background:linear-gradient(130deg,#404b52,#10151b 60%,#34414b)}
+.boss-foil[data-theme="bronze"]{background:linear-gradient(130deg,#71442a,#0f151a 60%,#4b2e20)}
+.boss-details{max-width:580px;margin:4px auto 0;padding:0 22px;text-align:center}
+.boss-details h2{font-size:clamp(1.8rem,5vw,2.7rem);margin-bottom:6px}
+.boss-details p{font-size:.9rem}
+.boss-tag{font-size:.7rem;color:#8fdac0;letter-spacing:.2em;font-weight:900;text-transform:uppercase}
+.boss-metrics{margin:22px auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:16px 0;border-top:1px solid #ffffff24;border-bottom:1px solid #ffffff24}
+.boss-metrics small{color:#a1b2b6;font-size:.74rem;display:block;margin-bottom:6px}
+.boss-metrics strong{font-size:clamp(.9rem,2.8vw,1.35rem);font-variant-numeric:tabular-nums}
+.boss-tools{display:flex;justify-content:center;align-items:center;gap:8px;margin:16px 0}
+.boss-tools .quiet{border-radius:99px;background:#ffffff16;padding:11px 16px}
+.boss-qty{display:flex;justify-content:center;align-items:center;gap:6px;font-size:.85rem}
+.boss-qty button{background:#ffffff10;border:1px solid #ffffff33;border-radius:9px;padding:8px 13px}
+.boss-qty button[aria-pressed=true]{background:#8fdac02e;border-color:#8fdac0}
+.boss-open{width:100%;margin-top:16px;padding:17px!important;border-radius:16px!important;font-size:1.1rem!important;background:linear-gradient(90deg,#ec7d2c,#f6a14b)!important;color:#211508!important}
+.boss-warning{font-size:.78rem!important;margin-top:13px}
+.boss-progress{text-align:center;color:#839b9c;font-size:.78rem;padding-top:8px}
+#modal.boss-inside{width:min(980px,calc(100vw - 16px));height:min(94dvh,1100px);max-height:94dvh;padding:0;border-radius:22px;background:#07151b;overflow-y:auto;scrollbar-width:thin}
+.inside-head{background:radial-gradient(circle at 40% 0,#24484b,#07151b 75%);padding:24px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:1;border-bottom:1px solid #ffffff23;backdrop-filter:blur(10px)}
+.inside-head .boss-foil{width:86px;height:115px;min-width:86px;border-radius:6px}
+.inside-head .boss-foil::before,.inside-head .boss-foil::after{height:7px}
+.inside-head .foil-crest,.inside-head .foil-footer,.inside-head .foil-lines,.inside-head .foil-rune{display:none}
+.inside-head .foil-emblem{font-size:1.7rem}
+.inside-head .foil-title{font-size:.54rem}
+.inside-head h2{font-size:clamp(1.25rem,4vw,2rem)}
+.inside-head p{font-size:.83rem}
+.inside-close{margin-left:auto;align-self:flex-start;border:1px solid #ffffff3b;background:#ffffff1c;padding:7px 12px;border-radius:99px}
+.inside-content{padding:18px 24px 30px}
+.inside-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 25px}
+.inside-facts>div{background:#ffffff09;border:1px solid #ffffff1b;border-radius:11px;padding:12px}
+.inside-facts small{display:block;color:#91a9af;font-size:.73rem}
+.inside-facts strong{font-size:clamp(.8rem,2vw,1.15rem);overflow-wrap:anywhere}
+.inside-group{margin:25px 0}
+.inside-group h3{padding-bottom:10px;border-bottom:1px solid #ffffff2a;margin-bottom:12px;font-size:1.15rem}
+.inside-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.inside-item{border:1px solid #ffffff28;border-radius:14px;overflow:hidden;background:linear-gradient(150deg,#1d3036,#0e1a20);min-width:0}
+.inside-icon{height:118px;display:grid;place-items:center;background:radial-gradient(circle,#ffffff14,transparent 70%)}
+.inside-icon img{image-rendering:auto;width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 9px 9px #000a)}
+.inside-item-details{padding:11px;background:#050f13b3}
+.inside-item-details strong{display:block;font-size:.85rem;min-height:2.3em;overflow-wrap:anywhere}
+.inside-item-details small{display:block;font-size:.73rem;color:#9baeb1;margin-top:4px}
+.inside-value{color:#82e2bb;font-weight:850;margin-bottom:7px}
+@media(max-width:650px){.inside-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.inside-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.inside-content{padding:14px}.inside-head{padding:14px}.inside-icon{height:105px}.boss-carousel{gap:18px}.boss-foil{height:325px}.boss-slide{flex-basis:min(69vw,265px)}.boss-carousel{padding-inline:max(12px,calc((100% - min(69vw,265px))/2))}.boss-metrics{gap:4px}}
+
 </style>
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><form id="auth" method="post">
@@ -72,7 +149,7 @@ const el = id => document.getElementById(id);
 const modal = el('modal');
 const price = gp => Number(gp).toLocaleString()+' GP';
 const odds = item => (item.weight / item.total * 100).toFixed(6).replace(/\.?0+$/, '')+'%';
-let cases=[], category=null, selected=null, quantity=1, batch=null, activeSlot=1;
+let cases=[], category=null, selected=null, quantity=1, batch=null, activeSlot=1, bossIndex=0;
 const purchaseKey='challenger-pending-purchase';
 const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sharedId = new URLSearchParams(location.search).get('shelf');
@@ -137,12 +214,141 @@ async function load() {
   state=session ? await rpc('state') : null;
   if(state){
     clockOffset=Date.parse(state.serverTime)-Date.now();
-    if(!catalog.size){await loadCatalog();void refreshPrices();}
+    if(!catalog.size){await loadCatalog();void refreshPrices();void refreshServerPrices();}
     if(!cases.length) cases=await rpc('cases');
     batch=await rpc('case_batch');
   }
   if(session && sharedId) shared=await rpc('showcase',{id:sharedId});
 }
+
+async function refreshServerPrices() {
+  if(!session || !db) return;
+  try {
+    const {data,error}=await db.functions.invoke('challenger-ge-refresh',{body:{}});
+    if(error || !data || data.status!=='updated' || !data.changed) return;
+    await loadCatalog();
+    cases=await rpc('cases');
+    if(view==='shop' && !modal.open) render();
+  } catch(error) {console.warn('GE server refresh not available:',error);}
+}
+setInterval(()=>{if(session)void refreshServerPrices();},15*60*1000);
+const pct = weight => (weight/10000).toFixed(4).replace(/\.?0+$/,'')+'%';
+const caseValues = entry => entry.rewards.map(r=>catalog.get(r.id)).filter(Boolean).map(estimate);
+function foilArt(entry) {
+  const tint=safe(entry.accent || '#ce834d'),theme=safe(entry.theme||'bronze');
+  return '<div class="boss-foil" data-theme="'+theme+'" style="--foil:'+tint+'"><div class="foil-lines"></div>'+
+    '<div class="foil-crest">CHALLENGER RIPS</div><div class="foil-rune">ᚱ</div>'+
+    '<div class="foil-emblem" aria-hidden="true">'+safe(entry.symbol||'⚔')+'</div>'+
+    '<div class="foil-title">'+safe(entry.name).replace(' ','<br>')+'</div>'+
+    '<div class="foil-footer">BOSS LOOT · OSRS</div></div>';
+}
+function bossCases() {return cases.filter(c=>c.pack==='boss').sort((a,b)=>a.price-b.price);}
+function renderBossDetails() {
+ const items=bossCases(),entry=items[bossIndex];
+ if(!entry || !el('boss-details')) return;
+ selected=entry;
+ const values=caseValues(entry);
+ const minimum=values.length?Math.min(...values):null;
+ const maximum=values.length?Math.max(...values):null;
+ const maxQty=Math.min(5,Math.floor((state?.gp||0)/entry.price));
+ quantity=Math.min(quantity,Math.max(1,maxQty));
+ el('boss-details').innerHTML='<span class="boss-tag">'+safe(entry.theme||'BOSS LOOT')+' series · '+(bossIndex+1)+' / '+items.length+'</span>'+
+   '<h2>'+safe(entry.name)+'</h2><p>'+safe(entry.description||'Open a mystery pack for unique rewards.')+'</p>'+
+   '<div class="boss-tools">'+button('◉ What’s inside','inside')+'</div>'+
+   '<div class="boss-metrics"><div><small>Minimum pull</small><strong>'+(minimum===null?'Unavailable':price(minimum))+'</strong></div>'+
+   '<div><small>Max pull</small><strong>'+(maximum===null?'Unavailable':price(maximum))+'</strong></div>'+
+   '<div><small>Pack price</small><strong>'+price(entry.price)+'</strong></div></div>'+
+   '<div class="boss-qty"><span>Open</span>'+[1,2,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
+   button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty||Boolean(batch))+
+   (batch?'<p class="boss-warning">Finish your previous opening before purchasing another pack.</p>':'<p class="boss-warning">Digital GP only · Actual reward probabilities are shown before purchase.</p>');
+ const buy=el('boss-details').querySelector('[data-act="purchase"]');if(buy)buy.classList.add('boss-open');
+ document.querySelectorAll('.boss-slide').forEach((slide,i)=>slide.classList.toggle('is-active',i===bossIndex));
+}
+function renderBossShop(resume) {
+ const items=bossCases();
+ if(!items.length){el('shop').innerHTML=empty('Boss Loot packs are not available.');return;}
+ bossIndex=Math.max(0,Math.min(items.length-1,bossIndex));
+ el('shop').innerHTML='<div class="boss-shell"><div class="boss-top">'+button('← All packs','categories')+
+   (batch?button('Resume opening','resume'):'<span class="boss-kicker">Mystery Collectibles</span>')+'</div>'+
+   '<h2 class="boss-heading">BOSS LOOT</h2><p class="boss-caption">Swipe to discover your next treasure</p>'+
+   '<div class="boss-carousel" role="region" aria-label="Boss loot packs">'+
+   items.map((entry,i)=>'<div class="boss-slide '+(i===bossIndex?'is-active':'')+'" data-index="'+i+'">'+
+   '<button type="button" data-act="boss-choose" data-id="'+entry.id+'" aria-label="Select '+safe(entry.name)+'">'+foilArt(entry)+'</button></div>').join('')+
+   '</div><div class="boss-details" id="boss-details"></div>'+
+   '<div class="boss-progress">Drag or swipe to browse · '+items.length+' unique packs</div></div>';
+ const carousel=el('shop').querySelector('.boss-carousel');
+ const snap=(i,smooth=true)=>{
+   i=Math.max(0,Math.min(items.length-1,i));
+   const slide=carousel.children[i];
+   carousel.scrollTo({left:slide.offsetLeft-carousel.offsetLeft-(carousel.clientWidth-slide.clientWidth)/2,behavior:smooth?'smooth':'instant'});
+   bossIndex=i;renderBossDetails();
+ };
+ renderBossDetails();
+ requestAnimationFrame(()=>snap(bossIndex,false));
+ let drag=null,suppress=false,scrollTimer=0;
+ carousel.addEventListener('pointerdown',e=>{
+   if(e.pointerType!=='mouse'||e.button!==0)return;
+   drag={x:e.clientX,left:carousel.scrollLeft,id:e.pointerId};
+   suppress=false;
+ });
+ carousel.addEventListener('pointermove',e=>{
+   if(!drag||!e.buttons)return;
+   const delta=e.clientX-drag.x;
+   if(Math.abs(delta)<7&&!suppress)return;
+   if(!suppress){carousel.setPointerCapture(e.pointerId);suppress=true;carousel.classList.add('dragging');}
+   carousel.scrollLeft=drag.left-delta;
+ });
+ const nearest=()=>{
+   const center=carousel.getBoundingClientRect().left+carousel.clientWidth/2;
+   return [...carousel.children].reduce((best,slide,i)=>{
+     const r=slide.getBoundingClientRect(),d=Math.abs(r.left+r.width/2-center);
+     return d<best.d?{i,d}:best;
+   },{i:0,d:Infinity}).i;
+ };
+ const finish=()=>{
+   if(!drag)return;
+   drag=null;carousel.classList.remove('dragging');
+   if(suppress)snap(nearest());
+ };
+ carousel.addEventListener('pointerup',finish);
+ carousel.addEventListener('pointercancel',finish);
+ carousel.addEventListener('click',e=>{
+   if(!suppress)return;
+   e.preventDefault();e.stopPropagation();suppress=false;
+ },true);
+ carousel.addEventListener('scroll',()=>{
+   clearTimeout(scrollTimer);
+   scrollTimer=setTimeout(()=>{const i=nearest();if(i!==bossIndex){bossIndex=i;renderBossDetails();}},80);
+ },{passive:true});
+ carousel.selectCase=snap;
+}
+function showInside() {
+ const entry=selected;if(!entry)return;
+ const rows=entry.rewards.map(r=>({r,item:catalog.get(r.id)})).filter(x=>x.item).sort((a,b)=>estimate(a.item)-estimate(b.item));
+ const groups=[
+   ['Common Drops',x=>x.r.weight>=50000],
+   ['Uncommon Drops',x=>x.r.weight>=10000&&x.r.weight<50000],
+   ['Rare Drops',x=>x.r.weight>=1000&&x.r.weight<10000],
+   ['Grails / Jackpot Items',x=>x.r.weight<1000]
+ ];
+ const vals=rows.map(x=>estimate(x.item));
+ modal.classList.add('boss-inside');
+ showModal('<div class="inside-head">'+foilArt(entry)+'<div><span class="boss-tag">BOSS LOOT</span>'+
+   '<h2 id="modalTitle">'+safe(entry.name)+'</h2><p>Every possible reward and its actual chance.</p></div>'+
+   button('✕','close')+'</div><div class="inside-content"><div class="inside-facts">'+
+   '<div><small>Opening cost</small><strong>'+price(entry.price)+'</strong></div>'+
+   '<div><small>Minimum</small><strong>'+price(Math.min(...vals))+'</strong></div>'+
+   '<div><small>Maximum</small><strong>'+price(Math.max(...vals))+'</strong></div>'+
+   '<div><small>Possible rewards</small><strong>'+rows.length+'</strong></div></div>'+
+   '<p>Values shown are the latest available Grand Exchange guides. The server determines sale prices. Odds below reflect the active pack configuration (v'+Number(entry.configVersion||1)+').</p>'+
+   groups.filter(([label,test])=>rows.some(test)).map(([label,test])=>
+     '<section class="inside-group"><h3>'+label+'</h3><div class="inside-grid">'+rows.filter(test).map(({r,item})=>
+       '<article class="inside-item"><div class="inside-icon"><img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+' .png" alt="'+safe(item.name)+'" onerror="this.replaceWith(document.createTextNode(\'⚔\'))"></div>'+
+       '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
+       '<small>Drop chance · '+pct(r.weight)+'</small><small>'+safe(guideValue(item))+'</small></div></article>'
+     ).join('')+'</div></section>').join('')+'</div>');
+}
+
 function packArt(pack,shake=false) {
   return '<div class="art" style="--glow:'+pack.color+'"><div class="pack '+(shake?'shake':'')+'"><span class="symbol" aria-hidden="true">'+pack.icon+'</span>'+pack.name.toUpperCase()+'</div></div>';
 }
@@ -174,7 +380,7 @@ function render() {
     const item=catalog.get(asset.item);
     const duplicate=state.items.filter(i=>i.item===asset.item).length>1;
     const actions=asset.listing?button('Cancel listing','cancel',asset.listing):
-      button(asset.pinned?'Unpin':'Pin to shelf','pin',asset.id)+button('List for sale','list',asset.id)+
+      button(asset.pinned?'Unpin':'Pin to shelf','pin',asset.id)+(item?.ge?button('Sell to GE · '+price(estimate(item)),'sell',asset.id):'')+button('List for sale','list',asset.id)+
       (duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
     return card(item,(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item),'<div class="actions">'+actions+'</div>');
   }).join('')||empty('Open a pack or buy a listing to fill your inventory.');
@@ -204,11 +410,13 @@ async function run(work) {
   finally {busy=false;render();}
 }
 function renderShop(ready){
+  el('shop').classList.toggle('boss-shop',category==='boss');
   const resume=batch?'<div class="case-toolbar">'+button('Resume opening','resume','','true')+'</div>':'';
   if(!category){
     el('shop').innerHTML=resume+packs.map(pack=>'<article class="tile">'+packArt(pack)+'<h2>'+pack.name+'</h2><p>'+pack.note+'</p>'+button('Browse cases','category',pack.id,true,!ready)+'</article>').join('');
     return;
   }
+  if(category==='boss'){renderBossShop(resume);return;}
   el('shop').innerHTML=resume+'<div class="case-toolbar">'+button('All categories','categories')+'</div>'+
     cases.filter(entry=>entry.pack===category).map(entry=>'<article class="tile">'+packArt(caseArt(entry))+
     '<h2>'+safe(entry.name)+'</h2><p>'+price(entry.price)+'</p>'+button('View case','case',entry.id,true)+'</article>').join('');
@@ -364,9 +572,12 @@ document.addEventListener('click',event=>{
   if(!b||busy) return;
   if(b.dataset.view) {view=b.dataset.view;notice();render();if(view==='market'&&session)run(load);return;}
   const {act,id}=b.dataset;
-  if(act==='close') {modal.close();return;}
-  if(act==='categories'){category=null;render();return;}
-  if(act==='category'){category=id;render();return;}
+  if(act==='close') {modal.close();modal.classList.remove('boss-inside');return;}
+   if(act==='inside'){showInside();return;}
+   if(act==='boss-qty'){quantity=Number(id);renderBossDetails();return;}
+   if(act==='boss-choose'){const entries=bossCases(),index=entries.findIndex(c=>c.id===id);const c=el('shop').querySelector('.boss-carousel');if(c&&index>=0)c.selectCase(index);return;}
+  if(act==='categories'){category=null;selected=null;render();return;}
+  if(act==='category'){category=id;bossIndex=0;quantity=1;render();return;}
   if(act==='case'){selected=cases.find(c=>c.id===id);quantity=1;run(async()=>{await loadCatalog();showCase();});return;}
   if(act==='quantity'){quantity=Number(id);showCase();return;}
   if(act==='purchase'){run(purchase);return;}
@@ -382,9 +593,10 @@ document.addEventListener('click',event=>{
     return;
   }
   if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;await load();});
-  if(['buy','cancel','pin','salvage'].includes(act)) {
+  if(['buy','cancel','pin','salvage','sell'].includes(act)) {
+     if(act==='sell'&&!confirm('Sell this item for the server-verified Grand Exchange price?'))return;
     if(act==='buy'&&!confirm('Buy this item for '+price(state.market.find(item=>item.id===id).price)+'?')) return;
-    run(async()=>{await rpc(act,{id});await load();notice(({buy:'Purchase complete. Find it in your inventory.',cancel:'Listing canceled.',pin:'Showcase updated.',salvage:'Duplicate salvaged.'})[act]);});
+    run(async()=>{await rpc(act,{id});await load();notice(({buy:'Purchase complete. Find it in your inventory.',cancel:'Listing canceled.',pin:'Showcase updated.',salvage:'Duplicate salvaged.',sell:'Item sold for the verified Grand Exchange price.'})[act]);});
   }
 });
 el('daily').onclick=()=>run(async()=>{await rpc('daily');await load();notice('Added 50,000 GP.');});
