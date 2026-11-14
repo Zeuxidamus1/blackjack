@@ -4,7 +4,7 @@ const ITEM_VALUES=[12000,22000,36000,49000,66000];
 const mockCatalog=ITEM_VALUES.map((value,i)=>({
   id:'test_item_'+i,pack:'boss',weight:2000,ge:1115+i,
   name:['Rune scimitar','Dragon platelegs','Abyssal whip','Dragon boots','Bandos tassets'][i],
-  guide:value,guideTime:'2026-11-14T11:00:00Z',
+  guide:value,guideTime:new Date().toISOString(),
   salvage:0,found:0,circulation:0
 }));
 const boss={
@@ -26,7 +26,7 @@ async function setup(page,{gp=100000,viewport}={}){
   }));
   await page.addInitScript(({mockCatalog,boss,gp})=>{
     const id='11111111-1111-4111-8111-111111111111';
-    const now='2026-11-14T11:00:00Z';
+    const now=new Date().toISOString();
     let backend=JSON.parse(sessionStorage.getItem('reveal-mock')||'null')||
       {gp,inventory:[],batch:null,purchases:0,settlements:0};
     const save=()=>sessionStorage.setItem('reveal-mock',JSON.stringify(backend));
@@ -58,9 +58,26 @@ async function setup(page,{gp=100000,viewport}={}){
         if(action==='state')return ok({
           id,name:'Playwright Tester',gp:backend.gp,
           items:backend.inventory.filter(i=>i.status==='vaulted')
-            .map(i=>({id:i.instance,item:i.item,pinned:false,pulled:true,listing:null,salvage:0})),
+            .map(i=>({id:i.instance,item:i.item,pinned:false,pulled:true,listing:i.listing||null,salvage:0})),
           market:[],pulls:{},nextDailyAt:now,serverTime:now
         });
+        if(action==='sell_bulk'){
+          const ids=payload?.ids;
+          if(!Array.isArray(ids)||!ids.length||ids.length>100||new Set(ids).size!==ids.length)
+            return fail('Invalid bulk sale selection');
+          const owned=ids.map(id=>backend.inventory.find(i=>i.instance===id && i.status==='vaulted'));
+          if(owned.some(item=>!item || item.listing))return fail('One or more selected items are unavailable');
+          if(window.__mockRejectBulkSale){
+            window.__mockRejectBulkSale=false;
+            return fail('Server rejected the sale; inventory unchanged.');
+          }
+          const total=owned.reduce((sum,item)=>sum+mockCatalog.find(c=>c.id===item.item).guide,0);
+          owned.forEach(item=>item.status='sold');
+          backend.gp+=total;
+          backend.bulkSales=(backend.bulkSales||0)+1;
+          save();
+          return ok({count:ids.length,total});
+        }
         if(action==='reward_batch')return ok(backend.batch &&
           (payload?.batch||backend.batch.rewards.some(r=>r.status==='pending'))?snapshot():null);
         if(action==='case_purchase'){
@@ -263,5 +280,100 @@ test('no debit or credit animation on insufficient GP / unsuccessful pack purcha
  await expect(page.locator('#balance')).toHaveText('500 GP');
  await expect(page.locator('#boss-details [data-act="purchase"]')).toBeDisabled();
  await expect(page.locator('#gp-delta-inline')).toBeHidden();
+ expect(errors).toEqual([]);
+});
+
+
+async function prepareInventory(page,qty=4){
+ await purchase(page,qty);
+ await revealAll(page,qty);
+ await page.locator('[data-cr="vault"]').click();
+ await expect(page.locator('#cr-reveal')).toBeHidden();
+ await page.getByRole('button',{name:'Inventory'}).click();
+ await expect(page.locator('#owned .item')).toHaveCount(qty);
+}
+
+test('Inventory multi-select sells only chosen items at confirmed GE prices and credits GP once',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,4);
+ await page.locator('#inventory-mode-button').click();
+ await expect(page.locator('#inventory-toolbar')).toBeVisible();
+ await page.locator('#owned [data-act="inventory-toggle"]').nth(0).click();
+ await page.locator('#owned [data-act="inventory-toggle"]').nth(1).click();
+ await expect(page.locator('#owned .inventory-entry.is-selected')).toHaveCount(2);
+ await expect(page.locator('#inventory-toolbar')).toContainText('2 selected');
+ await expect(page.locator('#inventory-toolbar')).toContainText('34,000 GP');
+ await expect(page.locator('#inventory-toolbar [data-act="inventory-sell"]')).toContainText('Sell selected (2)');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#inventory-toolbar [data-act="inventory-sell"]').click();
+ await expect(page.locator('#owned .item')).toHaveCount(2);
+ await expect(page.locator('#balance')).toHaveText('130,000 GP');
+ await expect(page.locator('#gp-delta-inline')).toHaveText('+34,000 GP');
+ await expect(page.locator('#owned .inventory-entry.is-selected')).toHaveCount(0);
+ const result=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+ expect(result.bulkSales).toBe(1);
+ expect(result.inventory.filter(i=>i.status==='sold')).toHaveLength(2);
+ expect(result.inventory.filter(i=>i.status==='vaulted')).toHaveLength(2);
+ expect(errors).toEqual([]);
+});
+test('Select all, clear and selection mode preserve individual inventory actions',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,3);
+ await page.locator('#inventory-mode-button').click();
+ await page.locator('#inventory-toolbar [data-act="inventory-all"]').click();
+ await expect(page.locator('#owned .is-selected')).toHaveCount(3);
+ await expect(page.locator('#inventory-toolbar')).toContainText('70,000 GP');
+ await page.locator('#inventory-toolbar [data-act="inventory-clear"]').click();
+ await expect(page.locator('#owned .is-selected')).toHaveCount(0);
+ await page.locator('#inventory-mode-button').click();
+ await expect(page.locator('#inventory-toolbar')).toBeHidden();
+ await expect(page.locator('#owned [data-act="sell"]')).toHaveCount(3);
+ expect(errors).toEqual([]);
+});
+test('Listed inventory items cannot be selected for bulk sale',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,3);
+ await page.evaluate(()=>{
+   const backend=JSON.parse(sessionStorage.getItem('reveal-mock'));
+   backend.inventory[0].listing='11111111-1111-4111-8111-111111111199';
+   sessionStorage.setItem('reveal-mock',JSON.stringify(backend));
+ });
+ await page.reload();
+ await page.getByRole('button',{name:'Inventory'}).click();
+ await page.locator('#inventory-mode-button').click();
+ await expect(page.locator('#owned .inventory-entry.is-unavailable')).toHaveCount(1);
+ await expect(page.locator('#owned .inventory-select-overlay')).toHaveCount(2);
+ await page.locator('#inventory-toolbar [data-act="inventory-all"]').click();
+ await expect(page.locator('#owned .is-selected')).toHaveCount(2);
+ await expect(page.locator('#inventory-toolbar')).toContainText('58,000 GP');
+ expect(errors).toEqual([]);
+});
+test('Failed atomic bulk sale does not deduct items or change GP, and retry succeeds',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,2);
+ await page.locator('#inventory-mode-button').click();
+ await page.locator('#inventory-toolbar [data-act="inventory-all"]').click();
+ await page.evaluate(()=>{window.__mockRejectBulkSale=true;});
+ page.on('dialog',d=>d.accept());
+ await page.locator('#inventory-toolbar [data-act="inventory-sell"]').click();
+ await expect(page.locator('#status')).toContainText('Server rejected the sale');
+ await expect(page.locator('#balance')).toHaveText('98,000 GP');
+ await expect(page.locator('#owned .inventory-entry.is-selected')).toHaveCount(2);
+ await expect(page.locator('#owned .item')).toHaveCount(2);
+ await page.locator('#inventory-toolbar [data-act="inventory-sell"]').click();
+ await expect(page.locator('#balance')).toHaveText('132,000 GP');
+ await expect(page.locator('#owned .item')).toHaveCount(0);
+ const result=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+ expect(result.bulkSales).toBe(1);
+ expect(errors).toEqual([]);
+});
+test('Inventory multi-select works on a phone width without horizontal overflow',async({page})=>{
+ const errors=await setup(page,{viewport:{width:375,height:812}});
+ await prepareInventory(page,5);
+ await page.locator('#inventory-mode-button').click();
+ await expect(page.locator('#inventory-toolbar [data-act="inventory-all"]')).toBeVisible();
+ await page.locator('#inventory-toolbar [data-act="inventory-all"]').click();
+ await expect(page.locator('#inventory-toolbar')).toContainText('5 selected');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
  expect(errors).toEqual([]);
 });
