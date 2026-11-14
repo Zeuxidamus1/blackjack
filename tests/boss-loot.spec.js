@@ -130,13 +130,14 @@ test('premium Boss Loot is the default after login and other categories stay acc
 });
 
 
-test('49-item rewards show true combined profit odds and ultra-rare jackpot precision',async({page})=>{
+test('49-item preview shows item-specific odds without profit summary boxes',async({page})=>{
  const errors=await setup(page,1000000000,{large:true});
  await page.locator('#boss-details [data-act="inside"]').click();
  await expect(page.locator('dialog.boss-inside')).toBeVisible();
  await expect(page.locator('.inside-item')).toHaveCount(49);
- await expect(page.locator('.inside-profit-stats')).toContainText('26 / 49');
- await expect(page.locator('.inside-profit-stats')).toContainText('16%');
+ await expect(page.locator('.inside-profit-stats')).toHaveCount(0);
+ await expect(page.getByText('Combined chance of profit')).toHaveCount(0);
+ await expect(page.locator('.inside-source-note')).toHaveCount(0);
  await expect(page.locator('.inside-item-details').last()).toContainText('0.000001%');
  await expect(page.locator('dialog')).toContainText('Profit Drops');
  await expect(page.locator('dialog')).toContainText('Big Wins');
