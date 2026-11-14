@@ -28,7 +28,7 @@ async function setup(page,gp=1000000000){
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
  await page.route('https://prices.runescape.wiki/**',r=>r.fulfill({status:200,contentType:'application/json',body:'{"data":{}}'}));
- await page.route('https://static.runelite.net/**',r=>r.fulfill({status:200,body:''}));
+ await page.route('https://static.runelite.net/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WpJwA8AAAAASUVORK5CYII=','base64')}));
  await page.addInitScript(({catalog,cases,gp})=>{
    window.supabase={createClient:()=>({
      auth:{getSession:async()=>({data:{session:{access_token:'mock'}}}),signOut:async()=>({})},
