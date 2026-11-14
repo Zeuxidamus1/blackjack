@@ -38,3 +38,14 @@ Single purchases use a fullscreen OSRS item reveal with Sell / Vault. Purchases 
 Reward decisions are persistent and owner-authorized. New rewards stay \`pending\` until they become \`vaulted\` or \`sold\`. Pending items are kept out of the ordinary market/inventory actions and cannot be bypass-sold. Exact server-side inventory instances are tracked; multi-reward selling is one atomic, idempotent database transaction that uses current, validated Grand Exchange quotes, while vaulting preserves the item. Closing or reloading the page does not delete unreviewed rewards: use **Resume opening** to continue.
 
 Implementation: \`reveal.js\` + \`reveal.css\`; database migrations \`20261114070000_premium_reward_sessions.sql\` and \`20261114071000_protect_pending_rewards.sql\`. Playwright tests in \`tests/reveal.spec.js\` exercise all quantity layouts, single and partial settlement flows, reload/resume and mobile widths with a simulated backend. Live account purchases are not used during browser tests.
+
+
+## Install Challenger Rips on a phone (PWA)
+
+Challenger Rips installs directly from https://zeuxidamus1.github.io/blackjack/ on supported Android and iPhone browsers, with a custom icon and standalone display. The game is still hosted by GitHub Pages and uses its existing Supabase backend.
+
+Android: open the site in Chrome, then use Install app or the three-dot browser menu. iPhone: open in Safari, tap Share, select Add to Home Screen, enable Open as Web App, then Add. The header has an install button and device-specific instructions where available. No APK or app-store membership is required.
+
+PWA configuration: manifest.json, app-install.js, sw.js, offline.html, and icons/. The service worker is scoped to the GitHub Pages /blackjack/ directory. It caches only static install assets and an offline page, never GP balances, Supabase requests or authenticated transactions. Pack opening, inventory and payments require internet. GitHub Pages deployments update the app's online content.
+
+Test by running npm run test:e2e; tests/pwa.spec.js covers manifest, icons, install prompts, phone viewport, offline page and registration, along with the existing Boss Loot regression suite.

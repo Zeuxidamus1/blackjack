@@ -4,6 +4,11 @@ on:
     branches: [main]
     paths:
       - index.html
+      - manifest.json
+      - app-install.js
+      - sw.js
+      - offline.html
+      - icons/**
       - package.json
       - playwright.config.js
       - tests/**
