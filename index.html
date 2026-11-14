@@ -111,6 +111,23 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .inside-value{color:#82e2bb;font-weight:850;margin-bottom:7px}
 @media(max-width:650px){.inside-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.inside-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.inside-content{padding:14px}.inside-head{padding:14px}.inside-icon{height:105px}.boss-carousel{gap:18px}.boss-foil{height:325px}.boss-slide{flex-basis:min(69vw,265px)}.boss-carousel{padding-inline:max(12px,calc((100% - min(69vw,265px))/2))}.boss-metrics{gap:4px}}
 
+
+.case-art{background:radial-gradient(circle,#374e59,#091017 80%)}
+.case-art .boss-foil{height:195px;width:140px;border-radius:7px}
+.case-art .boss-foil::before,.case-art .boss-foil::after{height:9px}
+.case-art .foil-crest{font-size:.47rem;margin-top:13px}
+.case-art .foil-emblem{font-size:2.2rem}
+.case-art .foil-title{font-size:.83rem}
+.case-art .foil-footer{font-size:.4rem;margin-bottom:10px}
+.foil-emblem{position:relative;display:grid;place-items:center;width:130px;height:125px}
+.foil-item{width:108px;height:108px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 8px 10px #000c) drop-shadow(0 0 12px var(--foil));position:relative;z-index:1}
+.foil-fallback{position:absolute;inset:0;display:grid;place-items:center}
+.inside-head .foil-emblem{width:45px;height:40px}
+.inside-head .foil-item{width:35px;height:35px}
+.inside-head .foil-fallback{font-size:1rem}
+.case-art .foil-emblem{width:65px;height:65px}
+.case-art .foil-item{width:56px;height:56px}
+.case-art .foil-fallback{font-size:1.6rem}
 </style>
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><form id="auth" method="post">
@@ -184,12 +201,11 @@ async function refreshPrices(){
 }
 function guideValue(item){
   if(!item.ge) return 'Custom guide · '+price(item.guide);
-  const snapshot={value:item.guide,time:Date.parse(item.guideTime)};
-  const cached=livePrices[item.ge];
-  const value=cached && cached.time>(snapshot.time || 0)?cached:snapshot;
-  if(!value.value || !value.time) return 'GE guide unavailable';
-  const stale=Date.now()-value.time>24*60*60*1000;
-  return 'GE guide · '+price(value.value)+(stale?' (stale)':'');
+  const last=Date.parse(item.guideTime);
+  if(!item.guide || !Number.isFinite(last)) return 'GE guide unavailable';
+  const stale=Date.now()-last>24*60*60*1000;
+  const updated=new Date(last).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  return 'GE guide · '+price(item.guide)+' · Updated '+updated+(stale?' (stale)':'');
 }
 async function loadCatalog(){
   const rows=await rpc('catalog');
@@ -236,9 +252,12 @@ const pct = weight => (weight/10000).toFixed(4).replace(/\.?0+$/,'')+'%';
 const caseValues = entry => entry.rewards.map(r=>catalog.get(r.id)).filter(Boolean).map(estimate);
 function foilArt(entry) {
   const tint=safe(entry.accent || '#ce834d'),theme=safe(entry.theme||'bronze');
+  const covers={bronze:1155,iron:1191,steel:1119,mithril:1071,adamant:1123,rune:1127,dragon:4087,ancient:4151,infernal:21018,divine:20997};
+  const icon=covers[theme];
   return '<div class="boss-foil" data-theme="'+theme+'" style="--foil:'+tint+'"><div class="foil-lines"></div>'+
     '<div class="foil-crest">CHALLENGER RIPS</div><div class="foil-rune">ᚱ</div>'+
-    '<div class="foil-emblem" aria-hidden="true">'+safe(entry.symbol||'⚔')+'</div>'+
+    '<div class="foil-emblem" aria-hidden="true"><span class="foil-fallback">'+safe(entry.symbol||'⚔')+'</span>'+
+    (icon?'<img class="foil-item" loading="lazy" alt="" src="https://static.runelite.net/cache/item/icon/'+icon+'.png" onerror="this.hidden=true">':'')+'</div>'+
     '<div class="foil-title">'+safe(entry.name).replace(' ','<br>')+'</div>'+
     '<div class="foil-footer">BOSS LOOT · OSRS</div></div>';
 }
@@ -350,6 +369,9 @@ function showInside() {
 }
 
 function packArt(pack,shake=false) {
+  if(pack.pack==='boss' && pack.theme){
+    return '<div class="art case-art '+(shake?'shake':'')+'">'+foilArt(pack)+'</div>';
+  }
   return '<div class="art" style="--glow:'+pack.color+'"><div class="pack '+(shake?'shake':'')+'"><span class="symbol" aria-hidden="true">'+pack.icon+'</span>'+pack.name.toUpperCase()+'</div></div>';
 }
 function card(item,detail,controls='',locked=false) {
@@ -422,11 +444,10 @@ function renderShop(ready){
     '<h2>'+safe(entry.name)+'</h2><p>'+price(entry.price)+'</p>'+button('View case','case',entry.id,true)+'</article>').join('');
 }
 function caseArt(entry){
-  return {...packs.find(pack=>pack.id===entry.pack),name:entry.name};
+  return {...packs.find(pack=>pack.id===entry.pack),...entry};
 }
-function estimate(item){
-  return livePrices[item.ge]?.time>Date.parse(item.guideTime)?livePrices[item.ge].value:item.guide;
-}
+function estimate(item){return Number(item?.guide)||0;}
+
 function showCase(){
   const entry=selected;
   const cap=Math.min(5,Math.floor(state.gp/entry.price));
