@@ -247,6 +247,16 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
  .boss-shell{border-radius:18px}
 }
 
+
+/* Reward-pool insights match the existing premium What's Inside visual style */
+.inside-profit-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 17px}
+.inside-profit-stats>div{min-width:0;padding:16px;border-radius:14px;background:#17352e77;border:1px solid #67ba9377}
+.inside-profit-stats small{display:block;font-size:.75rem;color:#a5cabe;margin-bottom:8px}
+.inside-profit-stats strong{font-size:clamp(1.1rem,3vw,1.65rem);font-weight:900;color:#a3f3c9;font-variant-numeric:tabular-nums}
+.inside-source-note{margin:14px 0;font-size:.8rem;line-height:1.55;color:#a2b7bb}
+.inside-jackpot{color:#f7c179!important;font-weight:850}
+@media(max-width:500px){.inside-profit-stats>div{padding:11px}.inside-profit-stats small{font-size:.69rem}.inside-profit-stats strong{font-size:1.1rem}}
+
 </style>
 <link rel="stylesheet" href="./reveal.css?v=2">
 <section id="login-screen"><div class="login-card">
@@ -369,7 +379,7 @@ async function refreshServerPrices() {
   } catch(error) {console.warn('GE server refresh not available:',error);}
 }
 setInterval(()=>{if(session)void refreshServerPrices();},15*60*1000);
-const pct = weight => (weight/10000).toFixed(4).replace(/\.?0+$/,'')+'%';
+const pct = (weight,total=1000000000000) => ((Number(weight)/Number(total))*100).toFixed(10).replace(/\.?0+$/,'')+'%';
 const caseValues = entry => entry.rewards.map(r=>catalog.get(r.id)).filter(Boolean).map(estimate);
 function foilArt(entry) {
   const tint=safe(entry.accent || '#ce834d'),theme=safe(entry.theme||'bronze');
@@ -470,13 +480,20 @@ function renderBossShop(resume) {
  carousel.selectCase=snap;
 }
 function showInside() {
- const entry=selected;if(!entry||!entry.rewards?.length)return;
- const rows=entry.rewards.map(r=>({r,item:catalog.get(r.id)})).filter(x=>x.item).sort((a,b)=>estimate(a.item)-estimate(b.item));
+ const entry=selected;
+ if(!entry||!entry.rewards?.length)return;
+ const rows=entry.rewards.map(r=>({r,item:catalog.get(r.id)}))
+   .filter(x=>x.item && Number(x.item.guide)>0)
+   .sort((a,b)=>estimate(a.item)-estimate(b.item));
+ const total=entry.rewards.reduce((sum,r)=>sum+Number(r.weight),0);
+ const profitable=rows.filter(x=>estimate(x.item)>entry.price);
+ const profitTickets=profitable.reduce((sum,x)=>sum+Number(x.r.weight),0);
  const groups=[
-   ['Common Drops',x=>x.r.weight>=50000],
-   ['Uncommon Drops',x=>x.r.weight>=10000&&x.r.weight<50000],
-   ['Rare Drops',x=>x.r.weight>=1000&&x.r.weight<10000],
-   ['Grails / Jackpot Items',x=>x.r.weight<1000]
+   ['Common Drops',x=>!x.r.chase&&estimate(x.item)<entry.price*.5],
+   ['Uncommon Drops',x=>!x.r.chase&&estimate(x.item)>=entry.price*.5&&estimate(x.item)<=entry.price],
+   ['Profit Drops',x=>!x.r.chase&&estimate(x.item)>entry.price&&estimate(x.item)<entry.price*2.5],
+   ['Big Wins',x=>!x.r.chase&&estimate(x.item)>=entry.price*2.5&&estimate(x.item)<entry.price*10],
+   ['Grails / Ultra-Rare Jackpots',x=>x.r.chase||estimate(x.item)>=entry.price*10]
  ];
  const vals=rows.map(x=>estimate(x.item));
  modal.classList.add('boss-inside');
@@ -487,15 +504,17 @@ function showInside() {
    '<div><small>Minimum</small><strong>'+price(Math.min(...vals))+'</strong></div>'+
    '<div><small>Maximum</small><strong>'+price(Math.max(...vals))+'</strong></div>'+
    '<div><small>Possible rewards</small><strong>'+rows.length+'</strong></div></div>'+
-   '<p>Values shown are the latest available Grand Exchange guides. The server determines sale prices. Odds below reflect the active pack configuration (v'+Number(entry.configVersion||1)+').</p>'+
+   '<div class="inside-profit-stats"><div><small>Rewards worth more than the pack</small><strong>'+profitable.length+' / '+rows.length+'</strong></div>'+
+   '<div><small>Combined chance of profit</small><strong>'+pct(profitTickets,total)+'</strong></div></div>'+
+   '<p class="inside-source-note">Values reflect the server Grand Exchange guides. Selling is validated at the time of sale. Profit chance sums actual reward weights, not the item count. Current odds version: '+Number(entry.configVersion||1)+'.</p>'+
    groups.filter(([label,test])=>rows.some(test)).map(([label,test])=>
      '<section class="inside-group"><h3>'+label+'</h3><div class="inside-grid">'+rows.filter(test).map(({r,item})=>
        '<article class="inside-item"><div class="inside-icon"><img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+'.png" alt="'+safe(item.name)+'" onerror="this.replaceWith(document.createTextNode(\'⚔\'))"></div>'+
        '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
-       '<small>Drop chance · '+pct(r.weight)+'</small><small>'+safe(guideValue(item))+'</small></div></article>'
+       '<small>Drop chance · '+pct(r.weight,total)+'</small>'+ (r.chase?'<small class="inside-jackpot">Ultra-rare jackpot</small>':'')+
+       '<small>'+safe(guideValue(item))+'</small></div></article>'
      ).join('')+'</div></section>').join('')+'</div>');
 }
-
 function packArt(pack,shake=false) {
   if(pack.pack==='boss' && pack.theme){
     return '<div class="art case-art '+(shake?'shake':'')+'">'+foilArt(pack)+'</div>';
