@@ -148,6 +148,7 @@ html,body{max-width:100%;overflow-x:clip}
  .boss-metrics strong{font-size:clamp(.76rem,2.8vw,1.1rem)}
 }
 </style>
+<link rel="stylesheet" href="./reveal.css?v=2">
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><form id="auth" method="post">
 <label>Username<input name="username" autocomplete="username" pattern="[A-Za-z0-9_]{3,24}" title="3 to 24 letters, digits, or underscores" required></label>
@@ -172,6 +173,7 @@ html,body{max-width:100%;overflow-x:clip}
 <footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 100K starter GP · Daily claim resets 24 hours after each claim.</footer></div>
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.js"></script>
+<script src="./reveal.js?v=2"></script>
 <script>
 const packs = [
   {id:'boss', name:'Boss Loot', icon:'⚔️', color:'#823ac6', note:'Armor progression and rare gear'},
@@ -251,7 +253,7 @@ async function load() {
     clockOffset=Date.parse(state.serverTime)-Date.now();
     if(!catalog.size){await loadCatalog();void refreshServerPrices();}
     if(!cases.length) cases=await rpc('cases');
-    batch=await rpc('case_batch');
+    batch=await rpc('reward_batch');
   }
   if(session && sharedId) shared=await rpc('showcase',{id:sharedId});
 }
@@ -490,6 +492,11 @@ function showCase(){
     }).join('')+'</ul>');
 }
 function showBatch(current){
+  if(window.PremiumReveal){
+    if(modal.open)modal.close();
+    window.PremiumReveal.open(current,{rpc,load,render,notice,catalog,cases,foilArt});
+    return;
+  }
   currentBatchShown=current;
   const entry=cases.find(c=>c.id===current.case);
   const remaining=current.rewards.some(r=>!r.item);
@@ -564,7 +571,7 @@ async function purchase(){
   sessionStorage.removeItem(purchaseKey);
   await load();
   activeSlot=1;
-  showBatch(current);
+  showBatch(batch||current);
 }
 async function reveal(slot){
   const current=await rpc('case_reveal',{batch:batch.id,slot});
