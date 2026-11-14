@@ -597,69 +597,12 @@ function showCase(){
     }).join('')+'</ul>');
 }
 function showBatch(current){
-  if(window.PremiumReveal){
-    if(modal.open)modal.close();
-    window.PremiumReveal.open(current,{rpc,load,render,notice,catalog,cases,foilArt});
+  if(!window.PremiumReveal){
+    notice('The updated opening screen could not load. Refresh this page to retry.');
     return;
   }
-  currentBatchShown=current;
-  const entry=cases.find(c=>c.id===current.case);
-  const remaining=current.rewards.some(r=>!r.item);
-  showModal('<h2 id="modalTitle">'+safe(entry.name)+' case</h2><div class="pack-carousel" aria-label="Purchased packs">'+
-    current.rewards.map(reward=>'<div class="pack-slide" data-slot="'+reward.slot+'">'+(reward.item?
-      '<button type="button" class="reward-select" data-act="select-slot" data-id="'+reward.slot+'">'+card(catalog.get(reward.item),guideValue(catalog.get(reward.item)))+'</button>'+
-      '<div class="actions reward-decisions">'+(reward.instance&&state?.items?.some(item=>item.id===reward.instance)?
-      button('Keep in inventory','keep-reward',String(reward.slot))+
-      (catalog.get(reward.item)?.ge?button('Sell · '+price(estimate(catalog.get(reward.item))),'sell-reward',reward.instance,true):'')
-      :'<small>Reward recorded in your collection.</small>')+'</div>':
-      '<button class="sealed-pack" data-act="reveal-slot" data-id="'+reward.slot+'" aria-label="Open pack '+reward.slot+'">'+packArt(caseArt(entry))+'</button>')+'</div>').join('')+
-    '</div><div class="actions reveal-controls">'+button('← Previous','previous')+button('Next →','next')+
-    (remaining?button('Open all','reveal-all','',true)+'<button type="button" id="swipe-reveal" data-act="reveal-all">Swipe up to open all</button>':'')+
-    button(remaining?'Finish later':'Done','close')+'</div>');
-  const carousel=modal.querySelector('.pack-carousel');
-  moveCarousel(activeSlot,false);
-  let drag, suppressClick=false;
-  carousel.addEventListener('pointerdown',event=>{
-    if(event.pointerType!=='mouse'||event.button!==0) return;
-    suppressClick=false;
-    drag={x:event.clientX,left:carousel.scrollLeft};
-  });
-  carousel.addEventListener('pointermove',event=>{
-    if(!drag||!event.buttons) return;
-    const delta=event.clientX-drag.x;
-    if(Math.abs(delta)<6&&!suppressClick) return;
-    if(!suppressClick) carousel.setPointerCapture(event.pointerId);
-    suppressClick=true;
-    carousel.classList.add('dragging');
-    carousel.scrollLeft=drag.left-delta;
-  });
-  const finishDrag=()=>{
-    drag=null;
-    carousel.classList.remove('dragging');
-    if(suppressClick) moveCarousel(activeSlot);
-  };
-  carousel.addEventListener('pointerup',finishDrag);
-  carousel.addEventListener('pointercancel',finishDrag);
-  carousel.addEventListener('click',event=>{
-    if(!suppressClick) return;
-    suppressClick=false;
-    event.stopPropagation();
-    event.preventDefault();
-  },true);
-  carousel.onscroll=()=>{
-    const center=carousel.getBoundingClientRect().left+carousel.clientWidth/2;
-    activeSlot=[...carousel.children].reduce((closest,slide)=>{
-      const box=slide.getBoundingClientRect();
-      const distance=Math.abs(box.left+box.width/2-center);
-      return distance<closest.distance?{slot:Number(slide.dataset.slot),distance}:closest;
-    },{slot:activeSlot,distance:Infinity}).slot;
-  };
-  const swipe=el('swipe-reveal');
-  if(swipe){
-    let startY;
-    swipe.onpointerdown=event=>{startY=event.clientY;swipe.setPointerCapture(event.pointerId);};
-    swipe.onpointerup=event=>{if(startY-event.clientY>35) swipe.click();};
-  }
+  if(modal.open) modal.close();
+  window.PremiumReveal.open(current,{rpc,load,render,notice,catalog,cases,foilArt});
 }
 function moveCarousel(slot,smooth=true){
   const slides=[...modal.querySelectorAll('.pack-slide')];
