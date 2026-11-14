@@ -132,6 +132,10 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .reward-decisions{display:flex;justify-content:center;flex-wrap:wrap;margin:12px 0 0;gap:6px}
 .reward-decisions button{font-size:.77rem;padding:9px;border-radius:8px}
 .pack-slide .reward-decisions{width:100%}
+
+.pack-category{cursor:pointer}
+.pack-category:hover{border-color:#c5a1ff}
+.pack-category:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 </style>
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><form id="auth" method="post">
@@ -234,7 +238,7 @@ async function load() {
   state=session ? await rpc('state') : null;
   if(state){
     clockOffset=Date.parse(state.serverTime)-Date.now();
-    if(!catalog.size){await loadCatalog();void refreshPrices();void refreshServerPrices();}
+    if(!catalog.size){await loadCatalog();void refreshServerPrices();}
     if(!cases.length) cases=await rpc('cases');
     batch=await rpc('case_batch');
   }
@@ -439,7 +443,7 @@ function renderShop(ready){
   el('shop').classList.toggle('boss-shop',category==='boss');
   const resume=batch?'<div class="case-toolbar">'+button('Resume opening','resume','','true')+'</div>':'';
   if(!category){
-    el('shop').innerHTML=resume+packs.map(pack=>'<article class="tile">'+packArt(pack)+'<h2>'+pack.name+'</h2><p>'+pack.note+'</p>'+button('Browse cases','category',pack.id,true,!ready)+'</article>').join('');
+    el('shop').innerHTML=resume+packs.map(pack=>'<article class="tile pack-category" data-category="'+pack.id+'" tabindex="0" aria-label="Open '+pack.name+'">'+packArt(pack)+'<h2>'+pack.name+'</h2><p>'+pack.note+'</p>'+button('Browse cases','category',pack.id,true,!ready)+'</article>').join('');
     return;
   }
   if(category==='boss'){renderBossShop(resume);return;}
@@ -598,7 +602,13 @@ document.addEventListener('submit',event=>{
     modal.close();await load();notice('Listing posted.');
   });
 });
+document.addEventListener('keydown',event=>{
+  const tile=event.target.closest('article[data-category]');
+  if(tile && (event.key==='Enter'||event.key===' ')){event.preventDefault();category=tile.dataset.category;bossIndex=0;quantity=1;render();}
+});
 document.addEventListener('click',event=>{
+  const tile=event.target.closest('article[data-category]');
+  if(tile && !event.target.closest('button')){category=tile.dataset.category;bossIndex=0;quantity=1;render();return;}
   const b=event.target.closest('button');
   if(!b||busy) return;
   if(b.dataset.view) {view=b.dataset.view;notice();render();if(view==='market'&&session)run(load);return;}
