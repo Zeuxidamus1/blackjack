@@ -46,8 +46,7 @@ async function setup(page,gp=1000000000){
    })};
  },{catalog:mockCatalog,cases:mockCases,gp});
  await page.goto('/');
- await expect(page.getByRole('button',{name:'Browse cases'}).first()).toBeVisible();
- await page.locator('article.tile').filter({hasText:'Boss Loot'}).getByRole('button',{name:'Browse cases'}).click();
+ await expect(page.locator('.boss-carousel')).toBeVisible();
  await expect(page.locator('.boss-slide')).toHaveCount(10);
  return errors;
 }
@@ -99,5 +98,17 @@ test('insufficient funds disable expensive opening while keeping preview availab
  await expect(page.locator('#boss-details button[data-act="purchase"]')).toBeDisabled();
  await page.getByRole('button',{name:/What.s inside/}).click();
  await expect(page.locator('dialog')).toContainText('5,000,000 GP');
+ expect(errors).toEqual([]);
+});
+
+test('premium Boss Loot is the default after login and other categories stay accessible',async({page})=>{
+ const errors=await setup(page);
+ await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
+ await expect(page.locator('#shop .tile')).toHaveCount(0);
+ await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
+ await page.getByRole('button',{name:/Explore packs/}).click();
+ await expect(page.locator('.premium-category')).toHaveCount(3);
+ await page.getByRole('button',{name:'Open Boss Loot'}).click();
+ await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
  expect(errors).toEqual([]);
 });
