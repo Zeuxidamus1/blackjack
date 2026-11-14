@@ -223,7 +223,7 @@ function showCase(){
     '<div class="actions">'+[1,2,3,4,5].map(n=>button(String(n),'quantity',String(n),n===quantity,n>cap)).join('')+
     button('Buy '+quantity+' · '+price(entry.price*quantity),'purchase','',true,!cap||Boolean(batch))+
     (batch?button('Resume opening','resume'):'')+button('Close','close')+'</div>'+
-    '<ul class="odds">'+[...entry.rewards].sort((a,b)=>Number(b.chase)-Number(a.chase)).map(reward=>{
+    '<ul class="odds">'+[...entry.rewards].sort((a,b)=>b.weight-a.weight||estimate(catalog.get(a.id))-estimate(catalog.get(b.id))||a.id.localeCompare(b.id)).map(reward=>{
       const item=catalog.get(reward.id);
       return '<li><div><strong>'+safe(item.name)+(reward.chase?' · Ultra-rare chase':'')+'</strong><br><small>'+
         safe(guideValue(item))+'<br>Total found: '+item.found.toLocaleString()+' · In circulation: '+item.circulation.toLocaleString()+
