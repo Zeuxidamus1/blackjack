@@ -17,6 +17,15 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .login-card input{display:block;width:100%;margin-top:6px}
 .login-card .primary{width:100%;background:#adbcff;color:#101830}
 #auth-mode{margin-top:12px}
+.case-toolbar{grid-column:1/-1;display:flex;gap:.75rem}
+.pack-carousel{position:relative;display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:18px max(12%,calc((100% - 245px)/2));background:radial-gradient(ellipse,#342448,#080710 72%);border-radius:16px}
+.pack-slide{flex:0 0 min(76vw,245px);display:grid;place-items:center;scroll-snap-align:center;min-height:240px}
+.pack-slide>*{width:100%}
+.sealed-pack{padding:0;border:1px solid #65507c;border-radius:14px;background:#151020}
+.sealed-pack .art{height:220px}
+.reveal-controls{margin-top:12px}
+#swipe-reveal{display:none;touch-action:none}
+@media(pointer:coarse){#swipe-reveal{display:inline-block}}
 </style>
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><form id="auth" method="post">
@@ -35,11 +44,11 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 <section id="inventory" hidden><div class="section"><h2>Your inventory</h2></div><div class="grid" id="owned"></div></section>
 <section id="market" hidden><div class="section"><h2>Player market</h2><button class="quiet" id="refresh">Refresh listings</button></div><p class="empty">Players set prices. A 2% tax comes out of each sale.</p><div class="grid" id="listings"></div></section>
 <section id="shop" class="grid" aria-label="Packs"></section>
-<section id="collection" hidden><div class="section"><h2 id="progress"></h2><label>Pack <select id="filter"><option value="all">All packs</option></select></label></div><p class="muted" id="milestone"></p><div class="grid" id="items" style="margin-top:12px"></div></section>
+<section id="collection" hidden><div class="section"><h2 id="progress"></h2><label>Pack <select id="filter"><option value="all">All packs</option></select></label></div><div class="grid" id="items" style="margin-top:12px"></div></section>
 <section id="showcase" hidden><div class="section"><h2>Your showcase</h2><button id="share" class="primary">Copy showcase link</button></div><p class="empty" id="shareHint">Pin up to five items from your inventory.</p><div class="grid" id="pins"></div></section>
 <section id="shared" hidden><div class="section"><h2>Shared showcase</h2></div><p class="empty">Current shelf shared by another player.</p><div class="grid" id="sharedItems"></div></section>
 </main>
-<footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 500M starter GP · Daily claim resets 24 hours after each claim.</footer></div>
+<footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 100K starter GP · Daily claim resets 24 hours after each claim.</footer></div>
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.js"></script>
 <script>
@@ -55,7 +64,8 @@ const el = id => document.getElementById(id);
 const modal = el('modal');
 const price = gp => Number(gp).toLocaleString()+' GP';
 const odds = item => (item.weight / item.total * 100).toFixed(6).replace(/\.?0+$/, '')+'%';
-const cost = {boss:1000000,clue:5000000,pets:5000000};
+let cases=[], category=null, selected=null, quantity=1, batch=null, activeSlot=1;
+const purchaseKey='challenger-pending-purchase';
 const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sharedId = new URLSearchParams(location.search).get('shelf');
 let session, state, shared, busy=false;
@@ -94,7 +104,7 @@ function guideValue(item){
   const value=cached && cached.time>(snapshot.time || 0)?cached:snapshot;
   if(!value.value || !value.time) return 'GE guide unavailable';
   const stale=Date.now()-value.time>24*60*60*1000;
-  return 'GE guide · '+price(value.value)+' · '+new Date(value.time).toLocaleString()+(stale?' (stale)':'');
+  return 'GE guide · '+price(value.value)+(stale?' (stale)':'');
 }
 async function loadCatalog(){
   const rows=await rpc('catalog');
@@ -120,6 +130,8 @@ async function load() {
   if(state){
     clockOffset=Date.parse(state.serverTime)-Date.now();
     if(!catalog.size){await loadCatalog();void refreshPrices();}
+    if(!cases.length) cases=await rpc('cases');
+    batch=await rpc('case_batch');
   }
   if(session && sharedId) shared=await rpc('showcase',{id:sharedId});
 }
@@ -143,13 +155,12 @@ function render() {
   el('account').innerHTML=!ready?'':'<div class="section"><strong>'+safe(state.name)+'</strong>'+button('Sign out','logout')+'</div>';
   for(const id of ['shop','collection','inventory','market','showcase','shared']) el(id).hidden=id!==view;
   document.querySelectorAll('[data-view]').forEach(b=>b.dataset.view===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
-  if(view==='shop') el('shop').innerHTML=packs.map(pack=>'<article class="tile">'+packArt(pack)+'<h2>'+pack.name+'</h2><p>'+pack.note+'</p><div class="actions">'+button('Open · '+price(cost[pack.id]),'open',pack.id,true,!ready||state.gp<cost[pack.id])+button('Odds','odds',pack.id)+'</div></article>').join('');
+  if(view==='shop') renderShop(ready);
   if(view==='collection') {
     const pulls=state?.pulls||{};
     el('progress').textContent=Object.keys(pulls).length+' / '+catalog.size+' personally pulled';
-    el('milestone').textContent='Earn 2M GP for every three new discoveries.';
     el('items').innerHTML=[...catalog.values()].filter(item=>el('filter').value==='all'||el('filter').value===item.pack)
-      .map(item=>card(item,pulls[item.id]?'×'+pulls[item.id].count+' · First pulled '+new Date(pulls[item.id].first).toLocaleDateString():'Undiscovered','',!pulls[item.id])).join('');
+      .map(item=>card(item,pulls[item.id]?'×'+pulls[item.id].count:'Undiscovered','',!pulls[item.id])).join('');
   }
   if(view==='inventory') el('owned').innerHTML=state?.items?.map(asset=>{
     const item=catalog.get(asset.item);
@@ -184,15 +195,89 @@ async function run(work) {
   catch(error) {if(modal.open) modal.close(); notice(error.message||'Something went wrong.');}
   finally {busy=false;render();}
 }
-async function openPack(pack) {
-  const pull=await rpc('open',{pack:pack.id});
-  showModal('<div class="reveal"><h2 id="modalTitle">Opening '+pack.name+'</h2>'+packArt(pack,true)+'</div>');
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches) await new Promise(resolve=>setTimeout(resolve,620));
-  const item=catalog.get(pull.item);
-  showModal('<div class="reveal"><h2 id="modalTitle">'+(pull.count>1?'Duplicate pull':'New collection entry')+'</h2>'+
-    card(item,guideValue(item))+(pull.bonus?'<p>Milestone bonus · '+price(pull.bonus)+'</p>':'')+
-    button('Done','close','','true')+'</div>');
-  state=await rpc('state');
+function renderShop(ready){
+  const resume=batch?'<div class="case-toolbar">'+button('Resume opening','resume','','true')+'</div>':'';
+  if(!category){
+    el('shop').innerHTML=resume+packs.map(pack=>'<article class="tile">'+packArt(pack)+'<h2>'+pack.name+'</h2><p>'+pack.note+'</p>'+button('Browse cases','category',pack.id,true,!ready)+'</article>').join('');
+    return;
+  }
+  el('shop').innerHTML=resume+'<div class="case-toolbar">'+button('All categories','categories')+'</div>'+
+    cases.filter(entry=>entry.pack===category).map(entry=>'<article class="tile">'+packArt(caseArt(entry))+
+    '<h2>'+safe(entry.name)+'</h2><p>'+price(entry.price)+'</p>'+button('View case','case',entry.id,true)+'</article>').join('');
+}
+function caseArt(entry){
+  return {...packs.find(pack=>pack.id===entry.pack),name:entry.name};
+}
+function estimate(item){
+  return livePrices[item.ge]?.time>Date.parse(item.guideTime)?livePrices[item.ge].value:item.guide;
+}
+function showCase(){
+  const entry=selected;
+  const normal=entry.rewards.filter(reward=>!reward.chase).map(reward=>estimate(catalog.get(reward.id)));
+  const expected=entry.rewards.reduce((sum,reward)=>sum+estimate(catalog.get(reward.id))*reward.weight/1000000,0);
+  const cap=Math.min(5,Math.floor(state.gp/entry.price));
+  quantity=Math.min(quantity,Math.max(cap,1));
+  showModal('<h2 id="modalTitle">'+safe(entry.name)+' case · '+price(entry.price)+'</h2>'+
+    '<p>Typical estimated item value: '+price(Math.min(...normal))+' to '+price(Math.max(...normal))+
+    ' · Average estimate including chase: '+price(Math.round(expected))+'</p>'+
+    '<div class="actions">'+[1,2,3,4,5].map(n=>button(String(n),'quantity',String(n),n===quantity,n>cap)).join('')+
+    button('Buy '+quantity+' · '+price(entry.price*quantity),'purchase','',true,!cap||Boolean(batch))+
+    (batch?button('Resume opening','resume'):'')+button('Close','close')+'</div>'+
+    '<ul class="odds">'+[...entry.rewards].sort((a,b)=>Number(b.chase)-Number(a.chase)).map(reward=>{
+      const item=catalog.get(reward.id);
+      return '<li><div><strong>'+safe(item.name)+(reward.chase?' · Ultra-rare chase':'')+'</strong><br><small>'+
+        safe(guideValue(item))+'<br>Total found: '+item.found.toLocaleString()+' · In circulation: '+item.circulation.toLocaleString()+
+        '</small></div><strong>'+(reward.weight/10000)+'%</strong></li>';
+    }).join('')+'</ul>');
+}
+function showBatch(current){
+  const entry=cases.find(c=>c.id===current.case);
+  const remaining=current.rewards.some(r=>!r.item);
+  showModal('<h2 id="modalTitle">'+safe(entry.name)+' case</h2><div class="pack-carousel" aria-label="Purchased packs">'+
+    current.rewards.map(reward=>'<div class="pack-slide" data-slot="'+reward.slot+'">'+(reward.item?
+      card(catalog.get(reward.item),guideValue(catalog.get(reward.item))):
+      '<button class="sealed-pack" data-act="reveal-slot" data-id="'+reward.slot+'" aria-label="Open pack '+reward.slot+'">'+packArt(caseArt(entry))+'</button>')+'</div>').join('')+
+    '</div><div class="actions reveal-controls">'+button('← Previous','previous')+button('Next →','next')+
+    (remaining?button('Open all','reveal-all','',true)+'<button type="button" id="swipe-reveal" data-act="reveal-all">Swipe up to open all</button>':'')+
+    button(remaining?'Finish later':'Done','close')+'</div>');
+  const carousel=modal.querySelector('.pack-carousel');
+  moveCarousel(activeSlot,false);
+  carousel.onscroll=()=>{
+    const center=carousel.getBoundingClientRect().left+carousel.clientWidth/2;
+    activeSlot=[...carousel.children].reduce((closest,slide)=>{
+      const box=slide.getBoundingClientRect();
+      const distance=Math.abs(box.left+box.width/2-center);
+      return distance<closest.distance?{slot:Number(slide.dataset.slot),distance}:closest;
+    },{slot:activeSlot,distance:Infinity}).slot;
+  };
+  const swipe=el('swipe-reveal');
+  if(swipe){
+    let startY;
+    swipe.onpointerdown=event=>{startY=event.clientY;swipe.setPointerCapture(event.pointerId);};
+    swipe.onpointerup=event=>{if(startY-event.clientY>35) swipe.click();};
+  }
+}
+function moveCarousel(slot,smooth=true){
+  const slides=[...modal.querySelectorAll('.pack-slide')];
+  const slide=slides[Math.max(0,Math.min(slides.length-1,slot-1))];
+  if(slide) slide.parentElement.scrollTo({left:slide.offsetLeft-(slide.parentElement.clientWidth-slide.offsetWidth)/2,behavior:smooth?'smooth':'instant'});
+}
+async function purchase(){
+  let pending=JSON.parse(sessionStorage.getItem(purchaseKey)||'null');
+  if(!pending||pending.case!==selected.id||pending.quantity!==quantity){
+    pending={case:selected.id,quantity,request:crypto.randomUUID()};
+    sessionStorage.setItem(purchaseKey,JSON.stringify(pending));
+  }
+  const current=await rpc('case_purchase',pending);
+  sessionStorage.removeItem(purchaseKey);
+  await load();
+  activeSlot=1;
+  showBatch(current);
+}
+async function reveal(slot){
+  const current=await rpc('case_reveal',{batch:batch.id,slot});
+  await load();
+  showBatch(current);
 }
 for(const pack of packs) el('filter').add(new Option(pack.name,pack.id));
 el('filter').onchange=render;
@@ -248,23 +333,21 @@ document.addEventListener('click',event=>{
   if(b.dataset.view) {view=b.dataset.view;notice();render();if(view==='market'&&session)run(load);return;}
   const {act,id}=b.dataset;
   if(act==='close') {modal.close();return;}
-  if(act==='odds') {
-    const pack=packs.find(p=>p.id===id);
-    run(async()=>{
-      await Promise.all([loadCatalog(),refreshPrices()]);
-      const rewards=[...catalog.values()].filter(item=>item.pack===pack.id);
-      showModal('<h2 id="modalTitle">'+pack.name+' odds</h2><ul class="odds">'+rewards.map(item=>
-        '<li><div><strong>'+safe(item.name)+'</strong><br><small>'+safe(guideValue(item))+
-        '<br>Total found: '+item.found.toLocaleString()+' · In circulation: '+item.circulation.toLocaleString()+
-        '</small></div><strong>'+odds(item)+'</strong></li>').join('')+'</ul>'+button('Done','close'));
-    });
-    return;
+  if(act==='categories'){category=null;render();return;}
+  if(act==='category'){category=id;render();return;}
+  if(act==='case'){selected=cases.find(c=>c.id===id);quantity=1;run(async()=>{await loadCatalog();showCase();});return;}
+  if(act==='quantity'){quantity=Number(id);showCase();return;}
+  if(act==='purchase'){run(purchase);return;}
+  if(act==='resume'){activeSlot=1;showBatch(batch);return;}
+  if(act==='previous'||act==='next'){moveCarousel(activeSlot+(act==='next'?1:-1));return;}
+  if(act==='reveal-all'||act==='reveal-slot'){
+    if(act==='reveal-slot') activeSlot=Number(id);
+    run(()=>reveal(act==='reveal-slot'?Number(id):null));return;
   }
   if(act==='list') {
     showModal('<h2 id="modalTitle">List item for sale</h2><form id="listForm"><input type="hidden" name="id" value="'+id+'"><label>Asking price in GP <input name="price" type="number" min="1000" max="1000000000" step="1" required></label><div class="actions"><button class="primary">Post listing</button>'+button('Cancel','close')+'</div></form>');
     return;
   }
-  if(act==='open') run(()=>openPack(packs.find(p=>p.id===id)));
   if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;await load();});
   if(['buy','cancel','pin','salvage'].includes(act)) {
     if(act==='buy'&&!confirm('Buy this item for '+price(state.market.find(item=>item.id===id).price)+'?')) return;
