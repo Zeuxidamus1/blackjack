@@ -136,6 +136,17 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .pack-category{cursor:pointer}
 .pack-category:hover{border-color:#c5a1ff}
 .pack-category:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+/* Responsive width safeguards, including long GP balances and rarity values. */
+html,body{max-width:100%;overflow-x:clip}
+.boss-metrics>div{min-width:0}
+.boss-metrics strong{overflow-wrap:anywhere;display:block}
+@media(max-width:600px){
+ .bar{flex-wrap:wrap}
+ .brand{font-size:1.14rem;letter-spacing:-.045em}
+ .balance{font-size:.85rem;padding:7px 10px;max-width:100%;white-space:normal}
+ .boss-metrics strong{font-size:clamp(.76rem,2.8vw,1.1rem)}
+}
 </style>
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><form id="auth" method="post">
@@ -332,10 +343,17 @@ function renderBossShop(resume) {
      return d<best.d?{i,d}:best;
    },{i:0,d:Infinity}).i;
  };
- const finish=()=>{
+ const finish=(event)=>{
    if(!drag)return;
+   const delta=(event.clientX??drag.x)-drag.x;
    drag=null;carousel.classList.remove('dragging');
-   if(suppress)snap(nearest());
+   if(suppress){
+     let target=nearest();
+     if(Math.abs(delta)>45 && target===bossIndex){
+       target=bossIndex+(delta<0?1:-1);
+     }
+     snap(target);
+   }
  };
  carousel.addEventListener('pointerup',finish);
  carousel.addEventListener('pointercancel',finish);
