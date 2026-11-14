@@ -46,11 +46,13 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 /* Boss Loot collectible pack storefront */
 #shop.boss-shop{display:block;min-width:0}
 .boss-shell{overflow:hidden;position:relative;border:1px solid #34454a;border-radius:24px;background:radial-gradient(ellipse at 50% 12%,#1b4548 0%,#101d23 43%,#080e13 85%);padding:18px 0 28px;box-shadow:0 28px 65px #0007}
-.boss-top{display:flex;justify-content:space-between;align-items:center;padding:0 20px;gap:10px}
+.boss-top{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(12px,3vw,20px);gap:10px;min-height:44px}
 .boss-top .quiet{background:#ffffff0e;border-color:#ffffff2a}
+.boss-top [data-act="categories"],.other-case-heading [data-act="categories"]{display:inline-flex;align-items:center;justify-content:center;min-height:42px;max-width:100%;padding:9px 13px;background:#142c30;border:1px solid #50736d;color:#d8efe7;border-radius:10px;font-size:.83rem;line-height:1.15;letter-spacing:0;font-weight:800;white-space:nowrap}
+.boss-top [data-act="categories"]:hover,.other-case-heading [data-act="categories"]:hover{background:#1e4140;border-color:#8cdec0}
+.boss-top [data-act="categories"]:focus-visible,.other-case-heading [data-act="categories"]:focus-visible{outline:3px solid #8fdfbf;outline-offset:3px}
 .boss-kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8fdac0;font-weight:900}
 .boss-heading{text-align:center;margin:14px 12px 0;font-size:clamp(1.25rem,3vw,1.9rem);letter-spacing:-.04em}
-.boss-caption{text-align:center;margin:6px 15px 2px;font-size:.88rem;color:#a3b8b9}
 .boss-carousel{width:100%;overflow-x:auto;display:flex;gap:clamp(18px,4vw,54px);padding:28px max(12px,calc((100% - min(72vw,300px))/2)) 20px;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:auto;cursor:grab;user-select:none;overscroll-behavior-inline:contain}
 .boss-carousel::-webkit-scrollbar{display:none}
 .boss-carousel.dragging{scroll-snap-type:none;cursor:grabbing}
@@ -91,7 +93,6 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .boss-qty button[aria-pressed=true]{background:#8fdac02e;border-color:#8fdac0}
 .boss-open{width:100%;margin-top:16px;padding:17px!important;border-radius:16px!important;font-size:1.1rem!important;background:linear-gradient(90deg,#ec7d2c,#f6a14b)!important;color:#211508!important}
 .boss-warning{font-size:.78rem!important;margin-top:13px}
-.boss-progress{text-align:center;color:#839b9c;font-size:.78rem;padding-top:8px}
 #modal.boss-inside{width:min(980px,calc(100vw - 16px));height:min(94dvh,1100px);max-height:94dvh;padding:0;border-radius:22px;background:#07151b;overflow-y:auto;scrollbar-width:thin}
 .inside-head{background:radial-gradient(circle at 40% 0,#24484b,#07151b 75%);padding:24px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:1;border-bottom:1px solid #ffffff23;backdrop-filter:blur(10px)}
 .inside-head .boss-foil{width:86px;height:115px;min-width:86px;border-radius:6px}
@@ -184,8 +185,8 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 .bar-right .balance{font-size:.92rem;background:#ffffff0a;border:1px solid #ffffff2b;padding:9px 13px;font-variant-numeric:tabular-nums}
 .header-signout{border:1px solid #ffffff27;border-radius:999px;color:#d3e2e3;padding:9px 13px;font-size:.77rem;white-space:nowrap}
 #storefront main{max-width:1140px}
-#storefront:has(#shop:not([hidden])) .hero{display:none}
-#storefront:has(#shop:not([hidden])) #account{display:none}
+#storefront:has(#shop:not([hidden])) .hero,#storefront:has(#games:not([hidden])) .hero{display:none}
+#storefront:has(#shop:not([hidden])) #account,#storefront:has(#games:not([hidden])) #account{display:none}
 #storefront:has(#shop:not([hidden])) #daily-timer{display:none}
 #storefront nav.tabs{border-bottom:1px solid #ffffff1a;gap:5px;margin:4px 0 19px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 #storefront nav.tabs::-webkit-scrollbar{display:none}
@@ -203,7 +204,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 .boss-open{box-shadow:0 10px 25px #e8792630}
 #shop:has(.premium-categories){display:block}
 .premium-categories{grid-column:1/-1;width:100%;border:1px solid #334b4f;border-radius:24px;background:radial-gradient(circle at 50% 0,#1c4044,#081115 65%);padding:clamp(18px,4vw,34px)}
-.premium-categories-heading{text-align:center;margin:10px auto 30px}
+.premium-categories-heading{text-align:center;margin:4px auto 22px}
 .premium-categories-heading h2{font-size:clamp(1.8rem,5vw,2.6rem);margin:9px 0 8px}
 .premium-categories-heading p{font-size:.92rem;max-width:470px;margin:auto;color:#a5bdbe}
 .premium-category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
@@ -306,6 +307,31 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 #inventory .inventory-item-unavailable{font-size:.77rem;color:#dbc6b2;margin-top:auto}
 @media(max-width:640px){#inventory .inventory-toolbar{top:72px;padding:12px}#inventory .inventory-selection-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}#inventory .inventory-selection-actions button{min-height:40px;font-size:.77rem}}
 
+
+/* Scalable game library with a single supported game today. */
+.game-library{margin:clamp(14px,4vw,34px) auto 32px;max-width:1020px;min-width:0}
+.game-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:18px;max-width:1020px}
+.game-card{display:grid;grid-template-columns:43% 1fr;align-items:stretch;text-align:left;min-width:0;min-height:188px;border:1px solid #45645f;border-radius:20px;overflow:hidden;background:linear-gradient(145deg,#19363a,#0b171c);color:#f5faf8;padding:0;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s}
+.game-card:hover{border-color:#9bdcc2;box-shadow:0 13px 38px #0009;transform:translateY(-2px)}
+.game-card:focus-visible{outline:3px solid #a0f4cb;outline-offset:3px}
+.game-card-art{position:relative;min-height:188px;display:block;overflow:hidden;background:radial-gradient(circle at 65% 40%,#476966 0%,#19413a 35%,#091b1b 79%)}
+.game-card-art::after{content:"";position:absolute;inset:auto -10% -2px;height:43%;background:linear-gradient(140deg,transparent 35%,#0d2928 36% 42%,transparent 43%),linear-gradient(28deg,transparent 36%,#163b33 37% 56%,transparent 57%),linear-gradient(to top,#071617,transparent)}
+.game-art-disc{position:absolute;left:21%;top:12%;width:68%;aspect-ratio:1;border:1px solid #b7b76a3c;border-radius:50%;box-shadow:0 0 65px #a9af4540}
+.game-art-item{position:absolute;z-index:1;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 10px 10px #000a)}
+.game-art-0{width:75%;height:75%;left:6%;top:4%;transform:rotate(-20deg)}
+.game-art-1{width:47%;height:47%;right:-3%;top:28%;transform:rotate(18deg)}
+.game-art-2{width:43%;height:43%;left:2%;bottom:2%;transform:rotate(-12deg)}
+.game-art-mark{position:absolute;z-index:2;bottom:11px;right:12px;color:#d6eed78c;font-size:1.05rem;letter-spacing:.12em;font-weight:950}
+.game-card-copy{display:flex;flex-direction:column;justify-content:center;gap:16px;padding:20px 16px 20px 19px;min-width:0}
+.game-card-copy strong{font-size:clamp(1.25rem,3.8vw,1.7rem);letter-spacing:-.04em;overflow-wrap:anywhere}
+.game-card-action{display:flex;align-items:center;gap:7px;color:#a4e7c8;font-size:.84rem;font-weight:800}
+.game-card-action span{font-size:1.1rem}
+.game-navigation{display:flex;align-items:center;margin:3px 0 5px}
+.game-navigation[hidden]{display:none!important}
+.game-back-link{background:transparent;border:1px solid #45655f;border-radius:9px;color:#bcebd4;padding:9px 12px;font-size:.81rem;font-weight:800;min-height:40px;cursor:pointer;white-space:nowrap}
+.game-back-link:hover{background:#1a3938;border-color:#9fdabf}
+.game-back-link:focus-visible{outline:3px solid #a1efd1;outline-offset:2px}
+@media(max-width:520px){.game-library-grid{grid-template-columns:minmax(0,1fr)}.game-card{min-height:170px}.game-card-art{min-height:170px}.game-card-copy{padding:15px}.game-navigation{margin:2px 0 6px}.boss-shell{padding-top:12px}.boss-heading{margin-top:12px}.boss-carousel{padding-top:18px}.premium-categories{padding:18px 14px}.premium-categories-heading{margin:0 auto 16px}}
 </style>
 <link rel="stylesheet" href="./reveal.css?v=3">
 <link rel="stylesheet" href="./wallet-feedback.css?v=2">
@@ -319,6 +345,8 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <p id="status" role="status"></p></div></section>
 <div id="storefront" hidden><header><div class="bar"><div class="brand">CHALLENGER<span> RIPS</span></div><div class="bar-right"><div class="gp-balance-wrap"><div class="balance" id="balance"></div></div><button id="pwa-install" type="button" class="pwa-install-button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install</span></button><button class="quiet header-signout" data-act="logout">Sign out</button></div></div></header>
 <main>
+<section id="games" class="game-library" aria-label="Choose a game" hidden><div class="game-library-grid" id="game-library-grid"></div></section>
+<div id="game-navigation" class="game-navigation" hidden><button type="button" class="game-back-link" data-act="all-games" aria-label="Back to all games"><span aria-hidden="true">←</span> All games</button></div>
 <section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button><span id="daily-timer"></span></div></section>
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button></nav>
 <div id="game-status"></div>
@@ -352,7 +380,8 @@ const el = id => document.getElementById(id);
 const modal = el('modal');
 const price = gp => Number(gp).toLocaleString()+' GP';
 const odds = item => (item.weight / item.total * 100).toFixed(6).replace(/\.?0+$/, '')+'%';
-let cases=[], category='boss', selected=null, quantity=1, batch=null, activeSlot=1, bossIndex=0, currentBatchShown=null;
+let cases=[], category=null, selected=null, quantity=1, batch=null, activeSlot=1, bossIndex=0, currentBatchShown=null;
+const supportedGames=[{id:'runescape',name:'RuneScape',art:[20997,4151,1127]}];
 let inventoryMode=false;
 const inventorySelected=new Set();
 const inventoryMaxSelect=100;
@@ -360,7 +389,8 @@ const purchaseKey='challenger-pending-purchase';
 const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sharedId = new URLSearchParams(location.search).get('shelf');
 let session, state, shared, busy=false;
-let view = sharedId ? 'shared' : 'shop';
+let view = sharedId ? 'shared' : 'games';
+const onboardingKey='challenger-rips-pending-onboarding';
 function notice(message='') { el('status').textContent=message; }
 async function rpc(action,payload={}) {
   const {data,error}=await db.rpc('rips_command',{action,payload});
@@ -468,7 +498,7 @@ function renderBossDetails() {
    '<div><small>Pack price</small><strong>'+price(entry.price)+'</strong></div></div>'+
    '<div class="boss-qty"><span>Open</span>'+[1,2,3,4,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
    button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty||Boolean(batch))+
-   (batch?'<p class="boss-warning">Finish your previous opening before purchasing another pack.</p>':'<p class="boss-warning">Digital GP only · Actual reward probabilities are shown before purchase.</p>');
+   (batch?'<p class="boss-warning">Finish your previous opening before purchasing another pack.</p>':'');
  const buy=el('boss-details').querySelector('[data-act="purchase"]');if(buy)buy.classList.add('boss-open');
  document.querySelectorAll('.boss-slide').forEach((slide,i)=>slide.classList.toggle('is-active',i===bossIndex));
 }
@@ -476,14 +506,13 @@ function renderBossShop(resume) {
  const items=bossCases();
  if(!items.length){el('shop').innerHTML=empty('Boss Loot packs are not available.');return;}
  bossIndex=Math.max(0,Math.min(items.length-1,bossIndex));
- el('shop').innerHTML='<div class="boss-shell"><div class="boss-top">'+button('← Explore packs','categories')+
-   (batch?button('Resume opening','resume'):'<span class="boss-kicker">Mystery Collectibles</span>')+'</div>'+
-   '<h2 class="boss-heading">BOSS LOOT</h2><p class="boss-caption">Swipe to discover your next treasure</p>'+
+ el('shop').innerHTML='<div class="boss-shell"><div class="boss-top">'+button('← Explore Packs','categories')+
+   (batch?button('Resume opening','resume'):'')+'</div>'+
+   '<h2 class="boss-heading">BOSS LOOT</h2>'+
    '<div class="boss-carousel" role="region" aria-label="Boss loot packs">'+
    items.map((entry,i)=>'<div class="boss-slide '+(i===bossIndex?'is-active':'')+'" data-index="'+i+'">'+
    '<button type="button" data-act="boss-choose" data-id="'+entry.id+'" aria-label="Select '+safe(entry.name)+'">'+foilArt(entry)+'</button></div>').join('')+
-   '</div><div class="boss-details" id="boss-details"></div>'+
-   '<div class="boss-progress">Drag or swipe to browse · '+items.length+' unique packs</div></div>';
+   '</div><div class="boss-details" id="boss-details"></div></div>';
  const carousel=el('shop').querySelector('.boss-carousel');
  const snap=(i,smooth=true)=>{
    i=Math.max(0,Math.min(items.length-1,i));
@@ -661,8 +690,11 @@ function render() {
   }
   renderDaily();
   el('account').innerHTML=!ready?'':'<div class="section"><strong>'+safe(state.name)+'</strong>'+button('Sign out','logout')+'</div>';
-  for(const id of ['shop','collection','inventory','showcase','shared']) el(id).hidden=id!==view;
+  for(const id of ['games','shop','collection','inventory','showcase','shared']) el(id).hidden=id!==view;
+  el('game-navigation').hidden=view==='games'||view==='shared';
+  document.querySelector('nav.tabs').hidden=view==='games'||view==='shared';
   document.querySelectorAll('[data-view]').forEach(b=>b.dataset.view===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+  if(view==='games')renderGameLibrary();
   if(view==='shop') renderShop(ready);
   if(view==='collection') {
     const pulls=state?.pulls||{};
@@ -692,11 +724,38 @@ async function run(work) {
   catch(error) {if(modal.open) modal.close(); notice(error.message||'Something went wrong.');}
   finally {busy=false;render();}
 }
+function renderGameLibrary(){
+  el('game-library-grid').innerHTML=supportedGames.map(game=>
+    '<button type="button" class="game-card" data-act="game" data-id="'+safe(game.id)+'" aria-label="Open '+safe(game.name)+'">'+
+    '<span class="game-card-art" aria-hidden="true"><span class="game-art-disc"></span>'+
+    game.art.map((id,index)=>'<img class="game-art-item game-art-'+index+'" alt="" loading="lazy" src="https://static.runelite.net/cache/item/icon/'+id+'.png" onerror="this.hidden=true">').join('')+
+    '<span class="game-art-mark">RS</span></span>'+
+    '<span class="game-card-copy"><strong>'+safe(game.name)+'</strong><span class="game-card-action">Explore <span aria-hidden="true">→</span></span></span>'+
+    '</button>').join('');
+}
+function navigateToGames(){
+  view='games';category=null;selected=null;
+  inventoryMode=false;inventorySelected.clear();
+  notice();render();
+}
+function navigateToRuneScape(){
+  view='shop';category='boss';selected=null;bossIndex=0;quantity=1;
+  notice();render();
+}
+function navigateToCategories(){
+  view='shop';category=null;selected=null;
+  notice();render();
+}
+function navigateToCategory(packId){
+  if(!packs.some(pack=>pack.id===packId))return;
+  view='shop';category=packId;selected=null;bossIndex=0;quantity=1;
+  notice();render();
+}
 function renderShop(ready){
   el('shop').classList.toggle('boss-shop',category==='boss');
   const resume=batch?'<div class="case-toolbar">'+button('Resume opening','resume','','true')+'</div>':'';
   if(!category){
-    const intro='<div class="premium-categories-heading"><span class="boss-kicker">CHALLENGER RIPS</span><h2>Choose your adventure</h2><p>Explore collectible mystery packs and discover rewards across Gielinor.</p></div>';
+    const intro='<div class="premium-categories-heading"><h2>Choose your adventure</h2></div>';
     el('shop').innerHTML='<div class="premium-categories">'+intro+'<div class="premium-category-grid">'+
       packs.map(pack=>'<button type="button" class="premium-category" data-act="category" data-id="'+pack.id+'" aria-label="Open '+safe(pack.name)+'" '+(!ready?'disabled':'')+'>'+
         '<span class="premium-category-art">'+(pack.id==='boss' && bossCases().length?foilArt(bossCases()[0]):packArt(pack))+'</span>'+
@@ -704,8 +763,8 @@ function renderShop(ready){
       '</div></div>';return;
   }
   if(category==='boss'){renderBossShop(resume);return;}
-  el('shop').innerHTML='<div class="other-case-heading">'+button('← Explore packs','categories')+
-    '<div><span class="boss-kicker">MYSTERY COLLECTIBLES</span><h2>'+safe(packs.find(p=>p.id===category)?.name||'Packs')+'</h2></div></div>'+
+  el('shop').innerHTML='<div class="other-case-heading">'+button('← Explore Packs','categories')+
+    '<h2>'+safe(packs.find(p=>p.id===category)?.name||'Packs')+'</h2></div>'+
     '<div class="other-case-grid">'+cases.filter(entry=>entry.pack===category).map(entry=>'<article class="other-case-item">'+packArt(caseArt(entry))+
     '<h3>'+safe(entry.name)+'</h3><p>'+price(entry.price)+'</p>'+button('View case','case',entry.id,true)+'</article>').join('')+'</div>';
 }
@@ -795,6 +854,12 @@ document.addEventListener('submit',event=>{
       const {data:account,error}=await db.auth.signUp({email,password,options:{data:{username},emailRedirectTo:new URL(location.pathname,location.origin).href}});
       if(error) throw error;
       session=account.session;
+      if(session){
+        sessionStorage.removeItem(onboardingKey);
+        view='shop';category=null;selected=null;
+      }else{
+        sessionStorage.setItem(onboardingKey,username);
+      }
     }else{
       const {data:tokens,error}=await db.functions.invoke('challenger-login',{body:{username,password}});
       if(error){
@@ -804,6 +869,12 @@ document.addEventListener('submit',event=>{
       const result=await db.auth.setSession({access_token:tokens.access_token,refresh_token:tokens.refresh_token});
       if(result.error) throw result.error;
       session=result.data.session;
+      if(!sharedId&&sessionStorage.getItem(onboardingKey)===username){
+        sessionStorage.removeItem(onboardingKey);
+        view='shop';category=null;selected=null;
+      }else if(!sharedId){
+        view='games';category=null;selected=null;
+      }
     }
     event.target.reset();
     await load();
@@ -906,8 +977,10 @@ document.addEventListener('click',event=>{
      });
      return;
    }
-  if(act==='categories'){category=null;selected=null;render();return;}
-  if(act==='category'){category=id;bossIndex=0;quantity=1;render();return;}
+  if(act==='all-games'){navigateToGames();return;}
+  if(act==='game'){if(id==='runescape')navigateToRuneScape();return;}
+  if(act==='categories'){navigateToCategories();return;}
+  if(act==='category'){navigateToCategory(id);return;}
   if(act==='case'){selected=cases.find(c=>c.id===id);quantity=1;run(async()=>{await loadCatalog();showCase();});return;}
   if(act==='quantity'){quantity=Number(id);showCase();return;}
   if(act==='purchase'){run(purchase);return;}
@@ -918,7 +991,7 @@ document.addEventListener('click',event=>{
     if(act==='reveal-slot'&&activeSlot!==Number(id)){activeSlot=Number(id);moveCarousel(activeSlot);return;}
     run(()=>reveal(act==='reveal-slot'?Number(id):null));return;
   }
-  if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;await load();});
+  if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;view=sharedId?'shared':'games';category=null;selected=null;await load();});
   if(['cancel','pin','salvage','sell'].includes(act)) {
      if(act==='sell'&&!confirm('Sell this item for the server-verified Grand Exchange price?'))return;
     run(async()=>{
