@@ -1,11 +1,11 @@
 (()=>{'use strict';
-const button=document.getElementById('pwa-install');
-if(!button)return;
+const buttons=[...document.querySelectorAll('.pwa-install-button')];
+if(!buttons.length)return;
 let deferred=null;
 const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const isApple=()=>/iPad|iPhone|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const isAndroid=()=>/Android/i.test(navigator.userAgent);
-function refresh(){button.hidden=isStandalone()||(!deferred&&!isApple()&&!isAndroid());}
+function refresh(){for(const button of buttons)button.hidden=isStandalone();}
 function instructions(){
  if(isStandalone())return;
  let dialog=document.getElementById('pwa-install-dialog');
@@ -27,7 +27,7 @@ window.addEventListener('appinstalled',()=>{
  deferred=null;refresh();
  const dialog=document.getElementById('pwa-install-dialog');if(dialog?.open)dialog.close();
 });
-button.addEventListener('click',async()=>{
+for(const button of buttons)button.addEventListener('click',async()=>{
  if(isStandalone())return;
  if(!deferred){instructions();return;}
  const prompt=deferred;deferred=null;

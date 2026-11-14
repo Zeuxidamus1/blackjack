@@ -260,7 +260,9 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 
 
 /* App installation entry point; no changes to pack or reveal styles */
-#pwa-install[hidden]{display:none!important}
+.pwa-install-button[hidden]{display:none!important}
+#pwa-install-login{width:auto;height:auto;display:inline-flex;margin:12px 0 18px;padding:10px 15px}
+@media(max-width:600px){#pwa-install-login{width:auto;height:auto;padding:10px 15px;font-size:.86rem}#pwa-install-login span{display:inline}}
 .pwa-install-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;background:#153c32;color:#b5f6db;border:1px solid #76cea7;border-radius:99px;font-size:.8rem;font-weight:850;padding:8px 12px;white-space:nowrap}
 #pwa-install-dialog{background:#0a1a1e;color:#f5f9f7;border:1px solid #54716f;border-radius:20px;width:min(420px,calc(100vw - 30px));padding:24px;box-shadow:0 25px 65px #000b}
 #pwa-install-dialog::backdrop{background:#000a}
@@ -269,11 +271,11 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 #pwa-install-dialog button{width:100%;border:0;border-radius:12px;padding:12px;background:#8adcb5;color:#09231c;font-weight:850}
 @media(max-width:600px){.pwa-install-button{width:36px;height:36px;padding:0;font-size:1.15rem}.pwa-install-button span{display:none}}
 @media(max-width:400px){.bar-right:has(.pwa-install-button:not([hidden])) .header-signout{display:none}}
-@media(display-mode:standalone){#pwa-install{display:none!important}header{padding-top:env(safe-area-inset-top)}footer{padding-bottom:env(safe-area-inset-bottom)}}
+@media(display-mode:standalone){.pwa-install-button{display:none!important}header{padding-top:env(safe-area-inset-top)}footer{padding-bottom:env(safe-area-inset-bottom)}}
 </style>
 <link rel="stylesheet" href="./reveal.css?v=2">
 <section id="login-screen"><div class="login-card">
-<h1>Challenger Rips</h1><form id="auth" method="post">
+<h1>Challenger Rips</h1><button id="pwa-install-login" class="pwa-install-button" type="button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install as app</span></button><form id="auth" method="post">
 <label>Username<input name="username" autocomplete="username" pattern="[A-Za-z0-9_]{3,24}" title="3 to 24 letters, digits, or underscores" required></label>
 <label id="signup-email" hidden>Email<input name="email" type="email" autocomplete="email" disabled></label>
 <label>Password<input name="password" type="password" autocomplete="current-password" maxlength="1024" required></label>
