@@ -111,9 +111,7 @@ async function setup(page,{gp=100000,viewport}={}){
     })};
   },{mockCatalog,boss,gp});
   await page.goto('/');
-  await expect(page.getByRole('button',{name:'Browse cases'}).first()).toBeVisible();
-  await page.locator('article.tile').filter({hasText:'Boss Loot'})
-    .getByRole('button',{name:'Browse cases'}).click();
+  await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
   await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
   return errors;
 }
