@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#100d19">
+<meta name="theme-color" content="#071014">
 <title>Challenger Rips</title>
 <style>
 :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#100d19;color:#fff;--muted:#b7afca;--panel:#20192d;--line:#3d304e;--accent:#c6a4ff}
@@ -147,6 +147,23 @@ html,body{max-width:100%;overflow-x:clip}
  .balance{font-size:.85rem;padding:7px 10px;max-width:100%;white-space:normal}
  .boss-metrics strong{font-size:clamp(.76rem,2.8vw,1.1rem)}
 }
+
+
+/* Finish aligning the legacy shell with the already restored premium packs. */
+meta[name="theme-color"]{color-scheme:dark}
+body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,#22464b 0%,#0e2026 43%,#050b0f 100%)}
+.login-card{background:linear-gradient(155deg,#1a3337,#09161b);border-color:#496e70;border-radius:22px;box-shadow:0 26px 85px #000a}
+.login-card h1{font-size:clamp(2.2rem,7vw,3rem);font-weight:950}
+.login-card .primary{background:linear-gradient(90deg,#83d8b5,#b5e9d1);color:#06231a;border-radius:12px;padding:13px 18px}
+.login-card .primary:hover:not(:disabled){background:#c8f6e0}
+.login-card input{background:#071316;border:1px solid #4b686e;padding:11px 13px}
+.login-card #auth-mode{color:#abdccc;background:#ffffff0a;border-radius:12px}
+.primary{background:#90dcb9;color:#0b2820}
+.primary:hover:not(:disabled){background:#bbf4d7}
+.item,.tile,.empty{background:linear-gradient(145deg,#182e35,#0d181e);border-color:#30434a}
+.item .symbol{background:#0a1b21}
+dialog:not(.boss-inside){background:#0e2026;border-color:#466066}
+#account{border-radius:14px}
 
 /* Premium Challenger Rips storefront: same design language across page and rewards */
 :root{color-scheme:dark;--muted:#a3b8b9;--panel:#112128;--line:#30444b;--accent:#8fdac0;background:#070d11}
