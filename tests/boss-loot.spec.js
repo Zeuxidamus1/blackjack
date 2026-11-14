@@ -82,7 +82,7 @@ test('What’s inside displays actual individual odds, item images, guide prices
  await expect(page.locator('dialog.boss-inside')).toBeVisible();
  await expect(page.locator('.inside-item')).toHaveCount(10);
  await expect(page.locator('.inside-item img')).toHaveCount(10);
- await expect(page.locator('dialog')).toContainText('Grails / Jackpot Items');
+ await expect(page.locator('dialog')).toContainText('Grails / Ultra-Rare Jackpots');
  await expect(page.locator('dialog')).toContainText('0.0001%');
  const total=weights.reduce((a,b)=>a+b,0); expect(total).toBe(1000000);
  expect(errors).toEqual([]);
