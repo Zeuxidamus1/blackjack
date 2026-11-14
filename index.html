@@ -30,7 +30,6 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .pack-carousel::-webkit-scrollbar{display:none}
 .pack-carousel.dragging{cursor:grabbing;scroll-snap-type:none}
 .reward-select{display:block;text-align:left;background:none;padding:0;border:0}
-.case-summary{color:var(--muted);line-height:1.45;margin:.4rem 0 1rem}
 .case-buy{padding:12px;background:#151020;border-radius:12px;margin-bottom:16px}
 .case-buy button{min-width:40px}
 .odds li{gap:12px;padding:10px 0}
@@ -222,13 +221,9 @@ function estimate(item){
 }
 function showCase(){
   const entry=selected;
-  const normal=entry.rewards.filter(reward=>!reward.chase).map(reward=>estimate(catalog.get(reward.id)));
-  const expected=entry.rewards.reduce((sum,reward)=>sum+estimate(catalog.get(reward.id))*reward.weight/1000000,0);
   const cap=Math.min(5,Math.floor(state.gp/entry.price));
   quantity=Math.min(quantity,Math.max(cap,1));
   showModal('<h2 id="modalTitle">'+safe(entry.name)+' case · '+price(entry.price)+'</h2>'+
-    '<p class="case-summary">Typical value: '+price(Math.min(...normal))+' to '+price(Math.max(...normal))+
-    '<br>Average including chase: '+price(Math.round(expected))+'</p>'+
     '<div class="actions case-buy">'+[1,2,3,4,5].map(n=>button(String(n),'quantity',String(n),n===quantity,n>cap)).join('')+
     button('Buy '+quantity+' · '+price(entry.price*quantity),'purchase','',true,!cap||Boolean(batch))+
     (batch?button('Resume opening','resume'):'')+button('Close','close')+'</div>'+
