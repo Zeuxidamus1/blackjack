@@ -90,11 +90,18 @@ body.cr-reveal-active{overflow:hidden!important}
  .cr-card-back .cr-stamp-sub{font-size:.52rem}
  .cr-actions{min-height:62px;margin-top:10px}
  .cr-single-art img{width:min(70vw,320px);height:min(55dvh,390px)}
- .cr-results-grid{margin-top:8px;gap:10px}
- .cr-result-card{padding:7px 4px 11px}
- .cr-result-art{height:clamp(116px,26vh,193px)}
- .cr-result-art img{height:clamp(108px,23vh,173px);width:95%}
- .cr-result-price{padding:6px 12px}
+ /* Compact results keep five rewards readable with substantially less scrolling. */
+ .cr-results .cr-summary{padding:2px 3px 7px}
+ .cr-results .cr-summary-label{font-size:.88rem}
+ .cr-results .cr-summary-value{font-size:clamp(1.9rem,6.4vw,2.5rem);line-height:1.08;margin-top:3px;overflow-wrap:anywhere}
+ .cr-results-grid{margin:2px auto 8px;gap:7px 10px}
+ .cr-result-card{padding:5px 3px 8px;justify-content:flex-start}
+ .cr-result-art{height:clamp(102px,17vh,132px)}
+ .cr-result-art img{height:clamp(90px,15vh,120px);width:90%;max-width:90%}
+ .cr-result-name{font-size:clamp(.76rem,2.7vw,.88rem);min-height:2.35em;line-height:1.17;margin:4px 0 3px}
+ .cr-result-price{font-size:clamp(.77rem,2.8vw,.95rem);padding:6px 10px}
+ .cr-results+.cr-actions{min-height:56px;margin-top:5px}
+ .cr-results+.cr-actions button{padding:11px 5px}
 }
 @media(max-height:700px){
  .cr-toolbar{height:48px}
