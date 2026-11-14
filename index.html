@@ -51,7 +51,7 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .boss-kicker{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:#8fdac0;font-weight:900}
 .boss-heading{text-align:center;margin:14px 12px 0;font-size:clamp(1.25rem,3vw,1.9rem);letter-spacing:-.04em}
 .boss-caption{text-align:center;margin:6px 15px 2px;font-size:.88rem;color:#a3b8b9}
-.boss-carousel{width:100%;overflow-x:auto;display:flex;gap:clamp(18px,4vw,54px);padding:28px max(12px,calc((100% - min(72vw,300px))/2)) 20px;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x;cursor:grab;user-select:none;overscroll-behavior-inline:contain}
+.boss-carousel{width:100%;overflow-x:auto;display:flex;gap:clamp(18px,4vw,54px);padding:28px max(12px,calc((100% - min(72vw,300px))/2)) 20px;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:auto;cursor:grab;user-select:none;overscroll-behavior-inline:contain}
 .boss-carousel::-webkit-scrollbar{display:none}
 .boss-carousel.dragging{scroll-snap-type:none;cursor:grabbing}
 .boss-slide{flex:0 0 min(72vw,300px);scroll-snap-align:center;display:flex;justify-content:center;align-items:center;transition:transform .3s,filter .3s;transform:scale(.85);filter:brightness(.63)}
