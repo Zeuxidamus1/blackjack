@@ -58,9 +58,17 @@ async function setup(page,{gp=100000,viewport}={}){
         if(action==='state')return ok({
           id,name:'Playwright Tester',gp:backend.gp,
           items:backend.inventory.filter(i=>i.status==='vaulted')
-            .map(i=>({id:i.instance,item:i.item,pinned:false,pulled:true,listing:i.listing||null,salvage:0})),
+            .map(i=>({id:i.instance,item:i.item,pinned:Boolean(i.pinned),pulled:true,listing:i.listing||null,salvage:0})),
           market:[],pulls:{},nextDailyAt:now,serverTime:now
         });
+        if(action==='pin'){
+          const owned=backend.inventory.find(i=>i.instance===payload?.id&&i.status==='vaulted');
+          if(!owned||owned.listing)return fail('This item cannot be displayed.');
+          if(!owned.pinned&&backend.inventory.filter(i=>i.status==='vaulted'&&i.pinned).length>=5)
+            return fail('Your showroom is full.');
+          owned.pinned=!owned.pinned;
+          save();return ok(null);
+        }
         if(action==='sell_bulk'){
           const ids=payload?.ids;
           if(!Array.isArray(ids)||!ids.length||ids.length>100||new Set(ids).size!==ids.length)
@@ -249,6 +257,29 @@ test('five-item mobile results keep the GP wallet above the summary and minimize
   await page.locator('#cr-reveal [data-cr="vault"]').click();
   expect(errors).toEqual([]);
 });
+test('inventory and showroom display authentic OSRS icons and no market or listing option',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await expect(page.locator('[data-view="market"]')).toHaveCount(0);
+  await expect(page.locator('[data-view="showcase"]')).toHaveText('Showroom');
+  await purchase(page,2);
+  await revealAll(page,2);
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  await page.locator('[data-view="inventory"]').click();
+  await expect(page.locator('#owned .item-icon')).toHaveCount(2);
+  await expect(page.locator('#owned .item-icon').first()).toHaveAttribute(
+    'src','https://static.runelite.net/cache/item/icon/1115.png');
+  await expect(page.locator('#owned .item-icon').first()).toBeVisible();
+  await expect(page.locator('#owned [data-act="list"]')).toHaveCount(0);
+  await expect(page.locator('#owned [data-act="pin"]')).toHaveCount(2);
+  await page.locator('#owned [data-act="pin"]').first().click();
+  await page.locator('[data-view="showcase"]').click();
+  await expect(page.locator('#pins .item-icon')).toHaveCount(1);
+  await expect(page.locator('#pins .item-icon')).toHaveAttribute(
+    'src','https://static.runelite.net/cache/item/icon/1115.png');
+  await expect(page.locator('#pins .item-icon')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('Sell All credits validated server prices exactly once',async({page})=>{
   const errors=await setup(page);
   await purchase(page,2);
