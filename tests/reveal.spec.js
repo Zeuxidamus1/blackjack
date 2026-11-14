@@ -220,6 +220,35 @@ test('mobile results remain two-column, safe-area actions and no sideways overfl
   await page.locator('[data-cr="vault"]').click();
   expect(errors).toEqual([]);
 });
+test('five-item mobile results keep the GP wallet above the summary and minimize scrolling',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:740}});
+  await purchase(page,5);
+  await revealAll(page,5);
+  await expect(page.locator('#gp-wallet-live')).toBeVisible();
+  // Even while a GP credit/debit message is visible, it must not cover the total.
+  await page.locator('#gp-wallet-live .gp-wallet-change').evaluate(node=>{
+    node.textContent='+12,000 GP';
+    node.hidden=false;
+  });
+  const layout=await page.evaluate(()=>{
+    const wallet=document.getElementById('gp-wallet-live').getBoundingClientRect();
+    const summary=document.querySelector('.cr-summary').getBoundingClientRect();
+    const art=document.querySelector('.cr-result-art').getBoundingClientRect();
+    const results=document.querySelector('.cr-results-scroll');
+    return {
+      walletBottom:wallet.bottom,
+      summaryTop:summary.top,
+      artHeight:art.height,
+      scrollOverhang:results.scrollHeight-results.clientHeight
+    };
+  });
+  expect(layout.walletBottom).toBeLessThanOrEqual(layout.summaryTop);
+  expect(layout.artHeight).toBeLessThanOrEqual(133);
+  expect(layout.scrollOverhang).toBeLessThanOrEqual(165);
+  await expect(page.locator('.cr-actions')).toBeInViewport();
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
 test('Sell All credits validated server prices exactly once',async({page})=>{
   const errors=await setup(page);
   await purchase(page,2);
