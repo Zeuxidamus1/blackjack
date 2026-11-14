@@ -274,12 +274,12 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 @media(display-mode:standalone){.pwa-install-button{display:none!important}header{padding-top:env(safe-area-inset-top)}footer{padding-bottom:env(safe-area-inset-bottom)}}
 
 /* Collection Log: actual OSRS icons for personally unlocked items. */
-#items .collection-unlocked .symbol{min-height:112px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 48%,#30535788,#0a171c 76%);border:1px solid #ffffff24}
-#items .collection-item-icon{width:86px;height:86px;max-width:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 7px 9px #000a)}
-#items .collection-icon-fallback{font-size:3rem;line-height:1}
+#items .collection-unlocked .symbol,#owned .item .symbol,#pins .item .symbol,#sharedItems .item .symbol{min-height:112px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 48%,#30535788,#0a171c 76%);border:1px solid #ffffff24}
+.item .item-icon{width:86px;height:86px;max-width:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 7px 9px #000a)}
+.item .item-icon-fallback{font-size:3rem;line-height:1}
 #items .collection-locked .symbol{min-height:112px;display:flex;align-items:center;justify-content:center;opacity:.7}
 #items .collection-unlocked h3{color:#f6fbf9}
-@media(max-width:520px){#items .collection-unlocked .symbol,#items .collection-locked .symbol{min-height:90px}#items .collection-item-icon{width:68px;height:68px}}
+@media(max-width:520px){#items .collection-unlocked .symbol,#items .collection-locked .symbol,#owned .item .symbol,#pins .item .symbol,#sharedItems .item .symbol{min-height:90px}.item .item-icon{width:68px;height:68px}}
 
 /* Inventory multi-select and bulk Grand Exchange selling */
 #inventory .inventory-heading{align-items:center;margin-bottom:12px}
@@ -320,7 +320,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <div id="storefront" hidden><header><div class="bar"><div class="brand">CHALLENGER<span> RIPS</span></div><div class="bar-right"><div class="gp-balance-wrap"><div class="balance" id="balance"></div></div><button id="pwa-install" type="button" class="pwa-install-button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install</span></button><button class="quiet header-signout" data-act="logout">Sign out</button></div></div></header>
 <main>
 <section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button><span id="daily-timer"></span></div></section>
-<nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="market">Market</button><button data-view="showcase">Showcase</button></nav>
+<nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button></nav>
 <div id="game-status"></div>
 <section id="account" class="empty"></section>
 <section id="inventory" hidden>
@@ -328,11 +328,10 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
   <div id="inventory-toolbar" class="inventory-toolbar" hidden></div>
   <div class="grid" id="owned"></div>
 </section>
-<section id="market" hidden><div class="section"><h2>Player market</h2><button class="quiet" id="refresh">Refresh listings</button></div><p class="empty">Listing prices use server-verified Grand Exchange guides. A 2% tax comes out of each player-market sale.</p><div class="grid" id="listings"></div></section>
 <section id="shop" class="grid" aria-label="Packs"></section>
 <section id="collection" hidden><div class="section"><h2 id="progress"></h2><label>Pack <select id="filter"><option value="all">All packs</option></select></label></div><div class="grid" id="items" style="margin-top:12px"></div></section>
-<section id="showcase" hidden><div class="section"><h2>Your showcase</h2><button id="share" class="primary">Copy showcase link</button></div><p class="empty" id="shareHint">Pin up to five items from your inventory.</p><div class="grid" id="pins"></div></section>
-<section id="shared" hidden><div class="section"><h2>Shared showcase</h2></div><p class="empty">Current shelf shared by another player.</p><div class="grid" id="sharedItems"></div></section>
+<section id="showcase" hidden><div class="section"><h2>Your showroom</h2><button id="share" class="primary">Copy showroom link</button></div><p class="empty" id="shareHint">Display up to five items from your inventory. Items remain yours until sold.</p><div class="grid" id="pins"></div></section>
+<section id="shared" hidden><div class="section"><h2>Shared showroom</h2></div><p class="empty">Items displayed by another player.</p><div class="grid" id="sharedItems"></div></section>
 </main>
 <footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 100K starter GP · Daily claim resets 24 hours after each claim.</footer></div>
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
@@ -577,10 +576,11 @@ function packArt(pack,shake=false) {
 }
 function card(item,detail,controls='',locked=false,collectionEntry=false) {
   const geId=Number(item.ge);
-  const hasImage=collectionEntry&&!locked&&Number.isSafeInteger(geId)&&geId>0;
+  // Use authentic item icons across inventory, showroom, and unlocked collection.
+  const hasImage=!locked&&Number.isSafeInteger(geId)&&geId>0;
   const symbol=hasImage?
-    '<img class="collection-item-icon" src="https://static.runelite.net/cache/item/icon/'+geId+'.png" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
-    '<span class="collection-icon-fallback" hidden>'+safe(item.icon||'⚔')+'</span>':
+    '<img class="item-icon'+(collectionEntry?' collection-item-icon':'')+'" src="https://static.runelite.net/cache/item/icon/'+geId+'.png" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
+    '<span class="item-icon-fallback'+(collectionEntry?' collection-icon-fallback':'')+'" hidden>'+safe(item.icon||'⚔')+'</span>':
     (locked?'🔒':safe(item.icon||'⚔'));
   return '<article class="item'+(collectionEntry?(locked?' collection-locked':' collection-unlocked'):'')+'" style="--rarity:'+item.color+'">'+
     '<div class="symbol" aria-hidden="true">'+symbol+'</div><h3>'+safe(item.name)+'</h3>'+
@@ -628,10 +628,9 @@ function renderInventory(){
     const detail=(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item);
     if(!inventoryMode){
       const duplicate=items.filter(i=>i.item===asset.item).length>1;
-      const actions=asset.listing?button('Cancel listing','cancel',asset.listing):
-        button(asset.pinned?'Unpin':'Pin to shelf','pin',asset.id)+
+      const actions=asset.listing?button('Cancel existing listing','cancel',asset.listing):
+        button(asset.pinned?'Remove from showroom':'Display in showroom','pin',asset.id)+
         (item.ge?button('Sell to GE · '+price(estimate(item)),'sell',asset.id):'')+
-        button('List for sale','list',asset.id)+
         (duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
       return card(item,detail,'<div class="actions">'+actions+'</div>');
     }
@@ -648,7 +647,7 @@ function renderInventory(){
         '<button type="button" class="inventory-select-overlay" data-act="inventory-toggle" data-id="'+asset.id+
         '" aria-label="'+(active?'Deselect ':'Select ')+safe(item.name)+'" aria-pressed="'+active+'"></button></article>':
         '</article>');
-  }).join('')||empty('Open a pack or buy a listing to fill your inventory.');
+  }).join('')||empty('Open a pack to fill your inventory.');
 }
 function render() {
   el('login-screen').hidden=Boolean(session);
@@ -662,7 +661,7 @@ function render() {
   }
   renderDaily();
   el('account').innerHTML=!ready?'':'<div class="section"><strong>'+safe(state.name)+'</strong>'+button('Sign out','logout')+'</div>';
-  for(const id of ['shop','collection','inventory','market','showcase','shared']) el(id).hidden=id!==view;
+  for(const id of ['shop','collection','inventory','showcase','shared']) el(id).hidden=id!==view;
   document.querySelectorAll('[data-view]').forEach(b=>b.dataset.view===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   if(view==='shop') renderShop(ready);
   if(view==='collection') {
@@ -672,10 +671,6 @@ function render() {
       .map(item=>card(item,pulls[item.id]?'×'+pulls[item.id].count:'Undiscovered','',!pulls[item.id],true)).join('');
   }
   if(view==='inventory') renderInventory();
-  if(view==='market') el('listings').innerHTML=state?.market?.map(listing=>card(catalog.get(listing.item),
-    listing.name+' · Asking '+price(listing.price)+' · '+(listing.recent?'Last sale '+price(listing.recent):'Guide '+price(listing.guide)),
-    listing.mine?button('Cancel listing','cancel',listing.id):button('Buy · '+price(listing.price),'buy',listing.id,true))).join('')||
-    empty(ready?'No active listings. List an item from your inventory.':'Sign in to browse player listings.');
   if(view==='showcase') {
     const pinned=state?.items?.filter(i=>i.pinned)||[];
     el('share').disabled=!pinned.length;
@@ -814,10 +809,6 @@ document.addEventListener('submit',event=>{
     await load();
     if(signup&&!session) { el('auth-mode').click(); notice('Check your email to confirm your account, then sign in.'); }
   });
-  if(event.target.id==='listForm') run(async()=>{
-    await rpc('list',{id:data.get('id'),price:1000});
-    modal.close();await load();notice('Listing posted.');
-  });
 });
 document.addEventListener('keydown',event=>{
   const tile=event.target.closest('article[data-category]');
@@ -832,7 +823,7 @@ document.addEventListener('click',event=>{
     if(view==='inventory'&&b.dataset.view!=='inventory'){
       inventoryMode=false;inventorySelected.clear();
     }
-    view=b.dataset.view;notice();render();if(view==='market'&&session)run(load);return;
+    view=b.dataset.view;notice();render();return;
   }
   const {act,id}=b.dataset;
   if(act==='inventory-mode'){
@@ -927,30 +918,24 @@ document.addEventListener('click',event=>{
     if(act==='reveal-slot'&&activeSlot!==Number(id)){activeSlot=Number(id);moveCarousel(activeSlot);return;}
     run(()=>reveal(act==='reveal-slot'?Number(id):null));return;
   }
-  if(act==='list') {
-    showModal('<h2 id="modalTitle">List item for sale</h2><form id="listForm"><input type="hidden" name="id" value="'+id+'"><p>Listings use the server’s current guide price.</p><div class="actions"><button class="primary">Post listing</button>'+button('Cancel','close')+'</div></form>');
-    return;
-  }
   if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;await load();});
-  if(['buy','cancel','pin','salvage','sell'].includes(act)) {
+  if(['cancel','pin','salvage','sell'].includes(act)) {
      if(act==='sell'&&!confirm('Sell this item for the server-verified Grand Exchange price?'))return;
-    if(act==='buy'&&!confirm('Buy this item for '+price(state.market.find(item=>item.id===id).price)+'?')) return;
     run(async()=>{
       const previousGp=state?.gp;
       await rpc(act,{id});
       await load();
       if(act==='sell')window.ChallengerWallet?.record(previousGp,state?.gp,'sell');
-      notice(({buy:'Purchase complete. Find it in your inventory.',cancel:'Listing canceled.',pin:'Showcase updated.',salvage:'Duplicate salvaged.',sell:'Item sold for the verified Grand Exchange price.'})[act]);
+      notice(({cancel:'Existing listing canceled.',pin:'Showroom updated.',salvage:'Duplicate salvaged.',sell:'Item sold for the verified Grand Exchange price.'})[act]);
     });
   }
 });
 el('daily').onclick=()=>run(async()=>{await rpc('daily');await load();notice('Added 50,000 GP.');});
-el('refresh').onclick=()=>session&&run(load);
 el('share').onclick=async()=>{
   const url=new URL(location.pathname,location.origin);
   url.searchParams.set('shelf',state.id);
-  try {await navigator.clipboard.writeText(url.href);notice('Showcase link copied.');}
-  catch {prompt('Copy your showcase link',url.href);}
+  try {await navigator.clipboard.writeText(url.href);notice('Showroom link copied.');}
+  catch {prompt('Copy your showroom link',url.href);}
 };
 render();
 if(db) run(async()=>{session=(await db.auth.getSession()).data.session;await load();});
