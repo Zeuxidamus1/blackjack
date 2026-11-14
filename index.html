@@ -272,6 +272,14 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 @media(max-width:600px){.pwa-install-button{width:36px;height:36px;padding:0;font-size:1.15rem}.pwa-install-button span{display:none}}
 @media(max-width:400px){.bar-right:has(.pwa-install-button:not([hidden])) .header-signout{display:none}}
 @media(display-mode:standalone){.pwa-install-button{display:none!important}header{padding-top:env(safe-area-inset-top)}footer{padding-bottom:env(safe-area-inset-bottom)}}
+
+/* Collection Log: actual OSRS icons for personally unlocked items. */
+#items .collection-unlocked .symbol{min-height:112px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 48%,#30535788,#0a171c 76%);border:1px solid #ffffff24}
+#items .collection-item-icon{width:86px;height:86px;max-width:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 7px 9px #000a)}
+#items .collection-icon-fallback{font-size:3rem;line-height:1}
+#items .collection-locked .symbol{min-height:112px;display:flex;align-items:center;justify-content:center;opacity:.7}
+#items .collection-unlocked h3{color:#f6fbf9}
+@media(max-width:520px){#items .collection-unlocked .symbol,#items .collection-locked .symbol{min-height:90px}#items .collection-item-icon{width:68px;height:68px}}
 </style>
 <link rel="stylesheet" href="./reveal.css?v=2">
 <link rel="stylesheet" href="./wallet-feedback.css?v=1">
@@ -534,8 +542,16 @@ function packArt(pack,shake=false) {
   }
   return '<div class="art" style="--glow:'+pack.color+'"><div class="pack '+(shake?'shake':'')+'"><span class="symbol" aria-hidden="true">'+pack.icon+'</span>'+pack.name.toUpperCase()+'</div></div>';
 }
-function card(item,detail,controls='',locked=false) {
-  return '<article class="item" style="--rarity:'+item.color+'"><div class="symbol" aria-hidden="true">'+(locked?'🔒':item.icon)+'</div><h3>'+item.name+'</h3><div class="rare">'+item.tier+' · '+odds(item)+'</div><p>'+safe(detail)+'</p>'+controls+'</article>';
+function card(item,detail,controls='',locked=false,collectionEntry=false) {
+  const geId=Number(item.ge);
+  const hasImage=collectionEntry&&!locked&&Number.isSafeInteger(geId)&&geId>0;
+  const symbol=hasImage?
+    '<img class="collection-item-icon" src="https://static.runelite.net/cache/item/icon/'+geId+'.png" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
+    '<span class="collection-icon-fallback" hidden>'+safe(item.icon||'⚔')+'</span>':
+    (locked?'🔒':safe(item.icon||'⚔'));
+  return '<article class="item'+(collectionEntry?(locked?' collection-locked':' collection-unlocked'):'')+'" style="--rarity:'+item.color+'">'+
+    '<div class="symbol" aria-hidden="true">'+symbol+'</div><h3>'+safe(item.name)+'</h3>'+
+    '<div class="rare">'+item.tier+' · '+odds(item)+'</div><p>'+safe(detail)+'</p>'+controls+'</article>';
 }
 function button(label,action,id='',primary=false,disabled=false) {
   return '<button type="button" class="'+(primary?'primary':'quiet')+'" data-act="'+action+'" data-id="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
@@ -560,7 +576,7 @@ function render() {
     const pulls=state?.pulls||{};
     el('progress').textContent=Object.keys(pulls).length+' / '+catalog.size+' personally pulled';
     el('items').innerHTML=[...catalog.values()].filter(item=>el('filter').value==='all'||el('filter').value===item.pack)
-      .map(item=>card(item,pulls[item.id]?'×'+pulls[item.id].count:'Undiscovered','',!pulls[item.id])).join('');
+      .map(item=>card(item,pulls[item.id]?'×'+pulls[item.id].count:'Undiscovered','',!pulls[item.id],true)).join('');
   }
   if(view==='inventory') el('owned').innerHTML=state?.items?.map(asset=>{
     const item=catalog.get(asset.item);
