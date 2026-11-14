@@ -280,6 +280,32 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 #items .collection-locked .symbol{min-height:112px;display:flex;align-items:center;justify-content:center;opacity:.7}
 #items .collection-unlocked h3{color:#f6fbf9}
 @media(max-width:520px){#items .collection-unlocked .symbol,#items .collection-locked .symbol{min-height:90px}#items .collection-item-icon{width:68px;height:68px}}
+
+/* Inventory multi-select and bulk Grand Exchange selling */
+#inventory .inventory-heading{align-items:center;margin-bottom:12px}
+#inventory .inventory-heading button{border-color:#78c7ac;color:#cbf6e6;border-radius:999px}
+#inventory .inventory-toolbar[hidden]{display:none!important}
+#inventory .inventory-toolbar{position:sticky;top:82px;z-index:4;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 20px;padding:14px 16px;border:1px solid #456961;border-radius:15px;background:#102b2bdc;backdrop-filter:blur(15px);box-shadow:0 8px 27px #0007}
+#inventory .inventory-selection-summary{display:flex;flex-direction:column;gap:3px;min-width:175px;flex:1}
+#inventory .inventory-selection-summary strong{font-size:1.15rem;color:#b2f4d9}
+#inventory .inventory-selection-summary span{font-weight:800;font-size:.92rem}
+#inventory .inventory-selection-summary small{font-size:.7rem;color:#a3bebc;max-width:440px;line-height:1.35}
+#inventory .inventory-selection-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#inventory .inventory-selection-actions button{font-size:.8rem;border-radius:10px;padding:10px 12px}
+#inventory .inventory-selection-actions .primary{background:linear-gradient(90deg,#11775c,#249e72);color:#fff;border-color:#56cca6}
+#inventory .inventory-selection-actions .primary:not(:disabled):hover{filter:brightness(1.15)}
+#inventory .inventory-entry{position:relative;transition:border-color .18s,box-shadow .18s,background .18s;min-width:0}
+#inventory .inventory-entry:not(.is-unavailable):hover{border-color:#65cfab}
+#inventory .inventory-entry.is-selected{border:2px solid #49e6ad!important;background:linear-gradient(145deg,#173f36,#0d2523);box-shadow:0 0 22px #27db9c7a,inset 0 0 12px #1fbc8c24}
+#inventory .inventory-entry.is-unavailable{opacity:.55}
+#inventory .inventory-select-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:2;border:0;background:transparent;border-radius:inherit;cursor:pointer}
+#inventory .inventory-select-overlay:focus-visible{outline:3px solid #92f5d5;outline-offset:3px}
+#inventory .inventory-selection-mark{position:absolute;top:10px;left:10px;z-index:1;width:30px;height:30px;display:grid;place-items:center;border:2px solid #64d8b0;border-radius:50%;color:#d9fff0;font-weight:900;background:#113c33}
+#inventory .is-selected .inventory-selection-mark{background:#14ba82;border-color:#71f4c5;color:white}
+#inventory .inventory-item-hint{margin-top:auto;color:#a2e8d0;font-weight:800;font-size:.79rem}
+#inventory .inventory-item-unavailable{font-size:.77rem;color:#dbc6b2;margin-top:auto}
+@media(max-width:640px){#inventory .inventory-toolbar{top:72px;padding:12px}#inventory .inventory-selection-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}#inventory .inventory-selection-actions button{min-height:40px;font-size:.77rem}}
+
 </style>
 <link rel="stylesheet" href="./reveal.css?v=2">
 <link rel="stylesheet" href="./wallet-feedback.css?v=1">
@@ -297,7 +323,11 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="market">Market</button><button data-view="showcase">Showcase</button></nav>
 <div id="game-status"></div>
 <section id="account" class="empty"></section>
-<section id="inventory" hidden><div class="section"><h2>Your inventory</h2></div><div class="grid" id="owned"></div></section>
+<section id="inventory" hidden>
+  <div class="section inventory-heading"><h2>Your inventory</h2><button type="button" class="quiet" id="inventory-mode-button" data-act="inventory-mode" aria-pressed="false">Select items</button></div>
+  <div id="inventory-toolbar" class="inventory-toolbar" hidden></div>
+  <div class="grid" id="owned"></div>
+</section>
 <section id="market" hidden><div class="section"><h2>Player market</h2><button class="quiet" id="refresh">Refresh listings</button></div><p class="empty">Listing prices use server-verified Grand Exchange guides. A 2% tax comes out of each player-market sale.</p><div class="grid" id="listings"></div></section>
 <section id="shop" class="grid" aria-label="Packs"></section>
 <section id="collection" hidden><div class="section"><h2 id="progress"></h2><label>Pack <select id="filter"><option value="all">All packs</option></select></label></div><div class="grid" id="items" style="margin-top:12px"></div></section>
@@ -324,6 +354,9 @@ const modal = el('modal');
 const price = gp => Number(gp).toLocaleString()+' GP';
 const odds = item => (item.weight / item.total * 100).toFixed(6).replace(/\.?0+$/, '')+'%';
 let cases=[], category='boss', selected=null, quantity=1, batch=null, activeSlot=1, bossIndex=0, currentBatchShown=null;
+let inventoryMode=false;
+const inventorySelected=new Set();
+const inventoryMaxSelect=100;
 const purchaseKey='challenger-pending-purchase';
 const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sharedId = new URLSearchParams(location.search).get('shelf');
@@ -557,6 +590,66 @@ function button(label,action,id='',primary=false,disabled=false) {
   return '<button type="button" class="'+(primary?'primary':'quiet')+'" data-act="'+action+'" data-id="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
 }
 const empty = msg => '<p class="empty">'+msg+'</p>';
+function eligibleForInventorySale(asset){
+  const item=catalog.get(asset.item);
+  const last=Date.parse(item?.guideTime);
+  return Boolean(!asset.listing&&item&&Number(item.ge)>0&&Number(item.guide)>0&&
+    Number.isFinite(last)&&last>Date.now()-24*60*60*1000);
+}
+function renderInventory(){
+  const items=state?.items||[];
+  const eligible=items.filter(eligibleForInventorySale);
+  const eligibleIds=new Set(eligible.map(asset=>asset.id));
+  for(const id of inventorySelected){
+    if(!eligibleIds.has(id))inventorySelected.delete(id);
+  }
+  const mode=el('inventory-mode-button');
+  mode.textContent=inventoryMode?'Cancel selection':'Select items';
+  mode.setAttribute('aria-pressed',String(inventoryMode));
+  mode.disabled=!items.length&&!inventoryMode;
+  const toolbar=el('inventory-toolbar');
+  toolbar.hidden=!inventoryMode;
+  const chosen=eligible.filter(asset=>inventorySelected.has(asset.id));
+  const estimated=chosen.reduce((sum,asset)=>sum+Number(catalog.get(asset.item)?.guide||0),0);
+  if(inventoryMode){
+    toolbar.innerHTML='<div class="inventory-selection-summary"><strong>'+
+      chosen.length+' selected</strong><span>Estimated GE value: <b>'+price(estimated)+'</b></span>'+
+      '<small>Final sale prices are verified by the server. Listed items and items without current GE quotes cannot be selected.</small></div>'+
+      '<div class="inventory-selection-actions">'+
+      button('Select all eligible','inventory-all','',false,!eligible.length)+
+      button('Clear','inventory-clear','',false,!chosen.length)+
+      button('Refresh quotes','inventory-refresh')+
+      button('Sell selected ('+chosen.length+')','inventory-sell','',true,!chosen.length)+
+      '</div>';
+  }
+  el('owned').innerHTML=items.map(asset=>{
+    const item=catalog.get(asset.item);
+    if(!item)return '';
+    const detail=(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item);
+    if(!inventoryMode){
+      const duplicate=items.filter(i=>i.item===asset.item).length>1;
+      const actions=asset.listing?button('Cancel listing','cancel',asset.listing):
+        button(asset.pinned?'Unpin':'Pin to shelf','pin',asset.id)+
+        (item.ge?button('Sell to GE · '+price(estimate(item)),'sell',asset.id):'')+
+        button('List for sale','list',asset.id)+
+        (duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
+      return card(item,detail,'<div class="actions">'+actions+'</div>');
+    }
+    const canSell=eligibleIds.has(asset.id);
+    const active=inventorySelected.has(asset.id);
+    const reason=asset.listing?'Listed — cancel the listing first':'Current GE quote unavailable';
+    const html=card(item,detail,canSell?'<p class="inventory-item-hint">'+
+      (active?'Selected for sale':'Tap item to select')+'</p>':
+      '<p class="inventory-item-unavailable">'+reason+'</p>');
+    return html.replace('<article class="item"','<article class="item inventory-entry'+
+      (active?' is-selected':'')+(canSell?'':' is-unavailable')+'"')
+      .replace('</article>',canSell?
+        '<span class="inventory-selection-mark" aria-hidden="true">'+(active?'✓':'+')+'</span>'+
+        '<button type="button" class="inventory-select-overlay" data-act="inventory-toggle" data-id="'+asset.id+
+        '" aria-label="'+(active?'Deselect ':'Select ')+safe(item.name)+'" aria-pressed="'+active+'"></button></article>':
+        '</article>');
+  }).join('')||empty('Open a pack or buy a listing to fill your inventory.');
+}
 function render() {
   el('login-screen').hidden=Boolean(session);
   el('storefront').hidden=!session;
@@ -578,14 +671,7 @@ function render() {
     el('items').innerHTML=[...catalog.values()].filter(item=>el('filter').value==='all'||el('filter').value===item.pack)
       .map(item=>card(item,pulls[item.id]?'×'+pulls[item.id].count:'Undiscovered','',!pulls[item.id],true)).join('');
   }
-  if(view==='inventory') el('owned').innerHTML=state?.items?.map(asset=>{
-    const item=catalog.get(asset.item);
-    const duplicate=state.items.filter(i=>i.item===asset.item).length>1;
-    const actions=asset.listing?button('Cancel listing','cancel',asset.listing):
-      button(asset.pinned?'Unpin':'Pin to shelf','pin',asset.id)+(item?.ge?button('Sell to GE · '+price(estimate(item)),'sell',asset.id):'')+button('List for sale','list',asset.id)+
-      (duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
-    return card(item,(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item),'<div class="actions">'+actions+'</div>');
-  }).join('')||empty('Open a pack or buy a listing to fill your inventory.');
+  if(view==='inventory') renderInventory();
   if(view==='market') el('listings').innerHTML=state?.market?.map(listing=>card(catalog.get(listing.item),
     listing.name+' · Asking '+price(listing.price)+' · '+(listing.recent?'Last sale '+price(listing.recent):'Guide '+price(listing.guide)),
     listing.mine?button('Cancel listing','cancel',listing.id):button('Buy · '+price(listing.price),'buy',listing.id,true))).join('')||
@@ -742,8 +828,69 @@ document.addEventListener('click',event=>{
   if(tile && !event.target.closest('button')){category=tile.dataset.category;bossIndex=0;quantity=1;render();return;}
   const b=event.target.closest('button');
   if(!b||busy) return;
-  if(b.dataset.view) {view=b.dataset.view;notice();render();if(view==='market'&&session)run(load);return;}
+  if(b.dataset.view) {
+    if(view==='inventory'&&b.dataset.view!=='inventory'){
+      inventoryMode=false;inventorySelected.clear();
+    }
+    view=b.dataset.view;notice();render();if(view==='market'&&session)run(load);return;
+  }
   const {act,id}=b.dataset;
+  if(act==='inventory-mode'){
+    inventoryMode=!inventoryMode;
+    inventorySelected.clear();
+    render();return;
+  }
+  if(act==='inventory-toggle'){
+    if(!inventoryMode)return;
+    const asset=state?.items?.find(a=>a.id===id);
+    if(!asset||!eligibleForInventorySale(asset))return;
+    if(inventorySelected.has(id))inventorySelected.delete(id);
+    else {
+      if(inventorySelected.size>=inventoryMaxSelect){notice('You can sell up to 100 items at once.');return;}
+      inventorySelected.add(id);
+    }
+    render();return;
+  }
+  if(act==='inventory-all'){
+    if(!inventoryMode)return;
+    inventorySelected.clear();
+    for(const asset of (state?.items||[]).filter(eligibleForInventorySale).slice(0,inventoryMaxSelect)){
+      inventorySelected.add(asset.id);
+    }
+    render();return;
+  }
+  if(act==='inventory-clear'){
+    inventorySelected.clear();render();return;
+  }
+  if(act==='inventory-refresh'){
+    run(async()=>{
+      await refreshServerPrices();
+      await loadCatalog();
+      await load();
+      notice('Checked the latest available Grand Exchange prices.');
+    });
+    return;
+  }
+  if(act==='inventory-sell'){
+    if(!inventoryMode||!inventorySelected.size)return;
+    const assets=(state?.items||[]).filter(a=>inventorySelected.has(a.id));
+    if(assets.length!==inventorySelected.size||assets.some(a=>!eligibleForInventorySale(a))) {
+      notice('Your selection has changed. Refresh and try again.');render();return;
+    }
+    const estimated=assets.reduce((n,a)=>n+Number(catalog.get(a.item)?.guide||0),0);
+    if(!confirm('Sell '+assets.length+' selected items? Estimated total: '+price(estimated)+
+      '. Actual GP credited will be based on validated server Grand Exchange prices.'))return;
+    const ids=assets.map(a=>a.id);
+    run(async()=>{
+      const before=state?.gp;
+      const outcome=await rpc('sell_bulk',{ids});
+      inventorySelected.clear();
+      await load();
+      window.ChallengerWallet?.record(before,state?.gp,'sell');
+      notice('Sold '+outcome.count+' items for '+price(outcome.total)+'.');
+    });
+    return;
+  }
   if(act==='close') {modal.close();modal.classList.remove('boss-inside');return;}
    if(act==='inside'){showInside();return;}
    if(act==='boss-qty'){quantity=Number(id);renderBossDetails();return;}
