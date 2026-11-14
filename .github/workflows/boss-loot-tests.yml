@@ -6,6 +6,8 @@ on:
       - index.html
       - manifest.json
       - app-install.js
+      - wallet-feedback.js
+      - wallet-feedback.css
       - sw.js
       - offline.html
       - icons/**

@@ -245,6 +245,7 @@
       const targets=this.selected.size?list.filter(r=>this.selected.has(r.slot)):list;
       if(!targets.length)return;
       const slots=targets.map(r=>r.slot);
+      const previousGp=this.ctx.getBalance?.();
       this.busy=true;this.toast='';
       this.render();
       try{
@@ -257,6 +258,7 @@
         this.batch=result;
         this.selected.clear();
         await this.ctx.load();
+        if(decision==='sell')this.ctx.onWalletChange?.(previousGp,'sell');
         if(result.remaining===0){
           this.close(decision==='sell'?'Sold rewards for '+gp(amount)+'.':'Rewards saved in your inventory.');
           return;

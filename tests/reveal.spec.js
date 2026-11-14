@@ -219,3 +219,49 @@ test('Sell All credits validated server prices exactly once',async({page})=>{
   expect(after.settlements).toBe(1);
   expect(errors).toEqual([]);
 });
+
+
+test('pack purchase shows red real-balance debit, single sale shows green server-credit',async({page})=>{
+ const errors=await setup(page);
+ await expect(page.locator('#balance')).toHaveText('100,000 GP');
+ await purchase(page,1);
+ await expect(page.locator('#balance')).toHaveText('99,000 GP');
+ await expect(page.locator('#gp-delta-inline')).toHaveText('−1,000 GP');
+ await expect(page.locator('#gp-delta-inline')).toHaveClass(/gp-negative/);
+ await expect(page.locator('#gp-wallet-live')).toContainText('99,000 GP');
+ await expect(page.locator('#gp-wallet-live .gp-wallet-change')).toHaveText('−1,000 GP');
+ await expect(page.locator('#gp-wallet-live .gp-wallet-change')).toHaveClass(/gp-negative/);
+ await expect(page.locator('.cr-single-info')).toContainText('12,000 GP');
+ await page.locator('[data-cr="sell"]').click();
+ await expect(page.locator('#cr-reveal')).toBeHidden();
+ await expect(page.locator('#balance')).toHaveText('111,000 GP');
+ await expect(page.locator('#gp-delta-inline')).toHaveText('+12,000 GP');
+ await expect(page.locator('#gp-delta-inline')).toHaveClass(/gp-positive/);
+ expect(errors).toEqual([]);
+});
+test('multi-pack purchase debits total and selected sale credits only selected verified rewards',async({page})=>{
+ const errors=await setup(page);
+ await purchase(page,4);
+ await expect(page.locator('#gp-wallet-live .gp-wallet-change')).toHaveText('−4,000 GP');
+ await expect(page.locator('#balance')).toHaveText('96,000 GP');
+ await revealAll(page,4);
+ await page.locator('.cr-result-card').nth(0).click();
+ await page.locator('.cr-result-card').nth(1).click();
+ await page.locator('[data-cr="sell"]').click();
+ await expect(page.locator('.cr-result-card')).toHaveCount(2);
+ await expect(page.locator('#balance')).toHaveText('130,000 GP');
+ await expect(page.locator('#gp-wallet-live')).toContainText('130,000 GP');
+ await expect(page.locator('#gp-wallet-live .gp-wallet-change')).toHaveText('+34,000 GP');
+ await expect(page.locator('#gp-wallet-live .gp-wallet-change')).toHaveClass(/gp-positive/);
+ await page.locator('[data-cr="vault"]').click();
+ await expect(page.locator('#cr-reveal')).toBeHidden();
+ await expect(page.locator('#gp-delta-inline')).toHaveText('+34,000 GP');
+ expect(errors).toEqual([]);
+});
+test('no debit or credit animation on insufficient GP / unsuccessful pack purchase',async({page})=>{
+ const errors=await setup(page,{gp:500});
+ await expect(page.locator('#balance')).toHaveText('500 GP');
+ await expect(page.locator('#boss-details [data-act="purchase"]')).toBeDisabled();
+ await expect(page.locator('#gp-delta-inline')).toBeHidden();
+ expect(errors).toEqual([]);
+});
