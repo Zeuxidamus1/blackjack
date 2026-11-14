@@ -3,17 +3,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#100d19">
-<title>Gielinor Rips</title>
+<title>Challenger Rips</title>
 <style>
 :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#100d19;color:#fff;--muted:#b7afca;--panel:#20192d;--line:#3d304e;--accent:#c6a4ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 55% 9%,#291844,transparent 52%) fixed;min-height:100vh}button{font:inherit;cursor:pointer;color:inherit}button:disabled{cursor:default;opacity:.55}button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 header{position:sticky;top:0;z-index:2;background:#100d19ed;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.bar,main,footer{max-width:1100px;margin:auto;padding:16px 24px}.bar{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950;letter-spacing:-.06em;font-size:1.5rem}.brand span,.accent{color:var(--accent)}.balance{font-weight:800;border:1px solid var(--line);padding:8px 12px;border-radius:999px;white-space:nowrap}.hero{padding:40px 0 24px;display:flex;justify-content:space-between;align-items:end;gap:18px;flex-wrap:wrap}h1,h2,h3,p{margin:0}h1{font-size:clamp(2.5rem,8vw,5rem);letter-spacing:-.085em;line-height:1}h2{letter-spacing:-.03em}p,.muted,footer{color:var(--muted)}.hero p{margin-top:12px}.tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);margin-bottom:18px}.tabs button,.quiet{background:none;border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-weight:750}.tabs button{border:0;border-radius:0;border-bottom:3px solid transparent;color:var(--muted)}.tabs button[aria-current=page]{border-color:var(--accent);color:white}.primary{border:0;border-radius:10px;background:#c4a0ff;color:#1c102d;padding:11px 15px;font-weight:900}.primary:hover:not(:disabled){background:#dfc9ff}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.tile,.item,.empty{padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px}.art{height:220px;border-radius:12px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 55%,var(--glow),transparent 70%),repeating-linear-gradient(135deg,#ffffff08 0 1px,transparent 1px 14px),#151020}.pack{width:119px;height:164px;display:grid;align-content:center;justify-items:center;gap:9px;transform:rotate(-8deg);color:#fff;border:2px solid #ffffff91;border-radius:7px;background:linear-gradient(145deg,#ffffff55,transparent 45%,#0008),var(--glow);box-shadow:0 16px 32px #0009,inset 0 6px #ffffff55,inset 0 -6px #0005;position:relative;text-align:center;font-size:.7rem;font-weight:950;letter-spacing:.09em;text-shadow:0 2px 5px #000}.pack::before{content:"";position:absolute;inset:13px 7px;border:1px solid #ffffff70;border-radius:5px}.symbol{font-size:3.25rem;line-height:1.2}.tile h2{margin-top:12px}.tile p{margin:5px 0 13px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button:first-child{flex:1}.item{display:grid;gap:7px;align-content:start}.item .symbol{background:#130f1d;border-radius:10px;padding:9px;text-align:center}.rare{color:var(--rarity,var(--accent));font-weight:800}.section{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 15px}.empty{margin-bottom:12px}footer{font-size:.85rem;margin-top:20px}dialog{border:1px solid var(--line);border-radius:18px;background:#20192e;color:white;width:min(450px,calc(100% - 28px));padding:20px;max-height:90dvh}dialog::backdrop{background:#090610db}.odds{list-style:none;padding:0}.odds li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:9px 0}.reveal{text-align:center}.reveal .art{height:240px;margin:12px 0}.reveal .item{min-height:240px;margin:12px 0;align-content:center;animation:land .38s ease-out;border-color:var(--rarity);box-shadow:inset 0 0 35px color-mix(in srgb,var(--rarity),transparent 85%)}.shake{animation:shake .58s ease-in-out both}@keyframes shake{35%{transform:rotate(12deg) scale(1.1)}70%{transform:rotate(-15deg) scale(1.2)}100%{transform:scale(.85);opacity:.1}}@keyframes land{from{transform:translateY(10px) scale(.94);opacity:.3}}#status:empty{display:none}#status{margin:0 0 12px;color:var(--accent)}input,select{max-width:100%;padding:8px;border-radius:8px;background:var(--panel);color:white;border:1px solid var(--line)}[hidden]{display:none!important}@media(max-width:740px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bar,main,footer{padding-inline:16px}.tabs button{padding-inline:9px}}@media(max-width:465px){#shop{grid-template-columns:1fr}.art{height:176px}.hero{padding-top:24px}.item{padding:10px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important}}
+[hidden]{display:none!important}
+body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,#344281,#0b0e18 68%)}
+#login-screen{min-height:100svh;display:grid;place-items:center;padding:24px}
+.login-card{width:min(100%,420px);padding:32px;background:#131a30;border:1px solid #526398;border-radius:18px;box-shadow:0 24px 80px #0007}
+.login-card h1{font-size:clamp(2rem,8vw,3rem);letter-spacing:-.06em;margin:0 0 24px}
+.login-card label{display:block;margin:12px 0}
+.login-card input{display:block;width:100%;margin-top:6px}
+.login-card .primary{width:100%;background:#adbcff;color:#101830}
+#auth-mode{margin-top:12px}
 </style>
-<header><div class="bar"><div class="brand">GIELINOR<span> RIPS</span></div><div class="balance" id="balance"></div></div></header>
+<section id="login-screen"><div class="login-card">
+<h1>Challenger Rips</h1><form id="auth" method="post">
+<label>Username<input name="username" autocomplete="username" pattern="[A-Za-z0-9_]{3,24}" title="3 to 24 letters, digits, or underscores" required></label>
+<label id="signup-email" hidden>Email<input name="email" type="email" autocomplete="email" disabled></label>
+<label>Password<input name="password" type="password" autocomplete="current-password" maxlength="1024" required></label>
+<button id="auth-submit" class="primary" name="mode" value="login">Sign in</button>
+</form><button id="auth-mode" type="button" class="quiet">Create account</button>
+<p id="status" role="status"></p></div></section>
+<div id="storefront" hidden><header><div class="bar"><div class="brand">GIELINOR<span> RIPS</span></div><div class="balance" id="balance"></div></div></header>
 <main>
 <section class="hero"><div><h1>Rip. Collect. <span class="accent">Flex.</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><button class="primary" id="daily">Claim daily GP</button></section>
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="market">Market</button><button data-view="showcase">Showcase</button></nav>
-<p id="status" role="status"></p>
+<div id="game-status"></div>
 <section id="account" class="empty"></section>
 <section id="inventory" hidden><div class="section"><h2>Your inventory</h2></div><div class="grid" id="owned"></div></section>
 <section id="market" hidden><div class="section"><h2>Player market</h2><button class="quiet" id="refresh">Refresh listings</button></div><p class="empty">Players set prices. A 2% tax comes out of each sale.</p><div class="grid" id="listings"></div></section>
@@ -22,7 +39,7 @@ header{position:sticky;top:0;z-index:2;background:#100d19ed;border-bottom:1px so
 <section id="showcase" hidden><div class="section"><h2>Your showcase</h2><button id="share" class="primary">Copy showcase link</button></div><p class="empty" id="shareHint">Pin up to five items from your inventory.</p><div class="grid" id="pins"></div></section>
 <section id="shared" hidden><div class="section"><h2>Shared showcase</h2></div><p class="empty">Current shelf shared by another player.</p><div class="grid" id="sharedItems"></div></section>
 </main>
-<footer>Free fan game. Drops are game collectibles only. Odds are specific to Gielinor Rips. Multiplayer beta · 500M starter GP · Daily reset at midnight UTC.</footer>
+<footer>Free fan game. Drops are game collectibles only. Odds are specific to Gielinor Rips. Multiplayer beta · 500M starter GP · Daily reset at midnight UTC.</footer></div>
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.js"></script>
 <script>
@@ -71,13 +88,14 @@ function button(label,action,id='',primary=false,disabled=false) {
 }
 const empty = msg => '<p class="empty">'+msg+'</p>';
 function render() {
+  el('login-screen').hidden=Boolean(session);
+  el('storefront').hidden=!session;
+  (session ? el('game-status') : el('auth-mode').parentElement).append(el('status'));
   const ready=Boolean(state && !state.needsProfile);
   el('balance').textContent=ready?price(state.gp):'Gielinor GP';
   el('daily').disabled=!ready||!state.daily;
   el('daily').textContent=ready&&!state.daily?'Daily GP claimed':'Claim 2M daily GP';
-  el('account').innerHTML=!session?
-    '<form id="auth"><h2>Join the market</h2><div class="actions"><input aria-label="Email" name="email" type="email" placeholder="Email" required><input aria-label="Password" name="password" type="password" placeholder="Password (6+ characters)" required minlength="6"><button class="primary" name="mode" value="login">Sign in</button><button class="quiet" name="mode" value="signup">Create account</button></div></form>':
-    !ready?'<form id="profile"><h2>Create your player</h2><div class="actions"><input name="name" aria-label="Display name" placeholder="Display name" required minlength="2" maxlength="24"><button class="primary">Join with 500M GP</button>'+button('Sign out','logout')+'</div></form>':
+  el('account').innerHTML=!ready?'<form id="profile"><h2>Create your player</h2><div class="actions"><input name="name" aria-label="Display name" placeholder="Display name" required minlength="2" maxlength="24"><button class="primary">Join with 500M GP</button>'+button('Sign out','logout')+'</div></form>':
     '<div class="section"><strong>'+safe(state.name)+'</strong>'+button('Sign out','logout')+'</div>';
   for(const id of ['shop','collection','inventory','market','showcase','shared']) el(id).hidden=id!==view;
   document.querySelectorAll('[data-view]').forEach(b=>b.dataset.view===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
@@ -135,17 +153,45 @@ async function openPack(pack) {
 for(const pack of packs) el('filter').add(new Option(pack.name,pack.id));
 el('filter').onchange=render;
 modal.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
+el('auth-mode').onclick=()=>{
+  const submit=el('auth-submit');
+  const signup=submit.value==='login';
+  submit.value=signup?'signup':'login';
+  submit.textContent=signup?'Create account':'Sign in';
+  el('auth-mode').textContent=signup?'Back to sign in':'Create account';
+  el('signup-email').hidden=!signup;
+  const form=el('auth');
+  form.elements.email.disabled=!signup;
+  form.elements.email.required=signup;
+  form.elements.password.autocomplete=signup?'new-password':'current-password';
+  notice();
+};
 document.addEventListener('submit',event=>{
   event.preventDefault();
   const data=new FormData(event.target);
   if(event.target.id==='auth') run(async()=>{
-    const signup=event.submitter?.value==='signup';
-    const credentials={email:data.get('email'),password:data.get('password')};
-    const result=signup?await db.auth.signUp({...credentials,options:{emailRedirectTo:new URL(location.pathname,location.origin).href}}):await db.auth.signInWithPassword(credentials);
-    if(result.error) throw result.error;
-    session=result.data.session;
+    const signup=el('auth-submit').value==='signup';
+    const username=String(data.get('username')).trim().toLowerCase();
+    const password=String(data.get('password'));
+    if(signup){
+      const email=String(data.get('email')).trim();
+      if(!email) throw new Error('Enter an email to create an account.');
+      const {data:account,error}=await db.auth.signUp({email,password,options:{data:{username},emailRedirectTo:new URL(location.pathname,location.origin).href}});
+      if(error) throw error;
+      session=account.session;
+    }else{
+      const {data:tokens,error}=await db.functions.invoke('challenger-login',{body:{username,password}});
+      if(error){
+        if(error.context?.status===401) throw new Error('Incorrect username or password, or email confirmation is pending.');
+        throw new Error('Sign-in is temporarily unavailable.');
+      }
+      const result=await db.auth.setSession({access_token:tokens.access_token,refresh_token:tokens.refresh_token});
+      if(result.error) throw result.error;
+      session=result.data.session;
+    }
+    event.target.reset();
     await load();
-    if(signup&&!session) notice('Check your email to confirm your account, then sign in.');
+    if(signup&&!session) { el('auth-mode').click(); notice('Check your email to confirm your account, then sign in.'); }
   });
   if(event.target.id==='profile') run(async()=>{await rpc('join',{name:data.get('name')});await load();});
   if(event.target.id==='listForm') run(async()=>{
