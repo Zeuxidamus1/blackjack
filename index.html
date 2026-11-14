@@ -298,7 +298,7 @@ function renderBossDetails() {
    '<div class="boss-metrics"><div><small>Minimum pull</small><strong>'+(minimum===null?'Unavailable':price(minimum))+'</strong></div>'+
    '<div><small>Max pull</small><strong>'+(maximum===null?'Unavailable':price(maximum))+'</strong></div>'+
    '<div><small>Pack price</small><strong>'+price(entry.price)+'</strong></div></div>'+
-   '<div class="boss-qty"><span>Open</span>'+[1,2,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
+   '<div class="boss-qty"><span>Open</span>'+[1,2,3,4,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
    button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty||Boolean(batch))+
    (batch?'<p class="boss-warning">Finish your previous opening before purchasing another pack.</p>':'<p class="boss-warning">Digital GP only · Actual reward probabilities are shown before purchase.</p>');
  const buy=el('boss-details').querySelector('[data-act="purchase"]');if(buy)buy.classList.add('boss-open');
