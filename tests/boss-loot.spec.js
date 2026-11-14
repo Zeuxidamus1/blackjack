@@ -23,7 +23,7 @@ const mockCatalog=weights.map((weight,index)=>({
  ge:1155+index,guide:(index+1)*1000,guideTime:new Date().toISOString(),
  found:3,circulation:5,salvage:0
 }));
-async function setup(page,gp=1000000000,{large=false}={}){
+async function setup(page,gp=1000000000,{large=false,pulls={}}={}){
  const catalogForTest=large?Array.from({length:49},(_,i)=>({
   id:'pool_item_'+i,pack:'boss',name:i===48?'Twisted bow':'OSRS Item '+i,
   ge:i===48?20997:1100+i,
@@ -45,12 +45,12 @@ async function setup(page,gp=1000000000,{large=false}={}){
  await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
  await page.route('https://prices.runescape.wiki/**',r=>r.fulfill({status:200,contentType:'application/json',body:'{"data":{}}'}));
  await page.route('https://static.runelite.net/**',r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WpJwA8AAAAASUVORK5CYII=','base64')}));
- await page.addInitScript(({catalog,cases,gp})=>{
+ await page.addInitScript(({catalog,cases,gp,pulls})=>{
    window.supabase={createClient:()=>({
      auth:{getSession:async()=>({data:{session:{access_token:'mock'}}}),signOut:async()=>({})},
      functions:{invoke:async()=>({data:{status:'fresh'}})},
      rpc:async(_name,{action,payload}={})=>{
-       const state={id:'test',name:'Playwright',gp,items:[],market:[],pulls:{},
+       const state={id:'test',name:'Playwright',gp,items:[],market:[],pulls,
          nextDailyAt:new Date(Date.now()+86400000).toISOString(),serverTime:new Date().toISOString()};
        const values={
          catalog,cases,state,case_batch:null,
@@ -60,7 +60,7 @@ async function setup(page,gp=1000000000,{large=false}={}){
        return {data:values[action]??{},error:null};
      }
    })};
- },{catalog:catalogForTest,cases:casesForTest,gp});
+ },{catalog:catalogForTest,cases:casesForTest,gp,pulls});
  await page.goto('/');
  await expect(page.locator('.boss-carousel')).toBeVisible();
  await expect(page.locator('.boss-slide')).toHaveCount(10);
@@ -144,5 +144,37 @@ test('49-item preview shows item-specific odds without profit summary boxes',asy
  await expect(page.locator('dialog')).toContainText('Grails / Ultra-Rare Jackpots');
  const smallest=await page.locator('.inside-item-details').first().textContent();
  expect(smallest).toContain('200 GP');
+ expect(errors).toEqual([]);
+});
+
+
+test('Collection Log renders real OSRS icons only for unlocked personally pulled items',async({page})=>{
+ const errors=await setup(page,1000000000,{pulls:{boss_0:{count:2},boss_1:{count:1}}});
+ await page.getByRole('button',{name:'Collection log'}).click();
+ await expect(page.locator('#items .collection-unlocked')).toHaveCount(2);
+ await expect(page.locator('#items .collection-locked')).toHaveCount(8);
+ await expect(page.locator('#progress')).toContainText('2 / 10 personally pulled');
+ const unlocked=page.locator('#items .collection-unlocked');
+ await expect(unlocked.nth(0).locator('img.collection-item-icon')).toHaveAttribute(
+   'src','https://static.runelite.net/cache/item/icon/1155.png');
+ await expect(unlocked.nth(1).locator('img.collection-item-icon')).toHaveAttribute(
+   'src','https://static.runelite.net/cache/item/icon/1156.png');
+ await expect(unlocked.nth(0)).toContainText('×2');
+ await expect(page.locator('#items .collection-locked img')).toHaveCount(0);
+ await expect(page.locator('#items .collection-locked .symbol').first()).toContainText('🔒');
+ await page.reload();
+ await page.getByRole('button',{name:'Collection log'}).click();
+ await expect(page.locator('#items .collection-unlocked img')).toHaveCount(2);
+ expect(errors).toEqual([]);
+});
+
+test('Collection Log falls back gracefully if an unlocked OSRS item icon fails to load',async({page})=>{
+ const errors=await setup(page,1000000000,{pulls:{boss_0:{count:1}}});
+ await page.route('https://static.runelite.net/cache/item/icon/1155.png',r=>r.abort());
+ await page.getByRole('button',{name:'Collection log'}).click();
+ const unlocked=page.locator('#items .collection-unlocked').first();
+ await expect(unlocked.locator('.collection-item-icon')).toBeHidden();
+ await expect(unlocked.locator('.collection-icon-fallback')).toBeVisible();
+ await expect(unlocked).toContainText('OSRS Item 0');
  expect(errors).toEqual([]);
 });
