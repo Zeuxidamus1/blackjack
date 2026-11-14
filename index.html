@@ -26,6 +26,15 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .reveal-controls{margin-top:12px}
 #swipe-reveal{display:none;touch-action:none}
 @media(pointer:coarse){#swipe-reveal{display:inline-block}}
+.pack-carousel{scrollbar-width:none;cursor:grab;user-select:none}
+.pack-carousel::-webkit-scrollbar{display:none}
+.pack-carousel.dragging{cursor:grabbing;scroll-snap-type:none}
+.reward-select{display:block;text-align:left;background:none;padding:0;border:0}
+.case-summary{color:var(--muted);line-height:1.45;margin:.4rem 0 1rem}
+.case-buy{padding:12px;background:#151020;border-radius:12px;margin-bottom:16px}
+.case-buy button{min-width:40px}
+.odds li{gap:12px;padding:10px 0}
+.odds li>strong{white-space:nowrap}
 </style>
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><form id="auth" method="post">
@@ -218,15 +227,15 @@ function showCase(){
   const cap=Math.min(5,Math.floor(state.gp/entry.price));
   quantity=Math.min(quantity,Math.max(cap,1));
   showModal('<h2 id="modalTitle">'+safe(entry.name)+' case · '+price(entry.price)+'</h2>'+
-    '<p>Typical estimated item value: '+price(Math.min(...normal))+' to '+price(Math.max(...normal))+
-    ' · Average estimate including chase: '+price(Math.round(expected))+'</p>'+
-    '<div class="actions">'+[1,2,3,4,5].map(n=>button(String(n),'quantity',String(n),n===quantity,n>cap)).join('')+
+    '<p class="case-summary">Typical value: '+price(Math.min(...normal))+' to '+price(Math.max(...normal))+
+    '<br>Average including chase: '+price(Math.round(expected))+'</p>'+
+    '<div class="actions case-buy">'+[1,2,3,4,5].map(n=>button(String(n),'quantity',String(n),n===quantity,n>cap)).join('')+
     button('Buy '+quantity+' · '+price(entry.price*quantity),'purchase','',true,!cap||Boolean(batch))+
     (batch?button('Resume opening','resume'):'')+button('Close','close')+'</div>'+
     '<ul class="odds">'+[...entry.rewards].sort((a,b)=>b.weight-a.weight||estimate(catalog.get(a.id))-estimate(catalog.get(b.id))||a.id.localeCompare(b.id)).map(reward=>{
       const item=catalog.get(reward.id);
       return '<li><div><strong>'+safe(item.name)+(reward.chase?' · Ultra-rare chase':'')+'</strong><br><small>'+
-        safe(guideValue(item))+'<br>Total found: '+item.found.toLocaleString()+' · In circulation: '+item.circulation.toLocaleString()+
+        safe(guideValue(item))+'<br>Found: '+item.found.toLocaleString()+' · In circulation: '+item.circulation.toLocaleString()+
         '</small></div><strong>'+(reward.weight/10000)+'%</strong></li>';
     }).join('')+'</ul>');
 }
@@ -235,13 +244,41 @@ function showBatch(current){
   const remaining=current.rewards.some(r=>!r.item);
   showModal('<h2 id="modalTitle">'+safe(entry.name)+' case</h2><div class="pack-carousel" aria-label="Purchased packs">'+
     current.rewards.map(reward=>'<div class="pack-slide" data-slot="'+reward.slot+'">'+(reward.item?
-      card(catalog.get(reward.item),guideValue(catalog.get(reward.item))):
+      '<button type="button" class="reward-select" data-act="select-slot" data-id="'+reward.slot+'">'+card(catalog.get(reward.item),guideValue(catalog.get(reward.item)))+'</button>':
       '<button class="sealed-pack" data-act="reveal-slot" data-id="'+reward.slot+'" aria-label="Open pack '+reward.slot+'">'+packArt(caseArt(entry))+'</button>')+'</div>').join('')+
     '</div><div class="actions reveal-controls">'+button('← Previous','previous')+button('Next →','next')+
     (remaining?button('Open all','reveal-all','',true)+'<button type="button" id="swipe-reveal" data-act="reveal-all">Swipe up to open all</button>':'')+
     button(remaining?'Finish later':'Done','close')+'</div>');
   const carousel=modal.querySelector('.pack-carousel');
   moveCarousel(activeSlot,false);
+  let drag, suppressClick=false;
+  carousel.addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='mouse'||event.button!==0) return;
+    suppressClick=false;
+    drag={x:event.clientX,left:carousel.scrollLeft};
+  });
+  carousel.addEventListener('pointermove',event=>{
+    if(!drag||!event.buttons) return;
+    const delta=event.clientX-drag.x;
+    if(Math.abs(delta)<6&&!suppressClick) return;
+    if(!suppressClick) carousel.setPointerCapture(event.pointerId);
+    suppressClick=true;
+    carousel.classList.add('dragging');
+    carousel.scrollLeft=drag.left-delta;
+  });
+  const finishDrag=()=>{
+    drag=null;
+    carousel.classList.remove('dragging');
+    if(suppressClick) moveCarousel(activeSlot);
+  };
+  carousel.addEventListener('pointerup',finishDrag);
+  carousel.addEventListener('pointercancel',finishDrag);
+  carousel.addEventListener('click',event=>{
+    if(!suppressClick) return;
+    suppressClick=false;
+    event.stopPropagation();
+    event.preventDefault();
+  },true);
   carousel.onscroll=()=>{
     const center=carousel.getBoundingClientRect().left+carousel.clientWidth/2;
     activeSlot=[...carousel.children].reduce((closest,slide)=>{
@@ -323,7 +360,7 @@ document.addEventListener('submit',event=>{
     if(signup&&!session) { el('auth-mode').click(); notice('Check your email to confirm your account, then sign in.'); }
   });
   if(event.target.id==='listForm') run(async()=>{
-    await rpc('list',{id:data.get('id'),price:Number(data.get('price'))});
+    await rpc('list',{id:data.get('id'),price:1000});
     modal.close();await load();notice('Listing posted.');
   });
 });
@@ -339,13 +376,14 @@ document.addEventListener('click',event=>{
   if(act==='quantity'){quantity=Number(id);showCase();return;}
   if(act==='purchase'){run(purchase);return;}
   if(act==='resume'){activeSlot=1;showBatch(batch);return;}
+  if(act==='select-slot'){activeSlot=Number(id);moveCarousel(activeSlot);return;}
   if(act==='previous'||act==='next'){moveCarousel(activeSlot+(act==='next'?1:-1));return;}
   if(act==='reveal-all'||act==='reveal-slot'){
-    if(act==='reveal-slot') activeSlot=Number(id);
+    if(act==='reveal-slot'&&activeSlot!==Number(id)){activeSlot=Number(id);moveCarousel(activeSlot);return;}
     run(()=>reveal(act==='reveal-slot'?Number(id):null));return;
   }
   if(act==='list') {
-    showModal('<h2 id="modalTitle">List item for sale</h2><form id="listForm"><input type="hidden" name="id" value="'+id+'"><label>Asking price in GP <input name="price" type="number" min="1000" max="1000000000" step="1" required></label><div class="actions"><button class="primary">Post listing</button>'+button('Cancel','close')+'</div></form>');
+    showModal('<h2 id="modalTitle">List item for sale</h2><form id="listForm"><input type="hidden" name="id" value="'+id+'"><p>Listings use the server’s current guide price.</p><div class="actions"><button class="primary">Post listing</button>'+button('Cancel','close')+'</div></form>');
     return;
   }
   if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;await load();});
