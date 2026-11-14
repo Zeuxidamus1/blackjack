@@ -1,7 +1,11 @@
 # Gielinor Rips
 
-A free Old School RuneScape fan game. Open Boss Loot, Clue Casket, and Pet Hunt packs, fill your collection log, and share a snapshot of five pinned pulls. Drop odds are displayed for each pack and are specific to this game.
+A free Old School RuneScape fan game with shared GP wallets, pack drops, a player market, and showcase shelves.
 
-Start with six packs, claim three packs per local calendar day, and earn two bonus packs for every three new discoveries. Progress is stored in the current browser. Showcase links contain a self-contained snapshot and do not verify a player's account or drops.
+The multiplayer beta starts each account with 500M GP. Boss Loot costs 1M GP, and Clue Casket and Pet Hunt cost 5M GP. Players can claim 2M GP per UTC day, earn 2M GP for every three new personal discoveries, and salvage eligible duplicates. Listing prices are player-set. Sales transfer ownership and carry a 2% seller tax. Guide prices are estimates.
 
-Open `index.html` in a modern browser or deploy the repository root through GitHub Pages. There are no payments, cash-outs, or links to RuneScape accounts.
+The collection log tracks personal pulls. The shelf displays up to five currently owned items, including purchases. Shelf links show the current shelf to signed-in players.
+
+GitHub Pages hosts the UI. Supabase Auth and the migration in `supabase/economy.sql` back accounts and economy operations. The browser uses a publishable key. Previous browser-only collections do not carry over to the shared market.
+
+No real-money purchases, cash-out, or links to RuneScape accounts.
