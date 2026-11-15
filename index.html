@@ -674,11 +674,12 @@ async function refreshPrices(){
 }
 function collectionGuideValue(item){
   if(!item)return 'GE guide unavailable';
-  if(!item.ge)return Number(item.guide)>0?'Custom guide · '+price(item.guide):'Value unavailable';
+  if(!item.ge)return Number(item.guide)>0?
+    (item.pack==='pets'?'Pet Hunt value · ':'Custom guide · ')+price(item.guide):'Value unavailable';
   return Number(item.guide)>0?'GE guide · '+price(item.guide):'GE guide unavailable';
 }
 function guideValue(item){
-  if(!item.ge) return 'Custom guide · '+price(item.guide);
+  if(!item.ge) return (item.pack==='pets'?'Pet Hunt value · ':'Custom guide · ')+price(item.guide);
   const last=Date.parse(item.guideTime);
   if(!item.guide || !Number.isFinite(last)) return 'GE guide unavailable';
   const stale=Date.now()-last>24*60*60*1000;
@@ -1007,7 +1008,7 @@ function showInside() {
  ];
  const vals=rows.map(x=>estimate(x.item));
  const note=entry.pack==='pets'?
-   '<p class="inside-custom-note">Pet rewards use configured in-game guide values rather than live Grand Exchange quotes.</p>':'';
+   '<p class="inside-custom-note">Nontradeable pets use server-assigned GP values. Tradable items use current Grand Exchange guides. Rarer pets have higher values and lower drop chances.</p>':'';
  modal.classList.add('boss-inside');
  showModal('<div class="inside-head">'+foilArt(entry)+'<div><span class="boss-tag">'+safe(brand.toUpperCase())+'</span>'+
    '<h2 id="modalTitle">'+safe(entry.name)+'</h2><p>Every possible reward and its actual chance.</p></div>'+
@@ -1024,6 +1025,7 @@ function showInside() {
          '<span class="inside-art-fallback" aria-hidden="true">'+safe(artworkFallback(item))+'</span>')+
        '</div>'+
        '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
+       (entry.pack==='pets'?'<small>Rarity · '+safe(item.tier)+'</small>':'')+
        '<small>Drop chance · '+pct(r.weight,total)+'</small>'+ (r.chase?'<small class="inside-jackpot">Ultra-rare jackpot</small>':'')+
        '<small>'+safe(guideValue(item))+'</small></div></article>'
      ).join('')+'</div></section>').join('')+'</div>');
