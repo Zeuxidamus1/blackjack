@@ -341,6 +341,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 </style>
 <link rel="stylesheet" href="./reveal.css?v=4">
 <link rel="stylesheet" href="./wallet-feedback.css?v=2">
+<link rel="stylesheet" href="./motion.css?v=1">
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><button id="pwa-install-login" class="pwa-install-button" type="button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install as app</span></button><form id="auth" method="post">
 <label>Username<input name="username" autocomplete="username" pattern="[A-Za-z0-9_]{3,24}" title="3 to 24 letters, digits, or underscores" required></label>
@@ -531,7 +532,15 @@ function renderBossDetails() {
    '<div class="boss-qty"><span>Open</span>'+[1,2,3,4,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
    button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty||Boolean(batch))+
    (batch?'<p class="boss-warning">Finish your previous opening before purchasing another pack.</p>':'');
- const buy=el('boss-details').querySelector('[data-act="purchase"]');if(buy)buy.classList.add('boss-open');
+ const details=el('boss-details');
+ const previousCase=details.dataset.motionCase;
+ details.dataset.motionCase=entry.id;
+ if(previousCase&&previousCase!==entry.id&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+   details.getAnimations().forEach(a=>a.cancel());
+   details.animate([{opacity:.62,transform:'translate3d(0,8px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
+     {duration:350,easing:'cubic-bezier(.22,1,.36,1)'});
+ }
+ const buy=details.querySelector('[data-act="purchase"]');if(buy)buy.classList.add('boss-open');
  document.querySelectorAll('.boss-slide').forEach((slide,i)=>slide.classList.toggle('is-active',i===bossIndex));
 }
 function renderBossShop(resume) {
@@ -710,6 +719,8 @@ function renderInventory(){
         '</article>');
   }).join('')||empty('Open a pack to fill your inventory.');
 }
+// Transition only when switching screens/categories, not during normal state redraws.
+let lastScreenKey=null;
 function render() {
   el('login-screen').hidden=Boolean(session);
   el('storefront').hidden=!session;
@@ -764,6 +775,18 @@ function render() {
   if(view==='shared') el('sharedItems').innerHTML=shared?
     '<h3>'+safe(shared.name)+'</h3>'+(shared.items.map(i=>card(catalog.get(i.item),i.pulled?'Personally pulled':'Bought on the market')).join('')||empty('This shelf is empty.')):
     empty('Sign in to view this showcase.');
+  const screenKey=session ? view+'|'+(view==='shop'?(category||'categories'):'') : 'login';
+  if(screenKey!==lastScreenKey){
+    lastScreenKey=screenKey;
+    if(session){
+      const panel=el(view);
+      if(panel&&!panel.hidden){
+        panel.classList.remove('cr-screen-enter');
+        void panel.offsetWidth;
+        panel.classList.add('cr-screen-enter');
+      }
+    }
+  }
 }
 function showModal(html) {
   modal.innerHTML=html;
