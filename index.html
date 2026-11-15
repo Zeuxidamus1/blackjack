@@ -403,6 +403,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <section id="collection" hidden>
   <div class="section collection-heading"><h2 id="progress"></h2></div>
   <div id="collection-progress"></div>
+  <div id="collection-milestones"></div>
   <div class="collection-controls" role="group" aria-label="Collection Log filters">
     <label for="filter">Pack
       <select id="filter"><option value="all">All packs</option></select>
@@ -539,7 +540,13 @@ async function loadEconomy(){
   }finally{
     economyLoading=false;
     if(view==='earn')renderEarn();
+    else if(view==='collection')renderCollectionMilestones();
   }
+}
+function renderCollectionMilestones(){
+  el('collection-milestones').innerHTML=window.ChallengerEconomy?.renderMilestones(
+    economyStatus,packs,el('filter').value,economyError)||'';
+  if(session&&state&&!economyStatus&&!economyLoading&&!economyError)void loadEconomy();
 }
 function renderEarn(){
   const root=el('earn-dashboard');
@@ -818,6 +825,7 @@ function render() {
     el('collection-progress').innerHTML=window.ChallengerProgression?.render({
       catalog:progressCatalog,pulls,packs,selectedPack:el('filter').value
     })||'';
+    renderCollectionMilestones();
     const pack=el('filter').value;
     const status=el('collection-status').value;
     const sort=el('collection-sort').value;
@@ -1127,14 +1135,11 @@ document.addEventListener('click',event=>{
     view=b.dataset.view;notice();render();return;
   }
   const {act,id}=b.dataset;
-  if(act==='earn-pack-tab'){
-    if(window.ChallengerEconomy?.choosePack(id,economyStatus,packs))renderEarn();
-    return;
-  }
   if(act==='earn-refresh'){
     economyError=false;
     economyStatus=null;
-    renderEarn();
+    if(view==='collection')renderCollectionMilestones();
+    else renderEarn();
     return;
   }
   if(act==='earn-daily'||act==='earn-recover'||act==='earn-milestone'){
