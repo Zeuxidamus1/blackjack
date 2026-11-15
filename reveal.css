@@ -41,15 +41,14 @@ body.cr-reveal-active{overflow:hidden!important}
 .cr-rip-reverse .cr-rip-seam::after{transform-origin:right center}
 .cr-rip-light{
   position:absolute;z-index:6;top:calc(var(--cr-seal-y) - 14px);
-  left:calc(2% + var(--cr-rip-progress,0)*96%);
+  left:var(--cr-rip-light-x,2%);
   width:16px;height:31px;opacity:0;transform:translate3d(-50%,0,0);
   background:radial-gradient(ellipse at center,#ffffff 0%,#d5ffff 16%,#8ffaf2a8 38%,transparent 74%);
   filter:drop-shadow(0 0 7px #9afff8) drop-shadow(0 0 13px #5ffff2);
   will-change:left,opacity;
 }
-.cr-rip-reverse .cr-rip-light{left:calc(98% - var(--cr-rip-progress,0)*96%)}
 .cr-rip-dragging .cr-rip-light{opacity:1}
-.cr-rip-progress .cr-rip-flap{transform:translate3d(0,calc(var(--cr-rip-progress,0)*-4px),0) rotate(calc(var(--cr-rip-progress,0)*-1.3deg))}
+.cr-rip-progress .cr-rip-flap{transform:translate3d(0,var(--cr-rip-lift,0px),0) rotate(-1deg)}
 .cr-rip-progress .cr-rip-seam{box-shadow:0 0 15px #a3fff59c}
 .cr-rip-flare{
   position:absolute;z-index:1;left:0;right:0;top:0;height:38%;opacity:0;
