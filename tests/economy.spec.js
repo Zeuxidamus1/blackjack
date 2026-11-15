@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 
 const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WpJwA8AAAAASUVORK5CYII=','base64');
-async function setup(page,{gp=0,daily=false,pending=false,readyCollection=true}={}){
+async function setup(page,{gp=0,daily=false,pending=false,readyCollection=true,startView='earn'}={}){
   await page.setViewportSize({width:375,height:812});
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
@@ -54,8 +54,12 @@ async function setup(page,{gp=0,daily=false,pending=false,readyCollection=true}=
   },{gp,daily,pending,readyCollection});
   await page.goto('/');
   await page.locator('#games .game-card').click();
-  await page.getByRole('button',{name:'Earn GP'}).click();
-  await expect(page.locator('.earn-dashboard .earn-milestone')).toHaveCount(1);
+  await page.locator('[data-view="'+startView+'"]').click();
+  if(startView==='collection')await expect(page.locator('#collection-milestones [data-act="earn-milestone"]')).toHaveCount(1);
+  else{
+    await expect(page.locator('.earn-quick')).toHaveCount(2);
+    await expect(page.locator('#earn .earn-milestone')).toHaveCount(0);
+  }
   return errors;
 }
 
@@ -64,19 +68,21 @@ test('low GP recovery and milestone bonuses are independently claimable once',as
   await expect(page.locator('#balance')).toHaveText('0 GP');
   await expect(page.locator('[data-act="earn-daily"]')).toBeDisabled();
   await expect(page.locator('[data-act="earn-recover"]')).toBeEnabled();
-  await expect(page.locator('[data-act="earn-milestone"]')).toBeEnabled();
+  await expect(page.locator('#earn [data-act="earn-milestone"]')).toHaveCount(0);
   await page.locator('[data-act="earn-recover"]').click();
   await expect(page.locator('#balance')).toHaveText('5,000 GP');
   await expect(page.locator('[data-act="earn-recover"]')).toBeDisabled();
   await expect(page.locator('[data-act="earn-recover"]')).toHaveText('Claimed');
   await expect(page.locator('[data-countdown="recovery"]')).toContainText('Next available claim in');
   await expect(page.locator('[data-countdown="recovery"] strong')).toContainText(/^23:59:/);
-  await expect(page.locator('[data-act="earn-milestone"]')).toBeEnabled();
-  await page.locator('[data-act="earn-milestone"]').click();
+  await page.locator('[data-view="collection"]').click();
+  const milestone=page.locator('#collection-milestones [data-act="earn-milestone"]');
+  await expect(milestone).toBeEnabled();
+  await milestone.click();
   await expect(page.locator('#balance')).toHaveText('7,000 GP');
-  await expect(page.locator('[data-act="earn-milestone"]')).toHaveCount(0);
-  await expect(page.locator('.earn-milestone-empty')).toContainText('All GP milestones claimed');
-  await expect(page.locator('.earn-pack-tab[data-id="boss"] .earn-pack-count')).toHaveText('0');
+  await expect(page.locator('#collection-milestones [data-act="earn-milestone"]')).toHaveCount(0);
+  await expect(page.locator('#collection-milestones .collection-rewards-complete').first()).toContainText('All rewards claimed');
+  await expect(page.locator('#collection .collection-goal')).toHaveCount(3);
   const calls=await page.evaluate(()=>window.__economyCalls);
   expect(calls.filter(a=>a==='economy_recover')).toHaveLength(1);
   expect(calls.filter(a=>a==='economy_claim')).toHaveLength(1);
@@ -87,7 +93,7 @@ test('50K daily claim remains independent of recovery and shows a confirmed cred
   const errors=await setup(page,{gp:2000,daily:true,readyCollection:false});
   await expect(page.locator('[data-act="earn-daily"]')).toBeEnabled();
   await expect(page.locator('[data-act="earn-recover"]')).toBeDisabled();
-  await expect(page.locator('[data-act="earn-milestone"]')).toBeDisabled();
+  await expect(page.locator('#earn [data-act="earn-milestone"]')).toHaveCount(0);
   await page.locator('[data-act="earn-daily"]').click();
   await expect(page.locator('#balance')).toHaveText('52,000 GP');
   await expect(page.locator('[data-act="earn-daily"]')).toBeDisabled();
@@ -122,13 +128,19 @@ test('Earn GP is responsive at narrow phone widths and does not change pack scre
   await expect(page.locator('.earn-quick-title').last()).toHaveText('Bonus GP');
   await expect(page.locator('.earn-dashboard')).not.toContainText('Low-balance recovery');
   await expect(page.locator('.earn-dashboard')).not.toContainText('Available below');
-  await expect(page.locator('.earn-pack-tab')).toHaveCount(3);
-  await expect(page.locator('.earn-pack-tab[data-id="boss"]')).toHaveAttribute('aria-selected','true');
-  await page.locator('.earn-pack-tab[data-id="clue"]').click();
-  await expect(page.locator('.earn-pack-tab[data-id="clue"]')).toHaveAttribute('aria-selected','true');
-  await expect(page.locator('.earn-log-panel')).toContainText('Collection complete');
-  await page.locator('.earn-pack-tab[data-id="boss"]').click();
-  await expect(page.locator('[data-act="earn-milestone"]')).toHaveCount(1);
+  await expect(page.locator('#earn')).not.toContainText('Milestone rewards');
+  await expect(page.locator('#earn [data-act="earn-milestone"]')).toHaveCount(0);
+  await page.locator('[data-view="collection"]').click();
+  await expect(page.locator('.collection-reward-group')).toHaveCount(3);
+  await expect(page.locator('#collection-milestones [data-act="earn-milestone"]')).toHaveCount(1);
+  await page.locator('#filter').selectOption('clue');
+  await expect(page.locator('.collection-reward-group')).toHaveCount(1);
+  await expect(page.locator('.collection-reward-group')).toContainText('Clue Casket');
+  await expect(page.locator('#collection-milestones [data-act="earn-milestone"]')).toHaveCount(0);
+  await page.locator('.collection-goal[data-id="boss"]').click();
+  await expect(page.locator('#filter')).toHaveValue('boss');
+  await expect(page.locator('.collection-reward-group')).toContainText('Boss Loot');
+  await expect(page.locator('#collection-milestones [data-act="earn-milestone"]')).toHaveCount(1);
   await page.getByRole('button',{name:'Packs'}).click();
   await expect(page.locator('.premium-categories')).toBeVisible();
   await expect(page.locator('#earn')).toBeHidden();
@@ -198,7 +210,7 @@ test('claim cards stay compact side by side at narrow mobile widths',async({page
   expect(errors).toEqual([]);
 });
 
-test('claimed milestones are absent across category switches and unclaimed milestones retain progress',async({page})=>{
+test('claimed milestones remain hidden in Collection Log, with unclaimed progress preserved',async({page})=>{
   const errors=await setup(page,{gp:0,readyCollection:true});
   const data=await page.evaluate(()=>{
     const economy=window.ChallengerEconomy;
@@ -207,21 +219,41 @@ test('claimed milestones are absent across category switches and unclaimed miles
       {code:'boss:scout',pack:'boss',title:'Scout',goal:10,found:4,amount:5000,available:false,claimed:false},
       {code:'clue:first',pack:'clue',title:'First find',goal:1,found:1,amount:2000,available:true,claimed:false}
     ];
-    const board={dailyAmount:50000,recovery:{amount:5000,available:false},
-      milestones};
+    const board={dailyAmount:50000,recovery:{amount:5000,available:false},milestones};
     const packs=[{id:'boss',name:'Boss Loot',icon:'⚔️'},
       {id:'clue',name:'Clue Casket',icon:'🧰'},
       {id:'pets',name:'Pet Hunt',icon:'🐾'}];
-    economy.choosePack('boss',board);
-    const boss=economy.render(board,{gp:0,daily:false},packs);
-    economy.choosePack('clue',board);
-    const clue=economy.render(board,{gp:0,daily:false},packs);
-    return {boss,clue};
+    return {
+      boss:economy.renderMilestones(board,packs,'boss'),
+      clue:economy.renderMilestones(board,packs,'clue'),
+      all:economy.renderMilestones(board,packs,'all'),
+      earn:economy.render(board,{gp:0,daily:false},packs)
+    };
   });
   expect(data.boss).not.toContain('data-id="boss:first"');
   expect(data.boss).toContain('data-id="boss:scout"');
   expect(data.boss).toContain('4 / 10 unique items');
   expect(data.clue).toContain('data-id="clue:first"');
   expect(data.clue).not.toContain('data-id="boss:scout"');
+  expect(data.all).toContain('data-id="boss:scout"');
+  expect(data.all).toContain('data-id="clue:first"');
+  expect(data.earn).not.toContain('Milestone rewards');
+  expect(data.earn).not.toContain('earn-milestone');
+  expect(errors).toEqual([]);
+});
+
+test('Collection Log loads claimable milestones directly and credits once',async({page})=>{
+  const errors=await setup(page,{gp:0,startView:'collection'});
+  await expect(page.locator('#collection-milestones')).toContainText('Milestone rewards');
+  await expect(page.locator('.collection-rewards-heading')).toContainText('1 ready to claim');
+  await expect(page.locator('#balance')).toHaveText('0 GP');
+  await page.locator('#collection-milestones [data-act="earn-milestone"]').click();
+  await expect(page.locator('#balance')).toHaveText('2,000 GP');
+  await expect(page.locator('#collection-milestones [data-act="earn-milestone"]')).toHaveCount(0);
+  await page.locator('[data-view="earn"]').click();
+  await expect(page.locator('.earn-quick')).toHaveCount(2);
+  await expect(page.locator('#earn')).not.toContainText('Milestone rewards');
+  const calls=await page.evaluate(()=>window.__economyCalls);
+  expect(calls.filter(a=>a==='economy_claim')).toHaveLength(1);
   expect(errors).toEqual([]);
 });
