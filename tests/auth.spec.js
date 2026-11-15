@@ -101,7 +101,7 @@ test('password reset request sends to registered email with app callback and no 
   await expect(page.locator('#auth-recovery-request')).toBeVisible();
   await page.locator('#auth-recovery-request [name="email"]').fill('Player@Example.com');
   await page.locator('#auth-recovery-request button[type="submit"]').click();
-  await expect(page.locator('#status')).toContainText('Check your inbox');
+  await expect(page.locator('#login-screen .login-card > #status')).toContainText('Check your inbox');
   const events=await page.evaluate(()=>window.__authEvents);
   const reset=events.find(e=>e[0]==='request-reset');
   expect(reset[1]).toBe('player@example.com');
