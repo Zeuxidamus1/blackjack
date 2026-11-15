@@ -8,6 +8,13 @@ on:
       - app-install.js
       - wallet-feedback.js
       - wallet-feedback.css
+      - reveal.js
+      - reveal.css
+      - motion.css
+      - progression.js
+      - progression.css
+      - economy.js
+      - economy.css
       - sw.js
       - offline.html
       - icons/**
