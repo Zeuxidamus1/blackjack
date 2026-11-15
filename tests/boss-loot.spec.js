@@ -23,7 +23,7 @@ const mockCatalog=weights.map((weight,index)=>({
  ge:1155+index,guide:(index+1)*1000,guideTime:new Date().toISOString(),
  found:3,circulation:5,salvage:0
 }));
-async function setup(page,gp=1000000000,{large=false,pulls={},orphan=false}={}){
+async function setup(page,gp=1000000000,{large=false,pulls={},orphan=false,oddsMismatch=false}={}){
  let catalogForTest=large?Array.from({length:49},(_,i)=>({
   id:'pool_item_'+i,pack:'boss',name:i===48?'Twisted bow':'OSRS Item '+i,
   ge:i===48?20997:1100+i,
@@ -40,9 +40,13 @@ async function setup(page,gp=1000000000,{large=false,pulls={},orphan=false}={}){
  const oddsForTest=Array.from({length:49},(_,i)=>
   i===48?10000:i<23?(i===22?840000000000-ordinaryLow*22:ordinaryLow):
   (i===47?winTotal-ordinaryWin*24:ordinaryWin));
- const casesForTest=large?[{...mockCases[0],rewards:catalogForTest.map((item,i)=>({
+ const baseCases=large?[{...mockCases[0],rewards:catalogForTest.map((item,i)=>({
   id:item.id,weight:oddsForTest[i],chase:i===48
  }))},...mockCases.slice(1)]:mockCases;
+ const casesForTest=oddsMismatch?baseCases.map(entry=>({...entry,
+   rewards:entry.rewards.map((reward,i)=>i===0?{...reward,weight:1}:
+     i===1?{...reward,weight:Number(reward.weight)+499999}:reward)
+ })):baseCases;
 
  const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
@@ -323,6 +327,19 @@ test('Collection details refresh stale pack data before showing a zero-source re
  await expect(dialog).toContainText('Starter Loot');
  await expect(dialog).toContainText('Drop chance');
  await expect(dialog).not.toContainText('not currently obtainable');
+ expect(errors).toEqual([]);
+});
+
+test('Collection Log uses actual pack odds rather than outdated catalog rarity percentages',async({page})=>{
+ const errors=await setup(page,1000000000,{oddsMismatch:true});
+ await page.getByRole('button',{name:'Collection log'}).click();
+ const item=page.locator('#items .item').filter({hasText:'OSRS Item 0'});
+ await expect(item.locator('.rare')).toContainText('Best pack chance 0.0001%');
+ await expect(item.locator('.rare')).not.toContainText('50%');
+ await page.locator('#collection-sort').selectOption('rare-high');
+ await expect(page.locator('#items .item h3').first()).toHaveText('OSRS Item 0');
+ await item.getByRole('button',{name:'More Info'}).click();
+ await expect(page.locator('#modal .collection-source-odds').first()).toContainText('0.0001%');
  expect(errors).toEqual([]);
 });
 
