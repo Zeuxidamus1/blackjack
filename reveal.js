@@ -190,10 +190,11 @@
       if(!this.detail)return '';
       const entry=this.entry(),r=this.batch.rewards[0];
       const stamp=r?.priceUpdated?new Date(r.priceUpdated).toLocaleString(): 'Not available';
+      const fixedPet=window.ChallengerArtwork?.fixedPet(catalogItem(this,r));
       return '<div class="cr-detail" role="note"><strong>'+h(entry.name)+'</strong>'+
         '<p style="margin-top:6px">'+h(this.batch.rewards.length)+' reward(s), each from a server-side purchase.</p>'+
         '<p style="margin-top:7px">Values use current GE guides or assigned Pet Hunt GP values. The server verifies every sale.</p>'+
-        (this.batch.rewards.length===1?'<p style="margin-top:7px">Price updated: '+h(stamp)+'</p>':'')+'</div>';
+        (this.batch.rewards.length===1?'<p style="margin-top:7px">'+(fixedPet?'Pet Hunt fixed GP value':'Last GE quote: '+h(stamp))+'</p>':'')+'</div>';
     }
     render(){
       if(root.hidden||!this.batch)return;
