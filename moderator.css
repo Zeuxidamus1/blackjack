@@ -1,0 +1,40 @@
+/* Challenger Rips private moderator testing panel */
+.mod-dashboard{max-width:1040px;margin:10px auto 35px;display:flex;flex-direction:column;gap:18px}
+.mod-hero{padding:clamp(19px,4vw,32px);border:1px solid #807044;border-radius:21px;background:radial-gradient(circle at 87% 12%,#a57b2940,transparent 58%),linear-gradient(135deg,#26363b,#0b1b20)}
+.mod-kicker{display:block;color:#e6bd73;font-size:.68rem;letter-spacing:.18em;font-weight:900;margin-bottom:11px}
+.mod-hero-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.mod-hero h2{font-size:clamp(1.55rem,4vw,2.3rem);letter-spacing:-.045em}
+.mod-hero p{color:#bed0c7;font-size:.92rem;margin-top:8px;line-height:1.55;max-width:550px}
+.mod-role-label{color:#211809;background:linear-gradient(135deg,#f5d48b,#dca850);border:1px solid #fff0ae;border-radius:999px;padding:9px 13px;letter-spacing:.08em;font-size:.72rem;font-weight:1000}
+.mod-layout{display:grid;grid-template-columns:minmax(200px,1fr) minmax(350px,1.6fr);gap:15px}
+.mod-balance-card,.mod-add-card,.mod-history{border:1px solid #446763;border-radius:18px;background:linear-gradient(145deg,#1a3438,#0b1b21);padding:22px;min-width:0}
+.mod-balance-card{display:flex;flex-direction:column;align-items:flex-start;gap:13px}
+.mod-label{font-size:.79rem;color:#a8d4c2;font-weight:800}
+.mod-current-gp{font-size:clamp(1.35rem,3.2vw,2rem);color:#9ff0bb;font-weight:950;font-variant-numeric:tabular-nums;letter-spacing:-.05em;overflow-wrap:anywhere}
+.mod-balance-card small{font-size:.75rem;color:#96b4ae}
+.mod-add-card h3{font-size:1.21rem;font-weight:900}
+.mod-add-card p{color:#b5ccc3;font-size:.86rem;margin:7px 0 15px;line-height:1.5}
+.mod-shortcuts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 17px}
+.mod-shortcuts button{border-radius:12px;color:#dbefde;border-color:#51796a;font-size:.8rem;padding:8px 12px}
+.mod-add-card label{display:block;margin:0 0 7px;font-size:.8rem;color:#c1e0cf;font-weight:850}
+.mod-amount-row{display:flex;gap:10px;align-items:stretch}
+.mod-amount-row input{flex:1;min-width:0;height:44px;background:#081b20;border:1px solid #54816d;border-radius:11px;color:#f4faf5;padding:10px 13px;font-size:.97rem;font-variant-numeric:tabular-nums}
+.mod-amount-row input:focus{outline:2px solid #8cf0b9;outline-offset:1px}
+.mod-amount-row button{flex:0 0 auto;border-radius:11px;padding:10px 17px;font-weight:900}
+.mod-limit{display:block;margin-top:10px;color:#99b9ad;line-height:1.5;font-size:.72rem}
+.mod-history-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.mod-history-heading h3{font-size:1.1rem}
+.mod-history-heading>span{font-size:.72rem;color:#a5c0b6}
+.mod-history-list{display:flex;flex-direction:column;gap:8px}
+.mod-history-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 13px;border-radius:11px;border:1px solid #ffffff1e;background:#11282c}
+.mod-history-row>div{display:flex;flex-direction:column;gap:4px}
+.mod-history-row strong{color:#97ecb5;font-variant-numeric:tabular-nums}
+.mod-history-row span,.mod-history-row>small{font-size:.72rem;color:#a9c9bd}
+.mod-empty-history{color:#b0c9bb;padding:8px}
+.mod-safety-note{color:#98b2aa;font-size:.76rem;line-height:1.6;max-width:900px}
+nav.tabs button[data-view="moderator"]{color:#ebc986;border:1px solid #b49c633c}
+nav.tabs button[data-view="moderator"][aria-current=page]{color:#fae1a9;background:#6b54353a;border-color:#d5ab61}
+nav.tabs button[data-view="moderator"][hidden]{display:none!important}
+@media(max-width:750px){.mod-layout{grid-template-columns:1fr}.mod-balance-card,.mod-add-card,.mod-history{padding:16px}}
+@media(max-width:390px){.mod-amount-row{flex-direction:column}.mod-shortcuts button{flex:1}.mod-history-row{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.mod-dashboard *{animation:none!important;transition:none!important}}
