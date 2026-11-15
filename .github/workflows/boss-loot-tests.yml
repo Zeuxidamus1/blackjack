@@ -17,6 +17,7 @@ on:
       - economy.css
       - missions.js
       - missions.css
+      - premium-packs.css
       - sw.js
       - offline.html
       - icons/**
