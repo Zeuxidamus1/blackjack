@@ -68,11 +68,14 @@ test('low GP recovery and milestone bonuses are independently claimable once',as
   await page.locator('[data-act="earn-recover"]').click();
   await expect(page.locator('#balance')).toHaveText('5,000 GP');
   await expect(page.locator('[data-act="earn-recover"]')).toBeDisabled();
+  await expect(page.locator('[data-countdown="recovery"]')).toContainText('Next available claim in');
+  await expect(page.locator('[data-countdown="recovery"] strong')).toContainText(/^23:59:/);
   await expect(page.locator('[data-act="earn-milestone"]')).toBeEnabled();
   await page.locator('[data-act="earn-milestone"]').click();
   await expect(page.locator('#balance')).toHaveText('7,000 GP');
-  await expect(page.locator('[data-act="earn-milestone"]')).toHaveText('Claimed');
-  await expect(page.locator('[data-act="earn-milestone"]')).toBeDisabled();
+  await expect(page.locator('[data-act="earn-milestone"]')).toHaveCount(0);
+  await expect(page.locator('.earn-milestone-empty')).toContainText('All GP milestones claimed');
+  await expect(page.locator('.earn-pack-tab[data-id="boss"] .earn-pack-count')).toHaveText('0');
   const calls=await page.evaluate(()=>window.__economyCalls);
   expect(calls.filter(a=>a==='economy_recover')).toHaveLength(1);
   expect(calls.filter(a=>a==='economy_claim')).toHaveLength(1);
@@ -87,6 +90,8 @@ test('50K daily claim remains independent of recovery and shows a confirmed cred
   await page.locator('[data-act="earn-daily"]').click();
   await expect(page.locator('#balance')).toHaveText('52,000 GP');
   await expect(page.locator('[data-act="earn-daily"]')).toBeDisabled();
+  await expect(page.locator('[data-countdown="daily"]')).toContainText('Next available claim in');
+  await expect(page.locator('[data-countdown="daily"] strong')).toContainText(/^23:59:/);
   await expect(page.locator('#gp-delta-inline')).toContainText('+50,000 GP');
   expect(errors).toEqual([]);
 });
@@ -95,6 +100,7 @@ test('pending pack blocks recovery even when wallet is below the cheapest pack',
   const errors=await setup(page,{gp:0,daily:false,pending:true,readyCollection:false});
   await expect(page.locator('[data-act="earn-recover"]')).toBeDisabled();
   await expect(page.locator('[data-act="earn-recover"]')).toHaveText('Finish current pack');
+  await expect(page.locator('[data-countdown="recovery"]')).toBeHidden();
   await expect(page.locator('#balance')).toHaveText('0 GP');
   expect((await page.evaluate(()=>window.__economyCalls)).filter(a=>a==='economy_recover')).toHaveLength(0);
   expect(errors).toEqual([]);
@@ -110,8 +116,111 @@ test('Earn GP is responsive at narrow phone widths and does not change pack scre
     }));
     expect(measures.scrollWidth).toBeLessThanOrEqual(measures.viewport+1);
   }
+  await expect(page.locator('.earn-quick')).toHaveCount(2);
+  await expect(page.locator('.earn-quick-title').first()).toHaveText('Daily GP');
+  await expect(page.locator('.earn-quick-title').last()).toHaveText('Bonus GP');
+  await expect(page.locator('.earn-dashboard')).not.toContainText('Low-balance recovery');
+  await expect(page.locator('.earn-dashboard')).not.toContainText('Available below');
+  await expect(page.locator('.earn-pack-tab')).toHaveCount(3);
+  await expect(page.locator('.earn-pack-tab[data-id="boss"]')).toHaveAttribute('aria-selected','true');
+  await page.locator('.earn-pack-tab[data-id="clue"]').click();
+  await expect(page.locator('.earn-pack-tab[data-id="clue"]')).toHaveAttribute('aria-selected','true');
+  await expect(page.locator('.earn-log-panel')).toContainText('Collection complete');
+  await page.locator('.earn-pack-tab[data-id="boss"]').click();
+  await expect(page.locator('[data-act="earn-milestone"]')).toHaveCount(1);
   await page.getByRole('button',{name:'Packs'}).click();
   await expect(page.locator('.premium-categories')).toBeVisible();
   await expect(page.locator('#earn')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+
+test('countdowns use server clock offset and advance without rebuilding the page',async({page})=>{
+  const errors=await setup(page,{gp:0,daily:false});
+  const values=await page.evaluate(()=>{
+    const now=Date.now();
+    const board={
+      dailyAmount:50000,minimumPackPrice:1000,
+      recovery:{amount:5000,available:false,balanceTooHigh:false,pendingPack:false,
+        nextAt:new Date(now+7300).toISOString()},
+      milestones:[]
+    };
+    const state={gp:0,daily:false,nextDailyAt:new Date(now+7300).toISOString()};
+    const root=document.getElementById('earn-dashboard');
+    const economy=window.ChallengerEconomy;
+    economy.tick(root,board,state,1000,now);
+    const earlier={
+      daily:root.querySelector('[data-countdown="daily"] strong').textContent,
+      recovery:root.querySelector('[data-countdown="recovery"] strong').textContent
+    };
+    economy.tick(root,board,state,1000,now+3000);
+    const later={
+      daily:root.querySelector('[data-countdown="daily"] strong').textContent,
+      recovery:root.querySelector('[data-countdown="recovery"] strong').textContent
+    };
+    economy.tick(root,board,state,1000,now+8000);
+    return {earlier,later,
+      dailyEnabled:!root.querySelector('[data-act="earn-daily"]').disabled,
+      recoveryEnabled:!root.querySelector('[data-act="earn-recover"]').disabled,
+      dailyHidden:root.querySelector('[data-countdown="daily"]').hidden,
+      recoveryHidden:root.querySelector('[data-countdown="recovery"]').hidden
+    };
+  });
+  expect(values.earlier).toEqual({daily:'00:00:07',recovery:'00:00:07'});
+  expect(values.later).toEqual({daily:'00:00:04',recovery:'00:00:04'});
+  expect(values.dailyEnabled).toBe(true);
+  expect(values.recoveryEnabled).toBe(true);
+  expect(values.dailyHidden).toBe(true);
+  expect(values.recoveryHidden).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('claim cards stay compact side by side at narrow mobile widths',async({page})=>{
+  const errors=await setup(page,{gp:0});
+  for(const width of [320,360,390,430]){
+    await page.setViewportSize({width,height:812});
+    const layout=await page.locator('.earn-quick-grid').evaluate(grid=>{
+      const cards=[...grid.querySelectorAll('.earn-quick')].map(el=>el.getBoundingClientRect());
+      return {
+        firstX:cards[0].x,secondX:cards[1].x,
+        firstY:cards[0].y,secondY:cards[1].y,
+        maxHeight:Math.max(cards[0].height,cards[1].height),
+        documentWidth:document.documentElement.scrollWidth,
+        viewport:document.documentElement.clientWidth
+      };
+    });
+    expect(layout.secondX).toBeGreaterThan(layout.firstX);
+    expect(Math.abs(layout.secondY-layout.firstY)).toBeLessThan(1);
+    expect(layout.maxHeight).toBeLessThanOrEqual(190);
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport+1);
+  }
+  expect(errors).toEqual([]);
+});
+
+test('claimed milestones are absent across category switches and unclaimed milestones retain progress',async({page})=>{
+  const errors=await setup(page,{gp:0,readyCollection:true});
+  const data=await page.evaluate(()=>{
+    const economy=window.ChallengerEconomy;
+    const milestones=[
+      {code:'boss:first',pack:'boss',title:'First find',goal:1,found:1,amount:2000,available:false,claimed:true},
+      {code:'boss:scout',pack:'boss',title:'Scout',goal:10,found:4,amount:5000,available:false,claimed:false},
+      {code:'clue:first',pack:'clue',title:'First find',goal:1,found:1,amount:2000,available:true,claimed:false}
+    ];
+    const board={dailyAmount:50000,recovery:{amount:5000,available:false},
+      milestones};
+    const packs=[{id:'boss',name:'Boss Loot',icon:'⚔️'},
+      {id:'clue',name:'Clue Casket',icon:'🧰'},
+      {id:'pets',name:'Pet Hunt',icon:'🐾'}];
+    economy.choosePack('boss',board);
+    const boss=economy.render(board,{gp:0,daily:false},packs);
+    economy.choosePack('clue',board);
+    const clue=economy.render(board,{gp:0,daily:false},packs);
+    return {boss,clue};
+  });
+  expect(data.boss).not.toContain('data-id="boss:first"');
+  expect(data.boss).toContain('data-id="boss:scout"');
+  expect(data.boss).toContain('4 / 10 unique items');
+  expect(data.clue).toContain('data-id="clue:first"');
+  expect(data.clue).not.toContain('data-id="boss:scout"');
   expect(errors).toEqual([]);
 });
