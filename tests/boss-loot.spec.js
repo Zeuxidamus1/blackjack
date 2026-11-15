@@ -124,7 +124,7 @@ test('RuneScape opens Boss Loot and other categories stay accessible',async({pag
  await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
  await expect(page.locator('#shop .tile')).toHaveCount(0);
  await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
- await page.getByRole('button',{name:/Explore packs/}).click();
+ await page.getByRole('button',{name:/Explore Packs/i}).click();
  await expect(page.locator('.premium-category')).toHaveCount(3);
  await page.getByRole('button',{name:'Open Boss Loot'}).click();
  await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
