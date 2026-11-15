@@ -1,0 +1,144 @@
+/* Challenger Rips interaction polish.
+   Motion is visual only; transactions and reward selection remain server authoritative. */
+:root{
+  --cr-motion-ease:cubic-bezier(.22,1,.36,1);
+  --cr-motion-quick:190ms;
+  --cr-motion-standard:340ms;
+}
+@keyframes cr-screen-fade{
+  from{opacity:.72;transform:translate3d(0,10px,0)}
+  to{opacity:1;transform:translate3d(0,0,0)}
+}
+@keyframes cr-modal-enter{
+  from{opacity:0;transform:translate3d(0,12px,0) scale(.975)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes cr-backdrop-enter{from{opacity:0}to{opacity:1}}
+@keyframes cr-overlay-enter{from{opacity:0}to{opacity:1}}
+@keyframes cr-stage-enter{
+  from{opacity:.55;transform:translate3d(0,12px,0) scale(.985)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes cr-card-enter{
+  from{opacity:0;transform:translate3d(0,13px,0) scale(.97)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+.cr-screen-enter{animation:cr-screen-fade .38s var(--cr-motion-ease) both}
+#storefront button:not(:disabled),#login-screen button:not(:disabled),
+dialog button:not(:disabled),#cr-reveal button:not(:disabled){
+  transition:background-color var(--cr-motion-quick) ease,border-color var(--cr-motion-quick) ease,
+    color var(--cr-motion-quick) ease,box-shadow var(--cr-motion-standard) var(--cr-motion-ease),
+    filter var(--cr-motion-quick) ease,transform var(--cr-motion-quick) var(--cr-motion-ease);
+}
+#storefront button:not(:disabled):active:not(.cr-rip-target),
+#login-screen button:not(:disabled):active,
+dialog button:not(:disabled):active,
+#cr-reveal button:not(:disabled):active:not(.cr-rip-target):not(.cr-turn){
+  transform:scale(.982);
+}
+#storefront .premium-category,#storefront .game-card{
+  transition:transform .34s var(--cr-motion-ease),box-shadow .32s var(--cr-motion-ease),
+    border-color .23s ease,background-color .23s ease;
+}
+#storefront .other-case-item,#storefront .inside-item,#storefront .item,
+#storefront .inventory-entry{
+  transition:background-color .24s ease,border-color .24s ease,box-shadow .30s var(--cr-motion-ease),
+    transform .32s var(--cr-motion-ease);
+}
+#storefront .boss-slide{
+  transition:transform .48s var(--cr-motion-ease),filter .45s ease;
+  transform:scale(.89);
+}
+#storefront .boss-slide.is-active{transform:scale(1)}
+#storefront .boss-carousel{
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
+  overscroll-behavior-inline:contain;
+}
+#storefront .boss-carousel.dragging{scroll-snap-type:none}
+#storefront nav.tabs button{
+  transition:color .22s ease,border-color .27s ease,background-color .24s ease;
+}
+#storefront .boss-details{
+  backface-visibility:hidden;
+}
+#storefront .boss-qty button[aria-pressed="true"]{
+  box-shadow:0 0 0 1px #8fdac059,0 0 16px #8fdac020;
+}
+#storefront .inventory-entry.is-selected{
+  box-shadow:0 0 18px #27db9c59,inset 0 0 12px #1fbc8c24;
+}
+@media(hover:hover) and (pointer:fine){
+  #storefront .premium-category:hover,#storefront .game-card:hover{
+    transform:translate3d(0,-3px,0);
+  }
+  #storefront .other-case-item:hover,#storefront .inside-item:hover{
+    transform:translate3d(0,-2px,0);
+    border-color:#82cfa971;
+    box-shadow:0 14px 28px #0005;
+  }
+  #storefront .game-back-link:hover,#storefront .header-signout:hover{
+    background-color:#1a3736;
+  }
+}
+dialog[open]{
+  animation:cr-modal-enter .30s var(--cr-motion-ease) both;
+}
+dialog[open]::backdrop{
+  animation:cr-backdrop-enter .3s ease-out both;
+}
+#cr-reveal:not([hidden]){
+  animation:cr-overlay-enter .34s ease-out both;
+}
+#cr-reveal .cr-phase-enter{
+  animation:cr-stage-enter .37s var(--cr-motion-ease) both;
+}
+#cr-reveal .cr-phase-enter .cr-result-card{
+  animation:cr-card-enter .35s var(--cr-motion-ease) both;
+}
+#cr-reveal .cr-phase-enter .cr-result-card:nth-child(2){animation-delay:35ms}
+#cr-reveal .cr-phase-enter .cr-result-card:nth-child(3){animation-delay:65ms}
+#cr-reveal .cr-phase-enter .cr-result-card:nth-child(4){animation-delay:95ms}
+#cr-reveal .cr-phase-enter .cr-result-card:nth-child(5){animation-delay:125ms}
+#cr-reveal .cr-turn .cr-card-inner{
+  transition:transform .77s cubic-bezier(.2,.75,.22,1.03);
+}
+#cr-reveal .cr-turn.cr-flipped .cr-card-inner{
+  transform:rotateY(180deg);
+}
+#cr-reveal .cr-single-art img{animation:none}
+#cr-reveal .cr-phase-enter .cr-single-art img{
+  animation:cr-land .65s var(--cr-motion-ease) both;
+}
+#cr-reveal:not(.cr-rip-dragging) .cr-tear{
+  transition:transform .28s var(--cr-motion-ease);
+}
+#cr-reveal.cr-rip-dragging .cr-tear{transition:none}
+#cr-reveal .cr-rip-target:active{transform:none}
+#cr-reveal .cr-result-card[aria-pressed="true"]{
+  transition:border-color .22s ease,box-shadow .26s ease,background-color .22s ease;
+}
+#cr-reveal .cr-detail{
+  animation:cr-modal-enter .26s var(--cr-motion-ease) both;
+}
+#cr-reveal .cr-toast{
+  animation:cr-modal-enter .27s var(--cr-motion-ease) both;
+}
+.gp-delta-inline.gp-pop,#gp-wallet-live .gp-wallet-change.gp-pop{
+  animation-duration:.52s;
+  animation-timing-function:var(--cr-motion-ease);
+}
+@media(prefers-reduced-motion:reduce){
+  .cr-screen-enter,dialog[open],dialog[open]::backdrop,
+  #cr-reveal:not([hidden]),#cr-reveal .cr-phase-enter,
+  #cr-reveal .cr-phase-enter .cr-result-card,
+  #cr-reveal .cr-phase-enter .cr-single-art img,
+  #cr-reveal .cr-detail,#cr-reveal .cr-toast{
+    animation:none!important;
+  }
+  #storefront *,#login-screen *,dialog *,#cr-reveal *,
+  #storefront *::before,#cr-reveal *::before{
+    transition:none!important;
+    scroll-behavior:auto!important;
+  }
+}
