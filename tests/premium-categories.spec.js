@@ -134,7 +134,7 @@ test('Clue Caskets use smooth premium carousel with three distinct pack artworks
  await go(page,'clue');
  await expect(page.locator('.boss-shell')).toHaveAttribute('data-pack','clue');
  await expect(page.locator('.boss-slide')).toHaveCount(3);
- await expect(page.locator('.boss-slide .boss-foil')).toHaveAttribute('data-foil-pack','clue');
+ await expect(page.locator('.boss-slide .boss-foil').first()).toHaveAttribute('data-foil-pack','clue');
  await expect(page.locator('.boss-slide .boss-foil')).toHaveCount(3);
  await expect(page.locator('#boss-details')).toContainText('1,000 GP');
  await page.getByRole('button',{name:'Select Select'}).click();
