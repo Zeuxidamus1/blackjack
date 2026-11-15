@@ -1,0 +1,66 @@
+/* Step 5: premium inventory dashboard and management, matching Boss Loot's UI */
+#inventory{max-width:1200px;margin:0 auto}
+#inventory .inventory-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:15px;flex-wrap:wrap}
+#inventory .inventory-heading h2{letter-spacing:-.045em;font-weight:900}
+#inventory .inventory-subtitle{color:#a5c0bb;font-size:.81rem;margin:4px 0 0}
+#inventory .inventory-heading button{flex:0 0 auto}
+#inventory .inventory-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:16px 0 17px}
+#inventory .inventory-stat{position:relative;display:flex;flex-direction:column;min-width:0;min-height:121px;padding:16px 15px 13px;border-radius:16px;background:linear-gradient(145deg,#1b373b,#0c2025);border:1px solid #486b67;gap:5px;overflow:hidden}
+#inventory .inventory-stat.is-primary{background:radial-gradient(circle at 80% 10%,#37725c6b,transparent 65%),linear-gradient(140deg,#1c4941,#0c252b);border-color:#4aa883}
+#inventory .inventory-stat>span{font-size:.71rem;font-weight:850;letter-spacing:.03em;color:#b9d0c8}
+#inventory .inventory-stat>strong{font-variant-numeric:tabular-nums;font-size:clamp(1.04rem,2.6vw,1.45rem);font-weight:950;letter-spacing:-.045em;color:#eefcf7;overflow-wrap:anywhere}
+#inventory .inventory-stat.is-primary>strong{color:#9bf1bf}
+#inventory .inventory-stat.is-most>strong{font-size:clamp(.93rem,2vw,1.16rem);letter-spacing:-.01em;line-height:1.3}
+#inventory .inventory-stat>small{color:#94b0aa;font-size:.7rem;margin-top:auto;line-height:1.35}
+#inventory .inventory-filters{display:grid;grid-template-columns:minmax(160px,2fr) minmax(115px,1fr) minmax(140px,1fr) auto;align-items:end;gap:12px;padding:14px;background:#11292d;border:1px solid #385958;border-radius:15px;margin-bottom:11px}
+#inventory .inventory-filters label{display:flex;flex-direction:column;gap:7px;font-size:.74rem;color:#b7d1cb;font-weight:800;min-width:0}
+#inventory .inventory-filters input[type=search],#inventory .inventory-filters select{height:43px;width:100%;min-width:0;background:#091a20;color:#e4f7ef;border:1px solid #52736e;border-radius:10px;font:inherit;font-size:.85rem;font-weight:650;padding:9px 11px;appearance:auto}
+#inventory .inventory-filters input[type=search]:focus,#inventory .inventory-filters select:focus{outline:2px solid #7ae3b7;outline-offset:1px}
+#inventory .inventory-filters input::placeholder{color:#83a19a}
+#inventory .inventory-filters .inventory-stack-toggle{flex-direction:row;align-items:center;gap:8px;min-height:43px;white-space:nowrap;font-size:.81rem;cursor:pointer}
+#inventory .inventory-stack-toggle input{accent-color:#6bebaf;width:18px;height:18px;flex:0 0 auto}
+#inventory .inventory-results-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 2px 15px}
+#inventory .inventory-results-bar p{color:#9fbeb6;font-size:.76rem;margin:0}
+#inventory .inventory-results-bar button{border-radius:10px;font-size:.76rem;padding:9px 12px;color:#a9ebcc;border-color:#528270}
+#inventory .inventory-protected-tag{display:inline-flex;align-items:center;gap:6px;background:#3963544d;color:#8aefbc;border:1px solid #77deaa6b;border-radius:20px;font-weight:900;font-size:.68rem;padding:6px 9px;margin-top:4px;align-self:flex-start}
+#inventory .item.inventory-protected{border-color:#3e7e64;background:linear-gradient(155deg,#1d3839,#0c2326)}
+#inventory .item.inventory-protected .symbol{box-shadow:inset 0 0 20px #1b6a4944}
+#inventory .item .actions{display:flex;flex-wrap:wrap;gap:8px}
+#inventory .item .actions button{white-space:normal}
+#inventory .inventory-stack{position:relative;min-width:0}
+#inventory .inventory-stack>.item{height:100%}
+#inventory .inventory-stack-count{position:absolute;z-index:3;top:10px;right:10px;border-radius:12px;padding:5px 10px;background:#1d624d;color:#d7ffee;border:1px solid #78cda2;font-weight:900;font-variant-numeric:tabular-nums;box-shadow:0 3px 14px #0006;pointer-events:none}
+#inventory .inventory-stack-copies{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:11px;grid-column:1/-1;margin-top:12px}
+#inventory .inventory-stack-copies .item{min-width:0}
+#inventory .inventory-stack-card .actions button{background:#2c775c4d;border:1px solid #91deb2;color:#b8ffd7}
+#inventory .inventory-stack:has(.inventory-stack-copies){grid-column:span 2;display:grid;grid-template-columns:1fr;min-width:0}
+#inventory .inventory-stack:has(.inventory-stack-copies)>.item{height:auto}
+#inventory .inventory-toolbar{top:calc(env(safe-area-inset-top) + 68px)}
+#inventory .inventory-selection-actions{max-width:100%}
+#inventory .inventory-selection-actions button{white-space:normal}
+#inventory .inventory-entry.inventory-protected.is-unavailable{opacity:.78}
+@media(max-width:1040px){
+ #inventory .inventory-overview{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #inventory .inventory-filters{grid-template-columns:1.4fr 1fr 1fr}
+ #inventory .inventory-filters .inventory-stack-toggle{grid-column:1/-1;min-height:25px}
+}
+@media(max-width:680px){
+ #inventory .inventory-overview{gap:8px;margin:12px 0}
+ #inventory .inventory-stat{padding:13px;min-height:113px}
+ #inventory .inventory-stat>strong{font-size:1.2rem}
+ #inventory .inventory-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
+ #inventory .inventory-search-label{grid-column:1/-1}
+ #inventory .inventory-filters .inventory-stack-toggle{grid-column:1/-1}
+ #inventory .inventory-stack:has(.inventory-stack-copies){grid-column:1/-1}
+ #inventory .inventory-stack-copies{grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr))}
+ #inventory .inventory-heading button{max-width:100%}
+}
+@media(max-width:350px){
+ #inventory .inventory-stat{min-height:102px;padding:10px}
+ #inventory .inventory-stat>strong{font-size:1.02rem}
+ #inventory .inventory-filters{grid-template-columns:1fr}
+ #inventory .inventory-filters label{grid-column:1/-1}
+}
+@media(prefers-reduced-motion:reduce){
+ #inventory .inventory-stack-card *{transition:none!important}
+}
