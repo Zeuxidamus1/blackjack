@@ -276,9 +276,18 @@
     actions(rows,multiple){
       const count=rows.length,select=this.selected.size>0;
       const suffix=multiple && select?' ('+count+')':multiple?' ALL':'';
+      const saleEligible=Boolean(count)&&rows.every(r=>{
+        const item=catalogItem(this,r);
+        const last=Date.parse(item?.guideTime);
+        return Number(item?.ge)>0&&Number(item?.guide)>0&&
+          Number.isFinite(last)&&last>Date.now()-24*60*60*1000;
+      });
       return '<div class="cr-actions" role="group" aria-label="Manage your rewards">'+
-        '<button data-cr="sell"'+(this.busy||!count?' disabled':'')+' aria-label="Sell '+count+' rewards">SELL'+suffix+'</button>'+
-        '<button data-cr="vault"'+(this.busy||!count?' disabled':'')+' aria-label="Vault '+count+' rewards">VAULT'+suffix+'</button></div>';
+        '<button data-cr="sell"'+(this.busy||!saleEligible?' disabled':'')+
+        ' title="'+(saleEligible?'Sell at the current server-verified GE guide':'GE selling unavailable for these rewards')+
+        '" aria-label="Sell '+count+' rewards">SELL'+suffix+'</button>'+
+        '<button data-cr="vault"'+(this.busy||!count?' disabled':'')+' aria-label="Vault '+count+' rewards">VAULT'+suffix+'</button></div>'+
+        (!saleEligible&&count?'<p class="cr-sale-note">GE selling is unavailable for this selection. You can keep these rewards in your vault.</p>':'');
     }
     async revealSlot(slot=null){
       if(this.busy || root.hidden)return;
