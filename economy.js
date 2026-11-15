@@ -42,7 +42,8 @@
         '<p class="collection-rewards-empty" role="status">Loading milestone rewards…</p>')+'</section>';
     const all=Array.isArray(board.milestones)?board.milestones:[];
     const remaining=all.filter(m=>!m.claimed);
-    const ready=remaining.filter(m=>m.available).length;
+    const inView=selectedPack==='all'?remaining:remaining.filter(m=>m.pack===selectedPack);
+    const ready=inView.filter(m=>m.available).length;
     const named=new Map((packs||[]).map(p=>[p.id,p]));
     const categories=selectedPack==='all'?[...named.keys()]:[selectedPack];
     const groups=categories.map((id,index)=>{
@@ -80,7 +81,7 @@
     }).join('');
     return '<section class="collection-rewards" aria-label="Collection milestone rewards">'+
       '<div class="collection-rewards-heading"><h3>Milestone rewards</h3>'+
-      '<span>'+ready+' ready to claim · '+remaining.length+' remaining</span></div>'+
+      '<span>'+ready+' ready to claim · '+inView.length+' remaining</span></div>'+
       '<div class="collection-reward-groups">'+groups+'</div></section>';
   }
   function render(board,state,packs,error=false){
