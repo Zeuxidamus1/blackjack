@@ -37,8 +37,8 @@ begin
       ('starter_uncommon',1750::bigint,     1250::bigint,     300::bigint,  4, 'all'),
       ('select_rare',     4500::bigint,    12000::bigint,    3000::bigint,  3, 'all'),
       ('premium_common',5000000::bigint,3500000::bigint,  500000::bigint,  8, 'high'),
-      ('premium_uncommon',5000000::bigint,9000000::bigint,500000::bigint, 16, 'low'),
       ('premium_rare',  15000000::bigint,18000000::bigint,500000::bigint,39, 'all'),
+      ('premium_uncommon',5000000::bigint,9000000::bigint,500000::bigint, 16, 'low'),
       ('premium_epic',  45000000::bigint,42000000::bigint,5000000::bigint, 8, 'all')
     ) as band(label, old_guide, start_guide, step_guide, expected_count, split_band)
   loop
