@@ -1,0 +1,40 @@
+/* Premium RuneScape-inspired mission dashboards */
+.mission-page{margin:8px auto 22px;max-width:1140px;color:#eff9f4}
+.mission-hero{padding:clamp(22px,4vw,34px);border:1px solid #436b63;border-radius:23px;background:radial-gradient(ellipse at 76% 12%,#234f49a1,transparent 57%),linear-gradient(145deg,#183237,#0b1b20);margin-bottom:18px;overflow:hidden}
+.mission-eyebrow{font-size:.7rem;color:#93e0bc;font-weight:900;letter-spacing:.18em}
+.mission-hero h2{font-size:clamp(1.65rem,4vw,2.6rem);letter-spacing:-.055em;margin:10px 0 7px}
+.mission-hero p{max-width:660px;color:#abc5be;font-size:.94rem;line-height:1.6}
+.mission-hero-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:22px}
+.mission-hero-footer span{font-size:.85rem;font-weight:900;color:#b4f5d0}
+.mission-hero-footer button{border-radius:999px;font-size:.78rem;padding:8px 13px}
+.mission-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.mission-group{border:1px solid #304b4c;border-radius:21px;padding:18px;background:linear-gradient(156deg,#152d33,#0a171c);min-width:0}
+.mission-group-head{display:flex;justify-content:space-between;align-items:start;gap:14px;padding:4px 2px 17px}
+.mission-group-kicker{font-size:.65rem;font-weight:900;letter-spacing:.14em;color:#8fd5b9}
+.mission-group-head h3{font-size:clamp(1.2rem,3vw,1.55rem);letter-spacing:-.04em;margin:5px 0}
+.mission-group-head p{color:#a2beba;font-size:.78rem}
+.mission-timer{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:96px}
+.mission-timer small{color:#aec6c1;font-size:.69rem}
+.mission-timer strong{font-size:clamp(.8rem,2vw,1rem);font-variant-numeric:tabular-nums;color:#b9f2d5;white-space:nowrap}
+.mission-cards{display:flex;flex-direction:column;gap:11px}
+.mission-card{border:1px solid #415a5c;background:linear-gradient(135deg,#1d363b,#102227);padding:17px;border-radius:16px;display:flex;flex-direction:column;gap:11px;min-width:0}
+.mission-card.is-ready{border-color:#66cca6;box-shadow:inset 0 0 14px #29bd8b14,0 0 10px #23c78716}
+.mission-card.is-claimed{opacity:.69}
+.mission-top{display:flex;align-items:flex-start;gap:11px;min-width:0}
+.mission-symbol{width:37px;height:37px;flex:0 0 37px;background:#143a35;color:#8aefc2;border:1px solid #4fae8a;border-radius:12px;display:grid;place-items:center;font-size:1.25rem}
+.mission-text{min-width:0;flex:1}
+.mission-text h4{font-size:.94rem;font-weight:900;line-height:1.25;color:#f4f8f6}
+.mission-text p{font-size:.75rem;line-height:1.4;color:#a7bfbb;margin-top:5px}
+.mission-reward{color:#95efbc;font-size:.74rem;font-weight:850;white-space:nowrap}
+.mission-progress-head{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums;font-size:.77rem;color:#c9e3dc;font-weight:800}
+.mission-progress-head small{color:#9bb5b2;font-size:.72rem;font-weight:500}
+.mission-track{height:8px;border-radius:100px;background:#08171b;overflow:hidden;border:1px solid #44645a}
+.mission-fill{height:100%;background:linear-gradient(90deg,#238a6e,#9cf1bc);border-radius:100px;transition:width .3s ease}
+.mission-claim-button{width:100%;padding:10px 16px;border-radius:11px;font-weight:900;font-size:.83rem}
+.mission-card button:disabled{opacity:.55;cursor:not-allowed}
+.mission-loading{padding:28px;text-align:center;background:#13272c;border:1px solid #314f50;border-radius:15px;color:#bed4cd}
+.mission-loading button{display:inline-block;margin-left:8px;border-radius:10px}
+.mission-footnote{font-size:.74rem;line-height:1.6;color:#93aead;margin:16px 5px}
+@media(max-width:800px){.mission-columns{grid-template-columns:1fr}.mission-group{padding:14px}}
+@media(max-width:470px){.mission-hero{padding:19px}.mission-card{padding:14px}.mission-top{flex-wrap:wrap}.mission-reward{margin-left:47px}.mission-timer{min-width:84px}.mission-group-head p{font-size:.72rem}}
+@media(prefers-reduced-motion:reduce){.mission-fill{transition:none}}
