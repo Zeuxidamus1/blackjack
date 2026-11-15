@@ -23,6 +23,15 @@ begin
   -- Serialize with pack purchases, inventory sales and reward settlement.
   perform pg_advisory_xact_lock(194712855);
 
+  -- The live data was also applied directly. A subsequent migration runner
+  -- may safely record this migration without repricing any items a second time.
+  if (select count(*) from rips.catalog where pack='pets' and ge_id is null)=83
+    and (select count(distinct guide) from rips.catalog where pack='pets' and ge_id is null)=83
+    and (select count(*) from rips.cases where pack='pets' and config_version>=3)=3
+  then
+    return;
+  end if;
+
   if (select count(*) from rips.catalog where pack='pets')<>85
     or (select count(*) from rips.catalog where pack='pets' and ge_id is null)<>83
     or (select count(*) from rips.cases where pack='pets')<>3
