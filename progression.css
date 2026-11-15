@@ -67,6 +67,20 @@
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:0 0 10px;margin:0 0 9px;border-bottom:1px solid #ffffff21;
 }
+#collection .collection-reward-group-heading{
+  list-style:none;cursor:pointer;user-select:none;-webkit-user-select:none;
+}
+#collection .collection-reward-group-heading::-webkit-details-marker{display:none}
+#collection .collection-reward-group-heading:focus-visible{
+  outline:2px solid #a4e7c5;outline-offset:3px;border-radius:5px;
+}
+#collection .collection-reward-toggle{
+  font-size:.9rem;color:#a4d6b1;transition:transform .2s ease;
+}
+#collection .collection-reward-group[open] .collection-reward-toggle{transform:rotate(180deg)}
+#collection .collection-reward-group:not([open]) .collection-reward-group-heading{
+  margin-bottom:0;border-bottom:0;padding-bottom:0;
+}
 #collection .collection-reward-group-heading strong{
   font-size:.87rem;color:#d4e9d7;
 }
