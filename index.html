@@ -991,7 +991,36 @@ el('auth-mode').onclick=()=>{
   form.elements.email.disabled=!signup;
   form.elements.email.required=signup;
   form.elements.password.autocomplete=signup?'new-password':'current-password';
+  form.elements.username.pattern=signup?'[A-Za-z0-9_]{3,24}':'';
+  form.elements.username.maxLength=signup?24:254;
+  form.elements.username.title=signup?'3 to 24 letters, digits, or underscores':'Enter your username or registration email';
+  el('auth-identifier-text').textContent=signup?'Username':'Username or email';
+  el('auth-forgot').hidden=signup;
   notice();
+};
+el('auth-forgot').onclick=()=>{
+  el('auth').hidden=true;
+  el('auth-mode').hidden=true;
+  el('auth-forgot').hidden=true;
+  el('auth-recovery-request').hidden=false;
+  notice();
+  el('auth-recovery-request').elements.email.focus();
+};
+el('auth-recovery-back').onclick=()=>{
+  el('auth-recovery-request').hidden=true;
+  el('auth').hidden=false;
+  el('auth-mode').hidden=false;
+  el('auth-forgot').hidden=el('auth-submit').value==='signup';
+  notice();
+};
+el('auth-show-password').onclick=()=>{
+  const field=el('auth').elements.password;
+  const show=field.type==='password';
+  field.type=show?'text':'password';
+  el('auth-show-password').textContent=show?'Hide':'Show';
+  el('auth-show-password').setAttribute('aria-label',show?'Hide password':'Show password');
+  el('auth-show-password').setAttribute('aria-pressed',String(show));
+  field.focus();
 };
 document.addEventListener('submit',event=>{
   event.preventDefault();
@@ -1000,6 +1029,8 @@ document.addEventListener('submit',event=>{
     const signup=el('auth-submit').value==='signup';
     const username=String(data.get('username')).trim().toLowerCase();
     const password=String(data.get('password'));
+    if(signup&&!/^[a-z0-9_]{3,24}$/.test(username))
+      throw new Error('Username must be 3 to 24 letters, digits, or underscores.');
     if(signup){
       const email=String(data.get('email')).trim();
       if(!email) throw new Error('Enter an email to create an account.');
@@ -1013,14 +1044,26 @@ document.addEventListener('submit',event=>{
         sessionStorage.setItem(onboardingKey,username);
       }
     }else{
-      const {data:tokens,error}=await db.functions.invoke('challenger-login',{body:{username,password}});
-      if(error){
-        if(error.context?.status===401) throw new Error('Incorrect username or password, or email confirmation is pending.');
-        throw new Error('Sign-in is temporarily unavailable.');
+      if(username.includes('@')){
+        const result=await db.auth.signInWithPassword({email:username,password});
+        if(result.error){
+          if(['invalid_credentials','email_not_confirmed'].includes(result.error.code))
+            throw new Error('Sign-in rejected. Check your email and password, or use Forgot password.');
+          throw new Error('Sign-in is temporarily unavailable.');
+        }
+        session=result.data.session;
+      }else{
+        const {data:tokens,error}=await db.functions.invoke('challenger-login',{body:{username,password}});
+        if(error){
+          if(error.context?.status===401)
+            throw new Error('Sign-in rejected. Check your username and password, try your email, or reset your password.');
+          throw new Error('Sign-in is temporarily unavailable.');
+        }
+        const result=await db.auth.setSession({access_token:tokens.access_token,refresh_token:tokens.refresh_token});
+        if(result.error) throw new Error('Could not complete sign-in. Please try again.');
+        session=result.data.session;
       }
-      const result=await db.auth.setSession({access_token:tokens.access_token,refresh_token:tokens.refresh_token});
-      if(result.error) throw result.error;
-      session=result.data.session;
+      if(!session)throw new Error('Could not establish a login session. Please try again.');
       if(!sharedId&&sessionStorage.getItem(onboardingKey)===username){
         sessionStorage.removeItem(onboardingKey);
         view='shop';category=null;selected=null;
