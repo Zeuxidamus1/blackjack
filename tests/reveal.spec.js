@@ -144,18 +144,62 @@ async function setup(page,{gp=100000,viewport}={}){
   await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
   return errors;
 }
+async function ripPack(page,from=.12,to=.90){
+  const handle=page.locator('#cr-reveal .cr-rip-target');
+  await expect(handle).toBeVisible();
+  await handle.evaluate(el=>Promise.all(el.parentElement.getAnimations().map(a=>a.finished.catch(()=>{}))));
+  const rect=await handle.boundingBox();
+  const y=rect.y+rect.height*.48;
+  await page.mouse.move(rect.x+rect.width*from,y);
+  await page.mouse.down();
+  await page.mouse.move(rect.x+rect.width*to,y,{steps:10});
+  await page.mouse.up();
+}
 async function purchase(page,qty){
   await page.locator('.boss-qty [data-id="'+qty+'"]').click();
   await page.locator('#boss-details [data-act="purchase"]').click();
   await expect(page.locator('#cr-reveal')).toBeVisible();
-  await expect(page.locator('#cr-reveal [data-cr="skip"]')).toBeVisible();
-  await page.locator('#cr-reveal [data-cr="skip"]').click();
+  await ripPack(page);
 }
 async function revealAll(page,qty){
   await expect(page.locator('#cr-reveal .cr-turn')).toHaveCount(qty);
   await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
   await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(qty);
 }
+test('pack stays sealed until a real horizontal swipe completes',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await page.locator('.boss-qty [data-id="1"]').click();
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  await expect(page.locator('.cr-rip-target')).toBeVisible();
+  await expect(page.locator('[data-cr="skip"]')).toHaveCount(0);
+  await page.waitForTimeout(2200);
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  await page.locator('.cr-rip-target').click();
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  await ripPack(page,.15,.38);
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  expect(await page.locator('#cr-reveal').evaluate(el=>el.style.getPropertyValue('--cr-rip-progress'))).toBe('0');
+  const before=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(before.batch.rewards[0].revealed).toBe(false);
+  await ripPack(page);
+  await expect(page.locator('.cr-single-name')).toHaveText('Rune scimitar');
+  const after=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(after.purchases).toBe(1);
+  expect(after.gp).toBe(99000);
+  await page.locator('[data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
+test('keyboard activation is an accessible alternative to the swipe',async({page})=>{
+  const errors=await setup(page);
+  await page.locator('.boss-qty [data-id="1"]').click();
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  await page.locator('.cr-rip-target').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.cr-single-name')).toHaveText('Rune scimitar');
+  await page.locator('[data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
 test('single opening presents dominant item, exact GP and Sell/Vault',async({page})=>{
   const errors=await setup(page);
   await purchase(page,1);
