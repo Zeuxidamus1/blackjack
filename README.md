@@ -51,3 +51,9 @@ Android: open the site in Chrome, then use Install app or the three-dot browser 
 PWA configuration: manifest.json, app-install.js, sw.js, offline.html, and icons/. The service worker is scoped to the GitHub Pages /blackjack/ directory. It caches only static install assets and an offline page, never GP balances, Supabase requests or authenticated transactions. Pack opening, inventory and payments require internet. GitHub Pages deployments update the app's online content.
 
 Test by running npm run test:e2e; tests/pwa.spec.js covers manifest, icons, install prompts, phone viewport, offline page and registration, along with the existing Boss Loot regression suite.
+
+## GP economy expansion (Step 2, 2026-11-14)
+
+An **Earn GP** tab now shows the unchanged 50,000 GP daily claim, a 5,000 GP low-balance recovery grant, and server-validated one-time collection milestones. Recovery is available only when the account has less GP than the cheapest pack (currently 1,000 GP), has no unresolved pack rewards, and has not claimed recovery in the preceding 24 hours. Collection milestones are based on distinct server-recorded pulls in Boss Loot, Clue Casket, and Pet Hunt. Rewards per category: First Find 2,000 GP; Scout 5,000 GP; Collector 12,000 GP; Veteran 25,000 GP; Complete 50,000 GP.
+
+The Supabase implementation is in `supabase/migrations/20261115020722_challenger_progression_gp_rewards_and_recovery.sql`. Player balances, pack prices, reward probabilities, and existing daily claim amounts were not modified. The server uses an existing transaction advisory lock, validates the authenticated player, and stores milestone and recovery claims in protected tables with no client-table privileges. Never award GP based on client-supplied achievements, requests, odds, or prices. A recovered or claimed reward is never paid twice inside the eligible period. See `tests/economy.spec.js` for browser regression tests.
