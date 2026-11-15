@@ -56,11 +56,11 @@
     const groups=result.groups.map(group=>{
       const active=group.id===data.selectedPack;
       const status=group.total===0?'No items available':
-        group.earned?(group.earned.name==='Complete'?'Collection complete':'Earned: '+group.earned.name):
+        group.earned?(group.earned.name==='Complete'?'Collection complete':'Reached: '+group.earned.name):
           'First find available';
       const next=group.total===0?'':group.next?
         '<span class="collection-goal-next">Next: '+escape(group.next.name)+' at '+group.next.count.toLocaleString()+'</span>':
-        '<span class="collection-goal-next">All milestones earned</span>';
+        '<span class="collection-goal-next">All discovery goals reached</span>';
       return '<button type="button" class="collection-goal'+(active?' is-active':'')+
         '" data-act="collection-progress-pack" data-id="'+escape(group.id)+'" aria-pressed="'+active+'"'+
         (group.total===0?' disabled':'')+' aria-label="Show '+escape(group.name)+' collection items, '+group.found+' of '+group.total+' discovered">'+
