@@ -423,7 +423,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <main>
 <section id="games" class="game-library" aria-label="Choose a game" hidden><div class="game-library-grid" id="game-library-grid"></div></section>
 <div id="game-navigation" class="game-navigation" hidden><button type="button" class="game-back-link" data-act="all-games" aria-label="Back to all games"><span aria-hidden="true">←</span> All games</button></div>
-<section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button><span id="daily-timer"></span></div></section>
+<section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button></div></section>
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="earn">Earn GP</button><button data-view="missions">Missions</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button><button data-view="moderator" hidden>Moderator Tools</button></nav>
 <div id="game-status"></div>
 <section id="inventory" hidden>
@@ -590,6 +590,8 @@ const PET_SPRITES=Object.freeze({
   "youngllef": 23757
 });
 const PET_CATEGORY_ICONS=Object.freeze({cats:'🐈',dogs:'🐕','pet fish':'🐟'});
+const GE_QUOTE_MAX_AGE_MS=72*60*60*1000;
+const GE_QUOTE_PREFERRED_AGE_MS=24*60*60*1000;
 function artworkFallback(item){
   const name=String(item?.name||'').toLowerCase();
   return PET_CATEGORY_ICONS[name]||(item?.pack==='pets'?'🐾':'⚔');
@@ -610,7 +612,7 @@ function eligibleCatalogSale(item){
   if(!item||Number(item.guide)<=0)return false;
   if(fixedPetGuide(item))return true;
   const last=Date.parse(item.guideTime);
-  return Number(item.ge)>0&&Number.isFinite(last)&&last>Date.now()-24*60*60*1000;
+  return Number(item.ge)>0&&Number.isFinite(last)&&last>Date.now()-GE_QUOTE_MAX_AGE_MS;
 }
 window.ChallengerArtwork={src:artworkUrl,fallback:artworkFallback,saleable:eligibleCatalogSale,fixedPet:fixedPetGuide};
 const tiers = [['Common','#b7afca'],['Uncommon','#7eeac2'],['Rare','#82c8ff'],['Epic','#d2a3ff'],['Legendary','#ffc966']];
@@ -682,9 +684,11 @@ function guideValue(item){
   if(!item.ge) return (item.pack==='pets'?'Pet Hunt value · ':'Custom guide · ')+price(item.guide);
   const last=Date.parse(item.guideTime);
   if(!item.guide || !Number.isFinite(last)) return 'GE guide unavailable';
-  const stale=Date.now()-last>24*60*60*1000;
+  const age=Date.now()-last;
   const updated=new Date(last).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-  return 'GE guide · '+price(item.guide)+' · Updated '+updated+(stale?' (stale)':'');
+  return 'GE guide · '+price(item.guide)+' · Last verified trade '+updated+
+    (age>GE_QUOTE_MAX_AGE_MS?' (expired quote)':
+      age>GE_QUOTE_PREFERRED_AGE_MS?' (older verified quote)':'');
 }
 // Pet Hunt in-game value bands are mirrored in the live server's rarity odds.
 function petRarityIndex(item){
@@ -714,9 +718,7 @@ async function loadCatalog(){
 }
 function renderDaily(){
   const remaining=state?.nextDailyAt?Date.parse(state.nextDailyAt)-Date.now()-clockOffset:0;
-  const minutes=Math.max(1,Math.ceil(remaining/60000));
   el('daily').hidden=!state||remaining>0;
-  el('daily-timer').textContent=state&&remaining>0?'Next claim in '+Math.floor(minutes/60)+'h '+minutes%60+'m':'';
   if(view==='earn')window.ChallengerEconomy?.tick(el('earn-dashboard'),economyStatus,state,clockOffset);
   if(view==='missions'&&missionsStatus){
     window.ChallengerMissions?.tick(el('missions-dashboard'),missionsStatus,clockOffset);
@@ -1082,15 +1084,9 @@ function inventoryBestChances(){
 }
 function inventorySummary(items,grouped){
   const total=items.reduce((sum,a)=>sum+Number(catalog.get(a.item)?.guide||0),0);
-  const duplicates=[...grouped.values()].reduce((sum,g)=>sum+Math.max(0,g.length-1),0);
-  const most=items.map(a=>catalog.get(a.item)).filter(Boolean).sort((a,b)=>Number(b.guide||0)-Number(a.guide||0))[0];
-  const protectedCount=items.filter(a=>a.protected).length;
   return '<div class="inventory-stat is-primary"><span>Inventory guide value</span><strong>'+price(total)+'</strong>'+
     '<small>Estimated values, not guaranteed sale proceeds</small></div>'+
-    '<div class="inventory-stat"><span>Total items</span><strong>'+items.length+'</strong><small>'+grouped.size+' unique types</small></div>'+
-    '<div class="inventory-stat"><span>Extra copies</span><strong>'+duplicates+'</strong><small>'+protectedCount+' protected items</small></div>'+
-    '<div class="inventory-stat is-most"><span>Most valuable item</span><strong>'+safe(most?.name||'—')+'</strong>'+
-    '<small>'+(most?price(most.guide):'No items yet')+'</small></div>';
+    '<div class="inventory-stat"><span>Total items</span><strong>'+items.length+'</strong><small>'+grouped.size+' unique types</small></div>';
 }
 function inventoryItemMarkup(asset,counts,eligibility){
   const item=catalog.get(asset.item);
@@ -1103,7 +1099,10 @@ function inventoryItemMarkup(asset,counts,eligibility){
     const actions=asset.listing?button('Cancel existing listing','cancel',asset.listing):
       button(locked?'Unlock item':'Protect item','inventory-lock',asset.id)+
       button(asset.pinned?'Remove from showroom':'Display in showroom','pin',asset.id)+
-      (!locked&&eligibleCatalogSale(item)?button((fixedPetGuide(item)?'Sell for assigned GP · ':'Sell to GE · ')+price(estimate(item)),'sell',asset.id):'')+
+      (!locked&&eligibleCatalogSale(item)?button((fixedPetGuide(item)?'Sell for assigned GP · ':
+        (Date.now()-Date.parse(item.guideTime)>GE_QUOTE_PREFERRED_AGE_MS?'Sell at last GE quote · ':'Sell to GE · '))+
+        price(estimate(item)),'sell',asset.id):'')+
+      (!locked&&!eligibleCatalogSale(item)&&item.ge?button('Refresh GE quote','inventory-refresh'):'')+
       (!locked&&duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
     return card(item,detail,tag+'<div class="actions">'+actions+'</div>')
       .replace('<article class="item"','<article class="item'+(locked?' inventory-protected':'')+'"');
@@ -1111,7 +1110,8 @@ function inventoryItemMarkup(asset,counts,eligibility){
   const canSell=eligibility.has(asset.id);
   const active=inventorySelected.has(asset.id);
   const reason=locked?'Protected — unlock this item to sell':
-    asset.listing?'Listed — cancel the listing first':'No available sale value';
+    asset.listing?'Listed — cancel the listing first':
+    item.ge?'Verified GE quote expired; refresh to sell':'No available sale value';
   const html=card(item,detail,tag+(canSell?'<p class="inventory-item-hint">'+
     (active?'Selected for sale':'Tap item to select')+'</p>':
     '<p class="inventory-item-unavailable">'+reason+'</p>'));
@@ -1810,7 +1810,14 @@ document.addEventListener('click',event=>{
   }
   if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;view=sharedId?'shared':'games';category=null;selected=null;await load();});
   if(['cancel','pin','salvage','sell'].includes(act)) {
-     if(act==='sell'&&!confirm('Sell this item for its current server-assigned value?'))return;
+     if(act==='sell'){
+        const item=catalog.get(state?.items?.find(a=>a.id===id)?.item);
+        const older=item?.ge&&Date.now()-Date.parse(item.guideTime)>GE_QUOTE_PREFERRED_AGE_MS;
+        const message=older?
+          'Sell this item for '+price(item.guide)+' using its last verified GE trade price? The quote is older than 24 hours.':
+          'Sell this item for its server-verified GP value?';
+        if(!confirm(message))return;
+      }
     run(async()=>{
       const previousGp=state?.gp;
       await rpc(act,{id});
