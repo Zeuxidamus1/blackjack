@@ -166,6 +166,52 @@ async function revealAll(page,qty){
   await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
   await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(qty);
 }
+
+test('enough GP with pending rewards offers Resume Opening instead of a disabled purchase',async({page})=>{
+  const errors=await setup(page,{gp:2000,viewport:{width:375,height:812}});
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  await expect(page.locator('#gp-wallet-live .gp-wallet-total')).toHaveText('1,000 GP');
+  await page.locator('#cr-reveal [data-cr="back"]').click();
+  await expect(page.locator('#cr-reveal')).toBeHidden();
+  const resume=page.locator('#boss-details [data-act="resume"]');
+  await expect(resume).toBeVisible();
+  await expect(resume).toBeEnabled();
+  await expect(resume).toHaveText('Resume Opening');
+  await expect(resume).toHaveClass(/boss-open/);
+  await expect(page.locator('#boss-details [data-act="purchase"]')).toHaveCount(0);
+  await expect(page.locator('.boss-warning')).toHaveCount(0);
+  await resume.click();
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  expect((await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')))).purchases).toBe(1);
+  await ripPack(page);
+  await expect(page.locator('.cr-single-name')).toHaveText('Rune scimitar');
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  await expect(page.locator('#boss-details [data-act="purchase"]')).toBeEnabled();
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  const backend=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(backend.purchases).toBe(2);
+  expect(backend.gp).toBe(0);
+  await ripPack(page);
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
+test('resume previous opening remains available even if GP has fallen below pack price',async({page})=>{
+  const errors=await setup(page,{gp:1000});
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  await page.locator('#cr-reveal [data-cr="back"]').click();
+  await expect(page.locator('#balance')).toHaveText('0 GP');
+  await expect(page.locator('#boss-details [data-act="resume"]')).toBeEnabled();
+  await expect(page.locator('#boss-details [data-act="purchase"]')).toHaveCount(0);
+  await page.locator('#boss-details [data-act="resume"]').click();
+  await expect(page.locator('.cr-opening')).toBeVisible();
+  await ripPack(page);
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  await expect(page.locator('#boss-details [data-act="purchase"]')).toBeDisabled();
+  expect(errors).toEqual([]);
+});
 test('pack stays sealed until a real horizontal swipe completes',async({page})=>{
   const errors=await setup(page,{viewport:{width:375,height:812}});
   await page.locator('.boss-qty [data-id="1"]').click();
