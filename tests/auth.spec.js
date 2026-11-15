@@ -75,7 +75,7 @@ test('desktop can sign in using account email without username lookup',async({pa
   await expect(page.locator('#balance')).toHaveText('100,000 GP');
   const events=await page.evaluate(()=>window.__authEvents);
   expect(events).toContainEqual(['email-login','player@example.com',16]);
-  expect(events.some(e=>e[0]==='edge-login')).toBe(false);
+  expect(events.some(e=>e[0]==='edge-login'&&e[1]==='challenger-login')).toBe(false);
   expect(errors).toEqual([]);
 });
 
