@@ -13,7 +13,15 @@ const boss={
   rewards:mockCatalog.map((v,i)=>({id:v.id,weight:i===4?992000:2000,chase:i===0})),
   configVersion:2
 };
-async function setup(page,{gp=100000,viewport}={}){
+async function setup(page,{gp=100000,viewport,customPet=false}={}){
+  const testCatalog=customPet?mockCatalog.map((item,i)=>i===0?{
+    ...item,id:'pets_abyssal_orphan',pack:'pets',name:'Abyssal orphan',
+    ge:null,guide:5000000,guideTime:null
+  }:item):mockCatalog;
+  const testCase=customPet?{
+    ...boss,rewards:boss.rewards.map((reward,i)=>i===0?
+      {...reward,id:'pets_abyssal_orphan'}:reward)
+  }:boss;
   if(viewport)await page.setViewportSize(viewport);
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -148,7 +156,7 @@ async function setup(page,{gp=100000,viewport}={}){
         return ok(null);
       }
     })};
-  },{mockCatalog,boss,gp});
+  },{mockCatalog:testCatalog,boss:testCase,gp});
   await page.goto('/');
   await expect(page.locator('#games [data-act="game"][data-id="runescape"]')).toBeVisible();
   await page.locator('#games [data-act="game"][data-id="runescape"]').click();
@@ -834,4 +842,59 @@ test('Step 5 inventory fits a small phone with value cards and filters',async({p
  await expect(page.locator('#inventory-results')).toContainText('Showing 5 of 5');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
  expect(errors).toEqual([]);
+});
+
+test('nontradeable Abyssal orphan shows real OSRS art and sells for 5 million assigned GP',async({page})=>{
+  const errors=await setup(page,{customPet:true,gp:100000});
+  await purchase(page,1);
+  await expect(page.locator('#cr-reveal .cr-single-art img')).toHaveAttribute(
+    'src','https://static.runelite.net/cache/item/icon/13262.png');
+  await expect(page.locator('#cr-reveal [data-cr="sell"]')).toBeEnabled();
+  await page.locator('#cr-reveal [data-cr="sell"]').click();
+  await expect(page.locator('#cr-reveal')).toBeHidden();
+  const first=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(first.gp).toBe(100000-1000+5000000);
+  expect(first.batch.rewards[0].settledValue).toBe(5000000);
+  await page.reload();
+  const next=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(next.gp).toBe(first.gp);
+  expect(errors).toEqual([]);
+});
+
+test('assigned-value pet can be vaulted and later sold via inventory bulk selection',async({page})=>{
+  const errors=await setup(page,{customPet:true,gp:100000});
+  await purchase(page,1);
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  await expect(page.locator('#cr-reveal')).toBeHidden();
+  await page.getByRole('button',{name:'Inventory'}).click();
+  await expect(page.locator('#owned .item')).toHaveCount(1);
+  await expect(page.locator('#owned .item-icon')).toHaveAttribute(
+    'src','https://static.runelite.net/cache/item/icon/13262.png');
+  await page.locator('#inventory-mode-button').click();
+  await expect(page.locator('#owned [data-act="inventory-toggle"]')).toHaveCount(1);
+  await page.locator('#owned [data-act="inventory-toggle"]').click();
+  await expect(page.locator('#inventory-toolbar')).toContainText('5,000,000 GP');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('#inventory-toolbar [data-act="inventory-sell"]').click();
+  await expect(page.locator('#owned .item')).toHaveCount(0);
+  const result=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(result.gp).toBe(100000-1000+5000000);
+  expect(result.bulkSales).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('other non-GE pets have a wiki artwork URL and positive server-assigned sale eligibility',async({page})=>{
+  await setup(page);
+  const art=await page.evaluate(()=>{
+    const item={id:'pets_vorki',name:'Vorki',pack:'pets',ge:null,guide:5000000,guideTime:null};
+    const nonPet={...item,pack:'boss'};
+    return {
+      url:window.ChallengerArtwork.src(item),
+      eligible:window.ChallengerArtwork.saleable(item),
+      nonPetEligible:window.ChallengerArtwork.saleable(nonPet)
+    };
+  });
+  expect(art.url).toBe('https://oldschool.runescape.wiki/Special:Redirect/file/Vorki.png');
+  expect(art.eligible).toBe(true);
+  expect(art.nonPetEligible).toBe(false);
 });
