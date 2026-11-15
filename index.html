@@ -272,6 +272,14 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 @media(max-width:400px){.bar-right:has(.pwa-install-button:not([hidden])) .header-signout{display:none}}
 @media(display-mode:standalone){.pwa-install-button{display:none!important}header{padding-top:env(safe-area-inset-top)}footer{padding-bottom:env(safe-area-inset-bottom)}}
 
+/* Collection Log: compact, independent pack/status/sort controls. */
+#collection .collection-heading{margin-bottom:10px}
+#collection .collection-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 7px;max-width:760px}
+#collection .collection-controls label{min-width:0;display:flex;flex-direction:column;gap:5px;color:#b3cac8;font-size:.77rem;font-weight:800}
+#collection .collection-controls select{width:100%;min-width:0;min-height:42px;background:#13252b;color:#eef8f5;border:1px solid #48645f;border-radius:11px;font-size:.85rem;font-weight:700;padding:8px 10px;cursor:pointer}
+#collection .collection-controls select:focus-visible{outline:2px solid #98e8c6;outline-offset:2px}
+#collection .collection-count{font-size:.78rem;color:#a9c0bd;margin:6px 0 12px}
+@media(max-width:520px){#collection .collection-controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#collection .collection-controls label:last-child{grid-column:1/-1}#collection .collection-controls select{font-size:.81rem}}
 /* Collection Log: actual OSRS icons for personally unlocked items. */
 #items .collection-unlocked .symbol,#owned .item .symbol,#pins .item .symbol,#sharedItems .item .symbol{min-height:112px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 48%,#30535788,#0a171c 76%);border:1px solid #ffffff24}
 .item .item-icon{width:86px;height:86px;max-width:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 7px 9px #000a)}
@@ -354,7 +362,34 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
   <div class="grid" id="owned"></div>
 </section>
 <section id="shop" class="grid" aria-label="Packs"></section>
-<section id="collection" hidden><div class="section"><h2 id="progress"></h2><label>Pack <select id="filter"><option value="all">All packs</option></select></label></div><div class="grid" id="items" style="margin-top:12px"></div></section>
+<section id="collection" hidden>
+  <div class="section collection-heading"><h2 id="progress"></h2></div>
+  <div class="collection-controls" role="group" aria-label="Collection Log filters">
+    <label for="filter">Pack
+      <select id="filter"><option value="all">All packs</option></select>
+    </label>
+    <label for="collection-status">Status
+      <select id="collection-status">
+        <option value="all">All items</option>
+        <option value="collected">Collected</option>
+        <option value="uncollected">Not collected</option>
+      </select>
+    </label>
+    <label for="collection-sort">Sort by
+      <select id="collection-sort">
+        <option value="default">Default order</option>
+        <option value="value-high">Value: high to low</option>
+        <option value="value-low">Value: low to high</option>
+        <option value="rare-high">Rarity: high to low</option>
+        <option value="rare-low">Rarity: low to high</option>
+        <option value="name-asc">Name: A to Z</option>
+        <option value="name-desc">Name: Z to A</option>
+      </select>
+    </label>
+  </div>
+  <p id="collection-count" class="collection-count" role="status" aria-live="polite"></p>
+  <div class="grid" id="items"></div>
+</section>
 <section id="showcase" hidden><div class="section"><h2>Your showroom</h2><button id="share" class="primary">Copy showroom link</button></div><p class="empty" id="shareHint">Display up to five items from your inventory. Items remain yours until sold.</p><div class="grid" id="pins"></div></section>
 <section id="shared" hidden><div class="section"><h2>Shared showroom</h2></div><p class="empty">Items displayed by another player.</p><div class="grid" id="sharedItems"></div></section>
 </main>
@@ -694,9 +729,31 @@ function render() {
   if(view==='shop') renderShop(ready);
   if(view==='collection') {
     const pulls=state?.pulls||{};
+    const pack=el('filter').value;
+    const status=el('collection-status').value;
+    const sort=el('collection-sort').value;
+    const isCollected=item=>Boolean(pulls[item.id]);
+    const chance=item=>Number(item.weight)/Number(item.total);
+    const tie=(a,b)=>a.name.localeCompare(b.name);
+    const rows=[...catalog.values()].filter(item=>
+      (pack==='all'||item.pack===pack)&&
+      (status==='all'||(status==='collected'?isCollected(item):!isCollected(item))));
+    const comparators={
+      'value-high':(a,b)=>Number(b.guide||0)-Number(a.guide||0)||tie(a,b),
+      'value-low':(a,b)=>Number(a.guide||0)-Number(b.guide||0)||tie(a,b),
+      // Smaller drop probabilities are rarer, regardless of pack size.
+      'rare-high':(a,b)=>chance(a)-chance(b)||tie(a,b),
+      'rare-low':(a,b)=>chance(b)-chance(a)||tie(a,b),
+      'name-asc':(a,b)=>tie(a,b),
+      'name-desc':(a,b)=>tie(b,a)
+    };
+    if(comparators[sort])rows.sort(comparators[sort]);
     el('progress').textContent=Object.keys(pulls).length+' / '+catalog.size+' personally pulled';
-    el('items').innerHTML=[...catalog.values()].filter(item=>el('filter').value==='all'||el('filter').value===item.pack)
-      .map(item=>card(item,pulls[item.id]?'×'+pulls[item.id].count:'Undiscovered','',!pulls[item.id],true)).join('');
+    el('collection-count').textContent='Showing '+rows.length+' of '+catalog.size+' items';
+    el('items').innerHTML=rows.map(item=>card(item,
+      (isCollected(item)?'×'+pulls[item.id].count:'Undiscovered')+' · '+guideValue(item),
+      '',!isCollected(item),true)).join('')||
+      empty('No items match these filters.');
   }
   if(view==='inventory') renderInventory();
   if(view==='showcase') {
@@ -822,7 +879,7 @@ async function reveal(slot){
   showBatch(current);
 }
 for(const pack of packs) el('filter').add(new Option(pack.name,pack.id));
-el('filter').onchange=render;
+for(const id of ['filter','collection-status','collection-sort'])el(id).onchange=render;
 modal.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
  modal.addEventListener('close',()=>modal.classList.remove('boss-inside'));
 el('auth-mode').onclick=()=>{
