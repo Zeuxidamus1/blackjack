@@ -29,7 +29,7 @@ async function setup(page,gp=1000000000,{large=false,pulls={},orphan=false,oddsM
   ge:i===48?20997:1100+i,
   guide:i===48?1375875485:(i<23?200+i*25:1200+(i-23)*200),
   guideTime:new Date().toISOString(),found:0,circulation:0
- })):mockCatalog;
+ })):mockCatalog.map(item=>({...item}));
  if(orphan)catalogForTest.push({
    id:'orphan_item',pack:'boss',weight:1,name:'Unassigned collectible',
    ge:20000,guide:700000,guideTime:new Date().toISOString(),found:0,circulation:0,salvage:0
