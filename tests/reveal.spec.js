@@ -693,6 +693,7 @@ test('Duplicate stacking, expansion and select-spares sell extra copies while pr
    sessionStorage.setItem('reveal-mock',JSON.stringify(backend));
  });
  await page.reload();
+ await page.locator('#games [data-act="game"][data-id="runescape"]').click();
  await page.getByRole('button',{name:'Inventory'}).click();
  await expect(page.locator('#inventory-overview')).toContainText('1');
  await expect(page.locator('#inventory-overview')).toContainText('3 unique types');
