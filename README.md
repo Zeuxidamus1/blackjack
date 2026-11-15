@@ -10,7 +10,7 @@ Boss reward pools currently contain ten existing, GE-backed catalogue items per 
 
 ## Price integrity
 
-The authenticated Supabase \`challenger-ge-refresh\` Edge Function obtains OSRS Wiki real-time GE quotes for the actual item IDs and synchronizes validated prices to the server catalogue. Requests are globally throttled to once per 15 minutes and are triggered by active authenticated sessions. Inactive periods will not refresh automatically unless an external schedule is configured. If prices are unavailable or older than 24 hours, direct GE sale is blocked; no market value is invented. Players cannot supply their own listing or GE sale price. Existing player listings reprice to validated guides when the catalogue is updated. Item artwork is served from RuneLite icons.
+The authenticated Supabase \`challenger-ge-refresh\` Edge Function obtains OSRS Wiki real-time GE quotes for the actual item IDs and synchronizes validated prices to the server catalogue. Requests are globally throttled to once per 15 minutes and are triggered by active authenticated sessions. Inactive periods will not refresh automatically unless an external schedule is configured. Verified GE quotes can be used for direct sales for up to 72 hours after their actual last trade timestamp. Quotes older than 24 hours are visibly labeled as older and require user confirmation; quotes over 72 hours or unavailable block selling until a refreshed quote is available. No market value is invented. Players cannot supply their own listing or GE sale price. Existing player listings reprice to validated guides when the catalogue is updated. Item artwork is served from RuneLite icons.
 
 ## Platform
 
@@ -126,7 +126,7 @@ Both queries must return zero or no rows respectively. The Collection Log's **Mo
 
 ## Step 5: Inventory dashboard, protection and duplicate tools
 
-The RuneScape Inventory tab now includes a premium dashboard with the combined **guide value of all owned items**, total owned count, unique item-type count, extra duplicate copies, protected item count, and most valuable item. This is an *estimate* based on currently stored GE or custom item guide values, not a guaranteed cash-out amount. GP wallet balances are separate.
+The RuneScape Inventory tab now includes a compact two-card dashboard showing **combined guide value** and **total items with unique-type count**. This is an *estimate* based on currently stored GE or custom item guide values, not a guaranteed cash-out amount. GP wallet balances are separate.
 
 Players can search inventory by item name, filter by sale eligibility, duplicates, protection, listing, or pack family, and sort by acquisition time, guide value, best actual pack rarity, name, or copy count. The optional **Stack duplicates** control displays identical items together without merging their separate server-owned instances; stacks expand into individual items.
 
@@ -153,3 +153,11 @@ Migration: `supabase/migrations/20261115095000_pet_hunt_rarity_values_and_72_per
 Actual case weights are recalculated with a monotonically decreasing value-based power weighting and largest-remainder ticket allocation. Each of the three cases has exactly 1,000,000,000,000 tickets, every reward remains obtainable, the jackpot stays exactly 1 in 1,000,000, and the server-verified expected payout is **72.0000% of pack cost** (720 GP Starter; 2,880 GP Select; 8,640,000 GP Premium). Higher-valued items always have lower chances within the same pack. Source updates increment all three Pet Hunt configuration versions. No purchases, GP balances, inventory instances, drop history, completed sales or prior snapshot fields were modified. Existing pending or owned pets use current server guide values when sold, as with the preexisting economy rules.
 
 The premium storefront's What's Inside popup lists pets by rarity, displays distinct values, and shows actual server draw odds rather than legacy catalog weights. The collection and inventory use the same values and authentic icons. Pet selling remains available from the reveal and from inventory/bulk selling. In-game values are read-only to clients; payouts are made server-side with existing owner verification. Relevant browser tests: `tests/premium-categories.spec.js`.
+
+## Inventory cleanup and sell stale GE items (2026-11-15)
+
+The inventory summary displays only Inventory guide value and Total items. The Extra copies and Most valuable item summary cards are removed (the functional duplicate filters, stacking, protection and per-item controls are preserved). The RuneScape hero no longer repeats the promotional "Spend GP on packs" sentence or the Next claim in timer. The detailed claim countdown remains on the Earn GP tab.
+
+Some OSRS Grand Exchange items, including Light tuxedo cuffs (item 19976), have no trade in the prior 24 hours despite a valid last traded value. These are now sellable for their **last verified, server-stored GE quote** for up to 72 hours. The inventory labels quotes older than 24 hours and the sale confirmation explicitly discloses their age. Beyond 72 hours the interface offers Refresh GE quote, while sales remain blocked at the backend. No fake timestamps, fallback market values, client-submitted GP amounts or ownership bypasses are used.
+
+Database: `supabase/migrations/20261115102000_allow_verified_ge_sales_within_72_hours.sql` updates reward settlement, individual selling and bulk selling using the same 72-hour rule. Frontend: `index.html` and `inventory-step5.css`. Tests: `tests/reveal.spec.js` includes both an eligible 34-hour trade and an ineligible 80-hour trade.
