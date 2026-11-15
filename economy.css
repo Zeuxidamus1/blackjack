@@ -1,0 +1,34 @@
+/* Economy dashboard: functional, compact, and distinct from the reveal screen. */
+#earn{max-width:100%;min-width:0}
+.earn-dashboard{padding:8px 0 30px}
+.earn-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 20px}
+.earn-heading h2{margin:4px 0 0;font-size:clamp(1.6rem,4vw,2.3rem);letter-spacing:-.04em}
+.earn-heading>strong{font-size:clamp(.9rem,2.8vw,1.1rem);font-variant-numeric:tabular-nums;color:#b0e9ce;white-space:nowrap}
+.earn-eyebrow{font-size:.68rem;color:#93d7b8;letter-spacing:.16em;font-weight:850}
+.earn-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.earn-quick{border:1px solid #47675f;background:radial-gradient(ellipse at 17% 0%,#1a4140,#102329 69%);padding:20px;border-radius:18px;display:flex;flex-direction:column;align-items:flex-start;gap:13px;min-width:0}
+.earn-quick-title{font-weight:800;color:#bbd3ce}
+.earn-quick>strong{font-size:clamp(1.5rem,4.5vw,2.1rem);line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.045em}
+.earn-quick button{min-height:44px;padding:10px 20px;border-radius:13px}
+.earn-quick button:disabled{opacity:.55}
+.earn-quick small{font-size:.73rem;color:#9fbcb6;line-height:1.45}
+.earn-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:30px 0 14px}
+.earn-section-heading h3{font-size:1.24rem;margin:0}
+.earn-section-heading span{color:#9bdcbd;font-size:.8rem;font-weight:750}
+.earn-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.earn-group{min-width:0;border:1px solid #35534f;border-radius:16px;padding:12px;background:#112327}
+.earn-group-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin:0 0 8px}
+.earn-group-heading h4{font-size:.94rem;margin:0}
+.earn-group-heading span{font-size:.67rem;color:#a5c4be;white-space:nowrap}
+.earn-milestone{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"info reward" "info action";gap:5px 9px;align-items:center;padding:13px 0;border-top:1px solid #ffffff19}
+.earn-milestone.is-ready{background:#17443c70;border-radius:10px;padding-left:8px;padding-right:8px}
+.earn-milestone-info{grid-area:info;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.earn-milestone-info strong{font-size:.83rem}
+.earn-milestone-info small{font-size:.72rem;color:#b9cfcb;font-variant-numeric:tabular-nums}
+.earn-milestone-prize{grid-area:reward;font-size:.74rem;font-weight:800;color:#a2eac9;white-space:nowrap;text-align:right}
+.earn-milestone button{grid-area:action;font-size:.73rem;min-height:31px;padding:5px 12px;border-radius:10px}
+.earn-milestone button:disabled{opacity:.57}
+.earn-empty{color:#b3c9c4;padding:20px 0}
+@media(max-width:900px){.earn-groups{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.earn-quick-grid,.earn-groups{grid-template-columns:1fr}.earn-quick{padding:16px}.earn-quick button{width:100%}.earn-milestone{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"info reward action";gap:8px}.earn-section-heading{margin-top:22px}}
+@media(max-width:375px){.earn-milestone{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"info reward" "info action"}}
