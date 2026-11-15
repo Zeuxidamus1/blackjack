@@ -172,7 +172,6 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .item,.tile,.empty{background:linear-gradient(145deg,#182e35,#0d181e);border-color:#30434a}
 .item .symbol{background:#0a1b21}
 dialog:not(.boss-inside){background:#0e2026;border-color:#466066}
-#account{border-radius:14px}
 
 /* Premium Challenger Rips storefront: same design language across page and rewards */
 :root{color-scheme:dark;--muted:#a3b8b9;--panel:#112128;--line:#30444b;--accent:#8fdac0;background:#070d11}
@@ -186,7 +185,6 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 .header-signout{border:1px solid #ffffff27;border-radius:999px;color:#d3e2e3;padding:9px 13px;font-size:.77rem;white-space:nowrap}
 #storefront main{max-width:1140px}
 #storefront:has(#shop:not([hidden])) .hero,#storefront:has(#games:not([hidden])) .hero{display:none}
-#storefront:has(#shop:not([hidden])) #account,#storefront:has(#games:not([hidden])) #account{display:none}
 #storefront:has(#shop:not([hidden])) #daily-timer{display:none}
 #storefront nav.tabs{border-bottom:1px solid #ffffff1a;gap:5px;margin:4px 0 19px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 #storefront nav.tabs::-webkit-scrollbar{display:none}
@@ -350,7 +348,6 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button><span id="daily-timer"></span></div></section>
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button></nav>
 <div id="game-status"></div>
-<section id="account" class="empty"></section>
 <section id="inventory" hidden>
   <div class="section inventory-heading"><h2>Your inventory</h2><button type="button" class="quiet" id="inventory-mode-button" data-act="inventory-mode" aria-pressed="false">Select items</button></div>
   <div id="inventory-toolbar" class="inventory-toolbar" hidden></div>
@@ -689,7 +686,6 @@ function render() {
     window.ChallengerWallet?.reset();
   }
   renderDaily();
-  el('account').innerHTML=!ready?'':'<div class="section"><strong>'+safe(state.name)+'</strong>'+button('Sign out','logout')+'</div>';
   for(const id of ['games','shop','collection','inventory','showcase','shared']) el(id).hidden=id!==view;
   el('game-navigation').hidden=view==='games'||view==='shared';
   document.querySelector('nav.tabs').hidden=view==='games'||view==='shared';
