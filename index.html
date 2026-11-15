@@ -529,9 +529,10 @@ function renderBossDetails() {
    '<div class="boss-metrics"><div><small>Minimum pull</small><strong>'+(minimum===null?'Unavailable':price(minimum))+'</strong></div>'+
    '<div><small>Max pull</small><strong>'+(maximum===null?'Unavailable':price(maximum))+'</strong></div>'+
    '<div><small>Pack price</small><strong>'+price(entry.price)+'</strong></div></div>'+
-   '<div class="boss-qty"><span>Open</span>'+[1,2,3,4,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
-   button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty||Boolean(batch))+
-   (batch?'<p class="boss-warning">Finish your previous opening before purchasing another pack.</p>':'');
+   '<div class="boss-qty"><span>Open</span>'+[1,2,3,4,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty||Boolean(batch)?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
+   (batch
+     ? button('Resume Opening','resume','',true)
+     : button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty));
  const details=el('boss-details');
  const previousCase=details.dataset.motionCase;
  details.dataset.motionCase=entry.id;
@@ -540,7 +541,7 @@ function renderBossDetails() {
    details.animate([{opacity:.62,transform:'translate3d(0,8px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
      {duration:350,easing:'cubic-bezier(.22,1,.36,1)'});
  }
- const buy=details.querySelector('[data-act="purchase"]');if(buy)buy.classList.add('boss-open');
+ const buy=details.querySelector('[data-act="purchase"],[data-act="resume"]');if(buy)buy.classList.add('boss-open');
  document.querySelectorAll('.boss-slide').forEach((slide,i)=>slide.classList.toggle('is-active',i===bossIndex));
 }
 function renderBossShop(resume) {
@@ -856,8 +857,8 @@ function showCase(){
   quantity=Math.min(quantity,Math.max(cap,1));
   showModal('<h2 id="modalTitle">'+safe(entry.name)+' case · '+price(entry.price)+'</h2>'+
     '<div class="actions case-buy">'+[1,2,3,4,5].map(n=>button(String(n),'quantity',String(n),n===quantity,n>cap)).join('')+
-    button('Buy '+quantity+' · '+price(entry.price*quantity),'purchase','',true,!cap||Boolean(batch))+
-    (batch?button('Resume opening','resume'):'')+button('Close','close')+'</div>'+
+    (batch?button('Resume Opening','resume','',true):button('Buy '+quantity+' · '+price(entry.price*quantity),'purchase','',true,!cap))+
+    button('Close','close')+'</div>'+
     '<ul class="odds">'+[...entry.rewards].sort((a,b)=>b.weight-a.weight||estimate(catalog.get(a.id))-estimate(catalog.get(b.id))||a.id.localeCompare(b.id)).map(reward=>{
       const item=catalog.get(reward.id);
       return '<li><div><strong>'+safe(item.name)+(reward.chase?' · Ultra-rare chase':'')+'</strong><br><small>'+
