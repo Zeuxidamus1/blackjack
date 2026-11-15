@@ -33,28 +33,21 @@ function group(title,subtitle,kind,data,resetAt){
  return '<section class="mission-group" aria-label="'+title+'">'+
   '<div class="mission-group-head"><div><span class="mission-group-kicker">'+esc(subtitle)+'</span>'+
   '<h3>'+title+'</h3><p>'+completed+' / '+data.length+' rewards claimed'+(ready?' · '+ready+' ready':'')+'</p></div>'+
-  '<div class="mission-timer"><small>Resets in</small><strong data-mission-reset="'+kind+'" role="timer" aria-live="off">--:--:--</strong></div></div>'+
+  '<div class="mission-group-tools">'+
+  (kind==='daily'?'<button type="button" class="quiet mission-refresh" data-act="mission-refresh" title="Refresh mission progress">↻ Refresh</button>':'')+
+  '<div class="mission-timer"><small>Resets in</small><strong data-mission-reset="'+kind+'" role="timer" aria-live="off">--:--:--</strong></div></div></div>'+
   '<div class="mission-cards">'+data.map(card).join('')+'</div></section>';
 }
 function render(board,error=false){
  if(!board){
-  return '<div class="mission-page"><div class="mission-hero">'+
-   '<span class="mission-eyebrow">CHALLENGER RIPS · MISSIONS</span><h2>Your next challenge awaits</h2>'+
-   '<p>Play, collect and earn bonus GP for completing objectives.</p></div>'+
+  return '<div class="mission-page">'+
    '<div class="mission-loading" role="status">'+(error?
    'Missions are unavailable right now. <button type="button" class="quiet" data-act="mission-refresh">Try again</button>':
    'Loading daily and weekly missions…')+'</div></div>';
  }
  const daily=Array.isArray(board.daily)?board.daily:[];
  const weekly=Array.isArray(board.weekly)?board.weekly:[];
- const count=[...daily,...weekly].filter(m=>m.available&&!m.claimed).length;
- return '<div class="mission-page"><div class="mission-hero">'+
-   '<span class="mission-eyebrow">CHALLENGER RIPS · MISSIONS</span>'+
-   '<h2>Earn GP. Complete quests.</h2>'+
-   '<p>Your progress updates automatically from real pack openings, distinct items revealed and completed item sales.</p>'+
-   '<div class="mission-hero-footer"><span>'+count+' '+(count===1?'reward':'rewards')+' ready to claim</span>'+
-   '<button class="quiet" type="button" data-act="mission-refresh">↻ Refresh progress</button></div></div>'+
-   '<div class="mission-columns">'+
+ return '<div class="mission-page"><div class="mission-columns">'+
    group('Daily Missions','EVERY DAY','daily',daily,board.dailyResetAt)+
    group('Weekly Missions','EVERY WEEK','weekly',weekly,board.weeklyResetAt)+
    '</div><p class="mission-footnote">Missions reset at 00:00 UTC daily and Monday 00:00 UTC weekly. Only newly sold items count toward sale missions. Different revealed items count once per item type in each period, and every mission reward can be claimed once per period.</p></div>';
