@@ -316,6 +316,32 @@
       }
       return true;
     }
+    // Selecting revealed items is another frequent interaction. Update only
+    // the selected styling, summary, and action buttons; keep the entire
+    // results scene (including the background animation) mounted.
+    updateResultsInPlace(){
+      if(root.hidden||this.phase!=='results'||this.renderedPhase!=='results')return false;
+      const stage=root.querySelector('.cr-results');
+      const cards=stage?.querySelectorAll('.cr-result-card');
+      const labels=stage?.querySelector('.cr-summary-label');
+      const value=stage?.querySelector('.cr-summary-value');
+      const actions=root.querySelector('.cr-actions');
+      const rows=this.available().filter(r=>r.revealed||r.item);
+      if(!stage||!cards||cards.length!==rows.length||!labels||!value||!actions)return false;
+      const selectedRows=this.selected.size?rows.filter(r=>this.selected.has(r.slot)):rows;
+      for(const card of cards){
+        card.setAttribute('aria-pressed',String(this.selected.has(Number(card.dataset.slot))));
+      }
+      labels.textContent=this.selected.size?
+        this.selected.size+' / '+rows.length+' items selected':
+        rows.length+' item'+(rows.length===1?'':'s');
+      value.textContent=gp(this.valueTotal(selectedRows));
+      // The first phase entrance should not replay or obscure selection.
+      stage.classList.remove('cr-phase-enter');
+      root.querySelector('.cr-sale-note')?.remove();
+      actions.outerHTML=this.actions(selectedRows,true);
+      return true;
+    }
     actions(rows,multiple){
       const count=rows.length,select=this.selected.size>0;
       const suffix=multiple && select?' ('+count+')':multiple?' ALL':'';
@@ -422,7 +448,7 @@
         const slot=Number(target.dataset.slot);
         if(this.selected.has(slot))this.selected.delete(slot);
         else this.selected.add(slot);
-        this.render();
+        if(!this.updateResultsInPlace())this.render();
         return;
       }
       if(action==='sell'||action==='vault')this.settle(action);
