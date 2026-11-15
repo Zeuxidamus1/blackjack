@@ -793,7 +793,7 @@ let lastScreenKey=null;
 function render() {
   el('login-screen').hidden=Boolean(session);
   el('storefront').hidden=!session;
-  (session ? el('game-status') : el('auth-mode').parentElement).append(el('status'));
+  (session ? el('game-status') : el('login-screen').querySelector('.login-card')).append(el('status'));
   const ready=Boolean(state);
   if(ready)window.ChallengerWallet?.sync(state.gp);
   else {
