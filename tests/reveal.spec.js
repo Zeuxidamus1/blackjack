@@ -190,6 +190,55 @@ test('pack stays sealed until a real horizontal swipe completes',async({page})=>
   await page.locator('[data-cr="vault"]').click();
   expect(errors).toEqual([]);
 });
+test('unopened pack shows only artwork and chrome, never helper notes',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  const opening=page.locator('.cr-opening');
+  await expect(opening).toBeVisible();
+  await expect(opening.locator('.cr-pack-piece .boss-foil')).toHaveCount(1);
+  await expect(opening.locator('.cr-rip-assembly .cr-rip-flap')).toHaveCount(1);
+  await expect(opening.locator('.cr-rip-assembly .cr-rip-light')).toHaveCount(1);
+  await expect(page.locator('.cr-progress,.cr-opening-title,.cr-opening-note,.cr-swipe-cue,.cr-deck-help')).toHaveCount(0);
+  const visible=await page.locator('#cr-reveal').innerText();
+  for(const text of ['SWIPE TO RIP','Rewards were securely selected','Swipe across the pack','Tap to speed up']){
+    expect(visible).not.toContain(text);
+  }
+  await ripPack(page);
+  await expect(page.locator('.cr-single-name')).toHaveText('Rune scimitar');
+  await page.locator('[data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
+test('swipe light follows a reverse drag and physically peels the foil',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  const handle=page.locator('.cr-rip-target');
+  await handle.evaluate(el=>Promise.all(el.parentElement.getAnimations().map(a=>a.finished.catch(()=>{}))));
+  const box=await handle.boundingBox();
+  const y=box.y+box.height*.45;
+  await page.mouse.move(box.x+box.width*.84,y);
+  await page.mouse.down();
+  await page.mouse.move(box.x+box.width*.38,y,{steps:8});
+  const swipe=await page.locator('#cr-reveal').evaluate(el=>({
+    direction:el.classList.contains('cr-rip-reverse'),
+    progress:Number(el.style.getPropertyValue('--cr-rip-progress')),
+    lightX:el.style.getPropertyValue('--cr-rip-light-x'),
+    lightOpacity:getComputedStyle(el.querySelector('.cr-rip-light')).opacity
+  }));
+  expect(swipe.direction).toBe(true);
+  expect(swipe.progress).toBeGreaterThan(.5);
+  expect(parseFloat(swipe.lightX)).toBeGreaterThan(2);
+  expect(swipe.lightOpacity).toBe('1');
+  await page.mouse.move(box.x+box.width*.12,y,{steps:6});
+  await page.mouse.up();
+  await expect(page.locator('.cr-opening.cr-ripped')).toBeVisible();
+  await expect(page.locator('.cr-opening.cr-ripped .cr-rip-flap')).toHaveCSS('animation-name','cr-foil-peel');
+  await expect(page.locator('.cr-single-name')).toHaveText('Rune scimitar');
+  const backend=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(backend.purchases).toBe(1);
+  expect(backend.gp).toBe(99000);
+  await page.locator('[data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
 test('keyboard activation is an accessible alternative to the swipe',async({page})=>{
   const errors=await setup(page);
   await page.locator('.boss-qty [data-id="1"]').click();
