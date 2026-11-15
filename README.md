@@ -122,3 +122,14 @@ having sum(r.weight)<>1000000000000;
 ```
 
 Both queries must return zero or no rows respectively. The Collection Log's **More Info** control also refreshes stale case lists if an item appears to have no source, so existing PWA sessions pick up newly added pack assignments.
+
+
+## Step 5: Inventory dashboard, protection and duplicate tools
+
+The RuneScape Inventory tab now includes a premium dashboard with the combined **guide value of all owned items**, total owned count, unique item-type count, extra duplicate copies, protected item count, and most valuable item. This is an *estimate* based on currently stored GE or custom item guide values, not a guaranteed cash-out amount. GP wallet balances are separate.
+
+Players can search inventory by item name, filter by sale eligibility, duplicates, protection, listing, or pack family, and sort by acquisition time, guide value, best actual pack rarity, name, or copy count. The optional **Stack duplicates** control displays identical items together without merging their separate server-owned instances; stacks expand into individual items.
+
+**Protect item** persists per instance through Supabase (new `rips.items.protected` flag). Protection is enforced server-side against individual GE sales, atomic multi-item GE sales, marketplace listing, and duplicate salvage. Listed or pending rewards cannot have their protection changed. **Select spare duplicates** marks eligible extra copies while retaining one of each item type; any protected copy is always kept. The existing 100-item limit and server-verified GP sale settlement still apply.
+
+Database migration: `supabase/migrations/20261115023000_inventory_protected_items.sql`. Frontend: `index.html` and `inventory-step5.css`. Mobile PWA assets include the new styles. Playwright tests extend `tests/reveal.spec.js` to cover the dashboard, sorting, filtering, protection, bulk-sale exclusion, duplicate expansion, and phone layout.
