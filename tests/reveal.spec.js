@@ -58,9 +58,23 @@ async function setup(page,{gp=100000,viewport}={}){
         if(action==='state')return ok({
           id,name:'Playwright Tester',gp:backend.gp,
           items:backend.inventory.filter(i=>i.status==='vaulted')
-            .map(i=>({id:i.instance,item:i.item,pinned:Boolean(i.pinned),pulled:true,listing:i.listing||null,salvage:0})),
+            .map(i=>({id:i.instance,item:i.item,pinned:Boolean(i.pinned),protected:Boolean(i.protected),pulled:true,listing:i.listing||null,salvage:0})),
           market:[],pulls:{},nextDailyAt:now,serverTime:now
         });
+        if(action==='lock'){
+          const owned=backend.inventory.find(i=>i.instance===payload?.id&&i.status==='vaulted');
+          if(!owned||owned.listing)return fail('Cannot protect this item.');
+          owned.protected=!owned.protected;save();return ok(null);
+        }
+        if(action==='sell'){
+          const owned=backend.inventory.find(i=>i.instance===payload?.id&&i.status==='vaulted');
+          if(!owned)return fail('Item not owned');
+          if(owned.protected)return fail('Unlock this protected item before selling it.');
+          if(owned.listing)return fail('Cancel listing first');
+          owned.status='sold';
+          backend.gp+=mockCatalog.find(c=>c.id===owned.item).guide;
+          save();return ok(null);
+        }
         if(action==='pin'){
           const owned=backend.inventory.find(i=>i.instance===payload?.id&&i.status==='vaulted');
           if(!owned||owned.listing)return fail('This item cannot be displayed.');
@@ -74,7 +88,7 @@ async function setup(page,{gp=100000,viewport}={}){
           if(!Array.isArray(ids)||!ids.length||ids.length>100||new Set(ids).size!==ids.length)
             return fail('Invalid bulk sale selection');
           const owned=ids.map(id=>backend.inventory.find(i=>i.instance===id && i.status==='vaulted'));
-          if(owned.some(item=>!item || item.listing))return fail('One or more selected items are unavailable');
+          if(owned.some(item=>!item || item.listing || item.protected))return fail('Your selection includes protected or unavailable items.');
           if(window.__mockRejectBulkSale){
             window.__mockRejectBulkSale=false;
             return fail('Server rejected the sale; inventory unchanged.');
@@ -595,6 +609,117 @@ test('Inventory multi-select works on a phone width without horizontal overflow'
  await expect(page.locator('#inventory-toolbar [data-act="inventory-all"]')).toBeVisible();
  await page.locator('#inventory-toolbar [data-act="inventory-all"]').click();
  await expect(page.locator('#inventory-toolbar')).toContainText('5 selected');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
+ expect(errors).toEqual([]);
+});
+
+
+test('Inventory dashboard reports combined guide values, unique types and top item without changing GP',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,4);
+ const dash=page.locator('#inventory-overview');
+ await expect(dash).toContainText('119,000 GP');
+ await expect(dash).toContainText('4');
+ await expect(dash).toContainText('4 unique types');
+ await expect(dash).toContainText('0');
+ await expect(dash).toContainText('Dragon boots');
+ await expect(dash).toContainText('49,000 GP');
+ await expect(page.locator('#balance')).toHaveText('96,000 GP');
+ expect(errors).toEqual([]);
+});
+test('Inventory live search, value sorting and category filters retain original items',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,4);
+ await page.locator('#inventory-sort').selectOption('value-high');
+ await expect(page.locator('#owned .item h3').first()).toHaveText('Dragon boots');
+ await page.locator('#inventory-sort').selectOption('value-low');
+ await expect(page.locator('#owned .item h3').first()).toHaveText('Rune scimitar');
+ await page.locator('#inventory-search').fill('abyssal');
+ await expect(page.locator('#owned .item')).toHaveCount(1);
+ await expect(page.locator('#inventory-results')).toContainText('Showing 1 of 4');
+ await expect(page.locator('#owned')).toContainText('Abyssal whip');
+ await page.locator('#inventory-search').fill('');
+ await page.locator('#inventory-filter').selectOption('sellable');
+ await expect(page.locator('#owned .item')).toHaveCount(4);
+ await page.locator('#inventory-filter').selectOption('pets');
+ await expect(page.locator('#owned .item')).toHaveCount(0);
+ await page.locator('#inventory-filter').selectOption('all');
+ await expect(page.locator('#owned .item')).toHaveCount(4);
+ const mock=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+ expect(mock.inventory.filter(i=>i.status==='vaulted')).toHaveLength(4);
+ expect(errors).toEqual([]);
+});
+test('Protected inventory blocks individual and bulk sales, and unlock restores eligibility',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,3);
+ const lock=page.locator('#owned [data-act="inventory-lock"]').first();
+ await lock.click();
+ await expect(page.locator('#owned .inventory-protected')).toHaveCount(1);
+ await expect(page.locator('#inventory-overview')).toContainText('1 protected items');
+ await page.locator('#inventory-filter').selectOption('protected');
+ await expect(page.locator('#owned .item')).toHaveCount(1);
+ await page.locator('#inventory-filter').selectOption('all');
+ await page.locator('#inventory-mode-button').click();
+ await expect(page.locator('#owned .inventory-entry.is-unavailable')).toHaveCount(1);
+ await page.locator('#inventory-toolbar [data-act="inventory-all"]').click();
+ await expect(page.locator('#owned .inventory-entry.is-selected')).toHaveCount(2);
+ const protectedID=await page.evaluate(()=>{
+   const backend=JSON.parse(sessionStorage.getItem('reveal-mock'));
+   return backend.inventory.find(i=>i.protected).instance;
+ });
+ const rpcBlocked=await page.evaluate(async id=>{
+   const api=window.supabase.createClient();
+   return Promise.all([
+     api.rpc('rips_command',{action:'sell',payload:{id}}),
+     api.rpc('rips_command',{action:'sell_bulk',payload:{ids:[id]}})
+   ]);
+ },protectedID);
+ expect(rpcBlocked.every(response=>/protected/i.test(response.error?.message||''))).toBe(true);
+ await expect(page.locator('#balance')).toHaveText('97,000 GP');
+ await page.locator('#inventory-mode-button').click();
+ await page.locator('#owned .inventory-protected [data-act="inventory-lock"]').click();
+ await expect(page.locator('#owned .inventory-protected')).toHaveCount(0);
+ await page.locator('#inventory-mode-button').click();
+ await page.locator('#inventory-toolbar [data-act="inventory-all"]').click();
+ await expect(page.locator('#owned .inventory-entry.is-selected')).toHaveCount(3);
+ expect(errors).toEqual([]);
+});
+test('Duplicate stacking, expansion and select-spares sell extra copies while preserving one',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,4);
+ await page.evaluate(()=>{
+   const backend=JSON.parse(sessionStorage.getItem('reveal-mock'));
+   backend.inventory[1].item=backend.inventory[0].item;
+   sessionStorage.setItem('reveal-mock',JSON.stringify(backend));
+ });
+ await page.reload();
+ await page.getByRole('button',{name:'Inventory'}).click();
+ await expect(page.locator('#inventory-overview')).toContainText('1');
+ await expect(page.locator('#inventory-overview')).toContainText('3 unique types');
+ await page.locator('#inventory-group').check();
+ await expect(page.locator('#owned .inventory-stack')).toHaveCount(1);
+ await expect(page.locator('#owned .inventory-stack-count')).toHaveText('×2');
+ await page.locator('#owned [data-act="inventory-expand"]').click();
+ await expect(page.locator('#owned .inventory-stack-copies .item')).toHaveCount(2);
+ await page.getByRole('button',{name:'Select spare duplicates'}).first().click();
+ await expect(page.locator('#inventory-toolbar')).toContainText('1 selected');
+ await expect(page.locator('#owned .inventory-entry.is-selected')).toHaveCount(1);
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#inventory-toolbar [data-act="inventory-sell"]').click();
+ await expect(page.locator('#owned .item')).toHaveCount(3);
+ await expect(page.locator('#balance')).toHaveText('108,000 GP');
+ const result=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+ expect(result.inventory.filter(i=>i.status==='vaulted')).toHaveLength(3);
+ expect(result.inventory.filter(i=>i.status==='vaulted'&&i.item==='test_item_0')).toHaveLength(1);
+ expect(errors).toEqual([]);
+});
+test('Step 5 inventory fits a small phone with value cards and filters',async({page})=>{
+ const errors=await setup(page,{viewport:{width:375,height:812}});
+ await prepareInventory(page,5);
+ await expect(page.locator('#inventory-overview .inventory-stat')).toHaveCount(4);
+ await expect(page.locator('#inventory-search')).toBeVisible();
+ await page.locator('#inventory-group').check();
+ await expect(page.locator('#inventory-results')).toContainText('Showing 5 of 5');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
  expect(errors).toEqual([]);
 });
