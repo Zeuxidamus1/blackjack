@@ -645,11 +645,6 @@ async function loadMissions(){
   }finally{
     missionsLoading=false;
     if(view==='missions')renderMissions();
-  if(view==='moderator'){
-    el('moderator-dashboard').innerHTML=canModerate?
-      (window.ChallengerModerator?.render(moderatorStatus,state)||''):
-      '';
-  }
   }
 }
 function renderMissions(){
@@ -1102,6 +1097,11 @@ function render() {
   if(view==='shop') renderShop(ready);
   if(view==='earn') renderEarn();
   if(view==='missions')renderMissions();
+  if(view==='moderator'){
+    el('moderator-dashboard').innerHTML=canModerate?
+      (window.ChallengerModerator?.render(moderatorStatus,state)||''):
+      '';
+  }
   if(view==='collection') {
     const pulls=state?.pulls||{};
     const progressCatalog=[...catalog.values()];
