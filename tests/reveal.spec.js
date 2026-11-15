@@ -883,18 +883,23 @@ test('assigned-value pet can be vaulted and later sold via inventory bulk select
   expect(errors).toEqual([]);
 });
 
-test('other non-GE pets have a wiki artwork URL and positive server-assigned sale eligibility',async({page})=>{
+test('pet catalog images and category fallbacks respect custom-value selling rules',async({page})=>{
   await setup(page);
   const art=await page.evaluate(()=>{
-    const item={id:'pets_vorki',name:'Vorki',pack:'pets',ge:null,guide:5000000,guideTime:null};
-    const nonPet={...item,pack:'boss'};
+    const pet={id:'pets_vorki',name:'Vorki',pack:'pets',ge:null,guide:5000000,guideTime:null};
+    const generic={...pet,name:'Cats'};
+    const nonPet={...pet,pack:'boss'};
     return {
-      url:window.ChallengerArtwork.src(item),
-      eligible:window.ChallengerArtwork.saleable(item),
+      url:window.ChallengerArtwork.src(pet),
+      eligible:window.ChallengerArtwork.saleable(pet),
+      genericFallback:window.ChallengerArtwork.fallback(generic),
+      genericIcon:window.ChallengerArtwork.src(generic),
       nonPetEligible:window.ChallengerArtwork.saleable(nonPet)
     };
   });
-  expect(art.url).toBe('https://oldschool.runescape.wiki/Special:Redirect/file/Vorki.png');
+  expect(art.url).toBe('https://static.runelite.net/cache/item/icon/21992.png');
   expect(art.eligible).toBe(true);
+  expect(art.genericFallback).toBe('🐈');
+  expect(art.genericIcon).toBe('');
   expect(art.nonPetEligible).toBe(false);
 });
