@@ -360,7 +360,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <link rel="stylesheet" href="./wallet-feedback.css?v=2">
 <link rel="stylesheet" href="./motion.css?v=1">
 <link rel="stylesheet" href="./progression.css?v=1">
-<link rel="stylesheet" href="./economy.css?v=1">
+<link rel="stylesheet" href="./economy.css?v=2">
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><button id="pwa-install-login" class="pwa-install-button" type="button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install as app</span></button><form id="auth" method="post">
 <label><span id="auth-identifier-text">Username or email</span><input name="username" autocomplete="username" maxlength="254" title="Enter your username or registration email" required></label>
@@ -437,7 +437,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.js"></script>
 <script src="./reveal.js?v=4"></script>
 <script src="./progression.js?v=1"></script>
-<script src="./economy.js?v=1"></script>
+<script src="./economy.js?v=2"></script>
 <script src="./wallet-feedback.js?v=2"></script>
 <script defer src="./app-install.js"></script>
 <script>
@@ -517,6 +517,7 @@ function renderDaily(){
   const minutes=Math.max(1,Math.ceil(remaining/60000));
   el('daily').hidden=!state||remaining>0;
   el('daily-timer').textContent=state&&remaining>0?'Next claim in '+Math.floor(minutes/60)+'h '+minutes%60+'m':'';
+  if(view==='earn')window.ChallengerEconomy?.tick(el('earn-dashboard'),economyStatus,state,clockOffset);
 }
 setInterval(renderDaily,1000);
 async function loadEconomy(){
@@ -541,7 +542,9 @@ async function loadEconomy(){
   }
 }
 function renderEarn(){
-  el('earn-dashboard').innerHTML=window.ChallengerEconomy?.render(economyStatus,state,packs,economyError)||'';
+  const root=el('earn-dashboard');
+  root.innerHTML=window.ChallengerEconomy?.render(economyStatus,state,packs,economyError)||'';
+  window.ChallengerEconomy?.tick(root,economyStatus,state,clockOffset);
   if(session&&state&&!economyStatus&&!economyLoading&&!economyError)void loadEconomy();
 }
 async function load() {
@@ -1124,6 +1127,10 @@ document.addEventListener('click',event=>{
     view=b.dataset.view;notice();render();return;
   }
   const {act,id}=b.dataset;
+  if(act==='earn-pack-tab'){
+    if(window.ChallengerEconomy?.choosePack(id,economyStatus))renderEarn();
+    return;
+  }
   if(act==='earn-refresh'){
     economyError=false;
     economyStatus=null;
