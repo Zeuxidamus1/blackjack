@@ -273,6 +273,49 @@
         }));
       }
     }
+    // Incrementally update multi-pack card faces instead of replacing the
+    // entire reveal DOM. Rebuilding the animated sky, glow and all 3D cards on
+    // every flip made the whole screen flash and replayed other card animations.
+    updateCardsInPlace(){
+      if(root.hidden||this.phase!=='cards'||this.renderedPhase!=='cards')return false;
+      const grid=root.querySelector('.cr-reveal-grid');
+      const subactions=root.querySelector('.cr-subactions');
+      if(!grid||!subactions||grid.querySelectorAll('.cr-turn').length!==this.batch.rewards.length)
+        return false;
+      const newlyRevealed=[];
+      for(const reward of this.batch.rewards){
+        const card=grid.querySelector('.cr-turn[data-slot="'+reward.slot+'"]');
+        if(!card)return false;
+        const flipped=Boolean(reward.revealed||reward.item);
+        card.disabled=flipped||this.busy;
+        card.setAttribute('aria-label',(flipped?'Revealed reward':'Reveal reward')+' '+reward.slot);
+        if(flipped&&!card.classList.contains('cr-flipped')){
+          const front=card.querySelector('.cr-card-front');
+          if(!front)return false;
+          front.style.setProperty('--cr-item-tint',itemTint(this,reward));
+          front.innerHTML=itemIcon(this,reward)+'<h3>'+itemName(this,reward)+
+            '</h3><p>'+gp(itemValue(this,reward))+'</p>';
+          newlyRevealed.push(card);
+        }
+      }
+      const remaining=this.batch.rewards.some(r=>!r.revealed&&!r.item);
+      const revealAll=subactions.querySelector('[data-cr="reveal-all"]');
+      if(!remaining)revealAll?.remove();
+      else if(revealAll)revealAll.disabled=this.busy;
+      // Retain all existing card and background nodes while the selected card flips.
+      this.newFlips.clear();
+      if(reduced()){
+        for(const card of newlyRevealed)card.classList.add('cr-flipped');
+      }else if(newlyRevealed.length){
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          if(root.hidden||this.phase!=='cards')return;
+          for(const card of newlyRevealed){
+            if(card.isConnected)card.classList.add('cr-flipped');
+          }
+        }));
+      }
+      return true;
+    }
     actions(rows,multiple){
       const count=rows.length,select=this.selected.size>0;
       const suffix=multiple && select?' ('+count+')':multiple?' ALL':'';
@@ -303,10 +346,14 @@
         if(data.rewards.length===1){
           this.phase='single';this.render();
         }else{
-          this.phase='cards';this.render();
+          const flipCount=this.newFlips.size;
+          this.phase='cards';
+          // Do not redraw the fullscreen background and previously flipped
+          // cards for each separately revealed reward.
+          if(!this.updateCardsInPlace())this.render();
           if(data.rewards.every(r=>r.revealed||r.item)){
             this.schedule(()=>{this.phase='results';this.render();},
-              800+this.newFlips.size*85);
+              Math.max(850,800+flipCount*85));
           }
         }
       }catch(error){
