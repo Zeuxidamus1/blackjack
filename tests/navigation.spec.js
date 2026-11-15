@@ -98,7 +98,7 @@ test('Collection Log has only the small header Sign out button',async({page})=>{
   await page.getByRole('button',{name:'Collection log'}).click();
   await expect(page.locator('#collection')).toBeVisible();
   await expect(page.locator('#account')).toHaveCount(0);
-  await expect(page.locator('[data-act="logout"]')).toHaveCount(0);
+  await expect(page.locator('[data-act="logout"]')).toHaveCount(1);
   await expect(page.locator('header .header-signout')).toBeVisible();
   await expect(page.locator('header .header-signout')).toHaveText('Sign out');
   expect(errors).toEqual([]);
