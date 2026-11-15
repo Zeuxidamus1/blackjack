@@ -2,14 +2,15 @@ import {test,expect} from '@playwright/test';
 
 const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WpJwA8AAAAASUVORK5CYII=','base64');
 
-async function setup(page,{signedIn=true,signupHasSession=true,path='/',width=375}={}){
+async function setup(page,{signedIn=true,signupHasSession=true,path='/',width=375,pendingConfirmed=false}={}){
   await page.setViewportSize({width,height:812});
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>route.fulfill({status:200,contentType:'application/javascript',body:''}));
   await page.route('https://static.runelite.net/**',route=>route.fulfill({status:200,contentType:'image/png',body:tinyPng}));
   await page.route('https://prices.runescape.wiki/**',route=>route.fulfill({status:200,contentType:'application/json',body:'{"data":{}}'}));
-  await page.addInitScript(({signedIn,signupHasSession})=>{
+  await page.addInitScript(({signedIn,signupHasSession,pendingConfirmed})=>{
+    if(pendingConfirmed)sessionStorage.setItem('challenger-rips-pending-onboarding','playwright');
     const account={access_token:'mock',user:{id:'11111111-1111-4111-8111-111111111111'}};
     let session=signedIn?account:null;
     window.__navigationCalls=[];
@@ -31,7 +32,7 @@ async function setup(page,{signedIn=true,signupHasSession=true,path='/',width=37
         return {data:values[action]??null,error:null};
       }
     })};
-  },{signedIn,signupHasSession});
+  },{signedIn,signupHasSession,pendingConfirmed});
   await page.goto(path);
   return errors;
 }
@@ -65,6 +66,15 @@ test('new account with pending email confirmation sees category overview after f
   await page.locator('#auth-submit').click();
   await expect(page.locator('#balance')).toHaveText('100,000 GP');
   await expect(page.locator('#shop .premium-categories h2')).toHaveText('Choose your adventure');
+  expect(errors).toEqual([]);
+});
+test('confirmed signup returns to categories on first authenticated page load',async({page})=>{
+  const errors=await setup(page,{signedIn:true,pendingConfirmed:true});
+  await expect(page.locator('#balance')).toHaveText('100,000 GP');
+  await expect(page.locator('#shop .premium-categories h2')).toHaveText('Choose your adventure');
+  await expect(page.locator('#games')).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#games .game-card')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 test('returning session starts on single RuneScape game card and resets to Games on reload',async({page})=>{
