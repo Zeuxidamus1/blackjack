@@ -742,7 +742,13 @@ function renderBossDetails(){
 function renderBossShop(){
  const items=packCases();
  const brand=packs.find(p=>p.id===category)?.name||'Mystery Packs';
- if(!items.length){el('shop').innerHTML=empty(brand+' packs are not available.');return;}
+ if(!items.length){
+   el('shop').innerHTML='<div class="boss-shell" data-pack="'+safe(category)+'">'+
+     '<div class="boss-top">'+button('← Explore Packs','categories')+'</div>'+
+     '<h2 class="boss-heading">'+safe(brand.toUpperCase())+'</h2>'+
+     '<div class="premium-empty-packs">'+empty(brand+' packs are not available right now.')+'</div></div>';
+   return;
+ }
  bossIndex=Math.max(0,Math.min(items.length-1,bossIndex));
  const quickNav='<div class="premium-pack-nav" role="group" aria-label="Switch pack category">'+
    packs.map(p=>'<button type="button" data-act="category" data-id="'+p.id+
