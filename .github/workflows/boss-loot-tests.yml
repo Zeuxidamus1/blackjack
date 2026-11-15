@@ -18,6 +18,7 @@ on:
       - missions.js
       - missions.css
       - premium-packs.css
+      - inventory-step5.css
       - sw.js
       - offline.html
       - icons/**
