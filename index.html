@@ -1128,7 +1128,7 @@ document.addEventListener('click',event=>{
   }
   const {act,id}=b.dataset;
   if(act==='earn-pack-tab'){
-    if(window.ChallengerEconomy?.choosePack(id,economyStatus))renderEarn();
+    if(window.ChallengerEconomy?.choosePack(id,economyStatus,packs))renderEarn();
     return;
   }
   if(act==='earn-refresh'){
