@@ -419,6 +419,44 @@ test('Reveal all preserves the existing scene while every card flips',async({pag
   expect(errors).toEqual([]);
 });
 
+test('selecting multi-pack rewards never remounts the scene or previously revealed cards',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await purchase(page,4);
+  await revealAll(page,4);
+  await page.evaluate(()=>{
+    window.__resultNodes={
+      sky:document.querySelector('#cr-reveal .cr-sky'),
+      light:document.querySelector('#cr-reveal .cr-light'),
+      stage:document.querySelector('#cr-reveal .cr-results'),
+      cards:[...document.querySelectorAll('#cr-reveal .cr-result-card')]
+    };
+  });
+  for(const [position,summary,total] of [
+    [0,'1 / 4 items selected','12,000 GP'],
+    [1,'2 / 4 items selected','34,000 GP'],
+    [0,'1 / 4 items selected','22,000 GP']
+  ]){
+    await page.locator('.cr-result-card').nth(position).click();
+    await expect(page.locator('.cr-summary-label')).toHaveText(summary);
+    await expect(page.locator('.cr-summary-value')).toHaveText(total);
+    const stable=await page.evaluate(()=>{
+      const nodes=window.__resultNodes;
+      return document.querySelector('#cr-reveal .cr-sky')===nodes.sky &&
+        document.querySelector('#cr-reveal .cr-light')===nodes.light &&
+        document.querySelector('#cr-reveal .cr-results')===nodes.stage &&
+        nodes.cards.every((node,index)=>document.querySelectorAll('#cr-reveal .cr-result-card')[index]===node);
+    });
+    expect(stable).toBe(true);
+    await expect(page.locator('.cr-results')).not.toHaveClass(/cr-phase-enter/);
+  }
+  await expect(page.locator('[data-cr="vault"]')).toHaveText('VAULT (1)');
+  await page.locator('[data-cr="vault"]').click();
+  await expect(page.locator('.cr-result-card')).toHaveCount(3);
+  await page.locator('[data-cr="vault"]').click();
+  await expect(page.locator('#cr-reveal')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('four-packs: select 2, sell only selected, vault the rest atomically',async({page})=>{
   const errors=await setup(page);
   await purchase(page,4);
