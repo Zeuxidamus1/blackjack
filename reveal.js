@@ -19,11 +19,13 @@
   const itemValue = (session,r) => r.value == null ? catalogItem(session,r)?.guide ?? null : Number(r.value);
   const itemName = (session,r) => h(catalogItem(session,r)?.name || 'Unknown reward');
   const itemIcon = (session,r) => {
-    const id=Number(catalogItem(session,r)?.ge);
-    return Number.isSafeInteger(id) && id>0
-      ? '<img draggable="false" alt="'+itemName(session,r)+'" loading="eager" src="https://static.runelite.net/cache/item/icon/'+id+'.png" onerror="this.hidden=true">'
-      : '<span class="cr-unknown" aria-label="Decorative item symbol">'+
-          (catalogItem(session,r)?.pack==='pets'?'🐾':'✦')+'</span>';
+    const item=catalogItem(session,r);
+    const url=window.ChallengerArtwork?.src(item);
+    const fallback=item?.pack==='pets'?'🐾':'✦';
+    return url
+      ? '<img draggable="false" alt="'+itemName(session,r)+'" loading="eager" src="'+h(url)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
+        '<span class="cr-unknown" hidden aria-hidden="true">'+fallback+'</span>'
+      : '<span class="cr-unknown" aria-label="Decorative item symbol">'+fallback+'</span>';
   };
   const itemTint = (session,r) => {
     const item=catalogItem(session,r);
@@ -190,8 +192,8 @@
       const stamp=r?.priceUpdated?new Date(r.priceUpdated).toLocaleString(): 'Not available';
       return '<div class="cr-detail" role="note"><strong>'+h(entry.name)+'</strong>'+
         '<p style="margin-top:6px">'+h(this.batch.rewards.length)+' reward(s), each from a server-side purchase.</p>'+
-        '<p style="margin-top:7px">Values are server-issued GE guides. Actual sales are verified when sold.</p>'+
-        (this.batch.rewards.length===1?'<p style="margin-top:7px">Last quote: '+h(stamp)+'</p>':'')+'</div>';
+        '<p style="margin-top:7px">Values use current GE guides or assigned Pet Hunt GP values. The server verifies every sale.</p>'+
+        (this.batch.rewards.length===1?'<p style="margin-top:7px">Price updated: '+h(stamp)+'</p>':'')+'</div>';
     }
     render(){
       if(root.hidden||!this.batch)return;
@@ -347,16 +349,14 @@
       const suffix=multiple && select?' ('+count+')':multiple?' ALL':'';
       const saleEligible=Boolean(count)&&rows.every(r=>{
         const item=catalogItem(this,r);
-        const last=Date.parse(item?.guideTime);
-        return Number(item?.ge)>0&&Number(item?.guide)>0&&
-          Number.isFinite(last)&&last>Date.now()-24*60*60*1000;
+        return Boolean(window.ChallengerArtwork?.saleable(item));
       });
       return '<div class="cr-actions" role="group" aria-label="Manage your rewards">'+
         '<button data-cr="sell"'+(this.busy||!saleEligible?' disabled':'')+
-        ' title="'+(saleEligible?'Sell at the current server-verified GE guide':'GE selling unavailable for these rewards')+
+        ' title="'+(saleEligible?'Sell for current server-authoritative GP value':'Selling unavailable for these rewards')+
         '" aria-label="Sell '+count+' rewards">SELL'+suffix+'</button>'+
         '<button data-cr="vault"'+(this.busy||!count?' disabled':'')+' aria-label="Vault '+count+' rewards">VAULT'+suffix+'</button></div>'+
-        (!saleEligible&&count?'<p class="cr-sale-note">GE selling is unavailable for this selection. You can keep these rewards in your vault.</p>':'');
+        (!saleEligible&&count?'<p class="cr-sale-note">Selling is unavailable for this selection. You can keep these rewards in your vault.</p>':'');
     }
     async revealSlot(slot=null){
       if(this.busy || root.hidden)return;
