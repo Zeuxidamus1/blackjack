@@ -51,13 +51,13 @@ function render(board,error=false){
  return '<div class="mission-page"><div class="mission-hero">'+
    '<span class="mission-eyebrow">CHALLENGER RIPS · MISSIONS</span>'+
    '<h2>Earn GP. Complete quests.</h2>'+
-   '<p>Your progress updates automatically from real pack openings, first-time discoveries and completed item sales.</p>'+
+   '<p>Your progress updates automatically from real pack openings, distinct items revealed and completed item sales.</p>'+
    '<div class="mission-hero-footer"><span>'+count+' '+(count===1?'reward':'rewards')+' ready to claim</span>'+
    '<button class="quiet" type="button" data-act="mission-refresh">↻ Refresh progress</button></div></div>'+
    '<div class="mission-columns">'+
    group('Daily Missions','EVERY DAY','daily',daily,board.dailyResetAt)+
    group('Weekly Missions','EVERY WEEK','weekly',weekly,board.weeklyResetAt)+
-   '</div><p class="mission-footnote">Missions reset at 00:00 UTC daily and Monday 00:00 UTC weekly. Only newly sold items count toward sale missions. First-time discoveries count once per item, and every mission reward can be claimed once per period.</p></div>';
+   '</div><p class="mission-footnote">Missions reset at 00:00 UTC daily and Monday 00:00 UTC weekly. Only newly sold items count toward sale missions. Different revealed items count once per item type in each period, and every mission reward can be claimed once per period.</p></div>';
 }
 function tick(root,board,offset=0){
  if(!root||!board)return;
