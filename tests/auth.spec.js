@@ -49,7 +49,8 @@ async function setup(page,{signedIn=false,wrongUsername=false,wrongEmail=false,p
     })};
   },{signedIn,wrongUsername,wrongEmail});
   await page.goto(path);
-  await expect(page.locator('#login-screen')).toBeVisible({visible:!signedIn}).catch(()=>{});
+  if(signedIn)await expect(page.locator('#login-screen')).toBeHidden();
+  else await expect(page.locator('#login-screen')).toBeVisible();
   return errors;
 }
 
