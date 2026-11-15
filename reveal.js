@@ -22,7 +22,8 @@
     const id=Number(catalogItem(session,r)?.ge);
     return Number.isSafeInteger(id) && id>0
       ? '<img draggable="false" alt="'+itemName(session,r)+'" loading="eager" src="https://static.runelite.net/cache/item/icon/'+id+'.png" onerror="this.hidden=true">'
-      : '<span class="cr-unknown" aria-label="Item artwork unavailable">✦</span>';
+      : '<span class="cr-unknown" aria-label="Decorative item symbol">'+
+          (catalogItem(session,r)?.pack==='pets'?'🐾':'✦')+'</span>';
   };
   const itemTint = (session,r) => {
     const item=catalogItem(session,r);
@@ -168,8 +169,11 @@
       if(message && this.ctx?.notice) this.ctx.notice(message);
       if(this.ctx?.render)this.ctx.render();
     }
-    entry(){return this.ctx.cases.find(c=>c.id===this.batch.case)||
-      {name:'Loot pack',price:this.batch.paid,theme:'bronze',accent:'#d18d51',symbol:'⚔'};}
+    entry(){
+      const found=this.ctx.cases.find(c=>c.id===this.batch.case)||
+        {name:'Loot pack',price:this.batch.paid,theme:'bronze',accent:'#d18d51',symbol:'⚔',pack:'boss'};
+      return this.ctx.packVisual?this.ctx.packVisual(found):found;
+    }
     available(){return this.batch.rewards.filter(r=>r.status!=='sold'&&r.status!=='vaulted');}
     valueTotal(rows){return rows.reduce((sum,r)=>sum+Number(itemValue(this,r)||0),0);}
     toolbar(extra=''){
