@@ -200,6 +200,18 @@ test('keyboard activation is an accessible alternative to the swipe',async({page
   await page.locator('[data-cr="vault"]').click();
   expect(errors).toEqual([]);
 });
+test('reveal phase fades in once and selecting loot does not replay the entrance',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await purchase(page,3);
+  await expect(page.locator('#cr-reveal .cr-stage.cr-phase-enter')).toBeVisible();
+  await revealAll(page,3);
+  await expect(page.locator('.cr-results.cr-phase-enter')).toBeVisible();
+  await page.locator('.cr-result-card').first().click();
+  await expect(page.locator('.cr-results')).not.toHaveClass(/cr-phase-enter/);
+  await expect(page.locator('.cr-result-card[aria-pressed="true"]')).toHaveCount(1);
+  await page.locator('[data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
 test('single opening presents dominant item, exact GP and Sell/Vault',async({page})=>{
   const errors=await setup(page);
   await purchase(page,1);
