@@ -132,6 +132,10 @@ test('Earn GP is responsive at narrow phone widths and does not change pack scre
   await expect(page.locator('#earn [data-act="earn-milestone"]')).toHaveCount(0);
   await page.locator('[data-view="collection"]').click();
   await expect(page.locator('.collection-reward-group')).toHaveCount(3);
+  await expect(page.locator('.collection-reward-group').first()).toHaveAttribute('open','');
+  await expect(page.locator('.collection-reward-group').nth(1)).not.toHaveAttribute('open','');
+  await page.locator('.collection-reward-group').nth(1).locator('summary').click();
+  await expect(page.locator('.collection-reward-group').nth(1)).toHaveAttribute('open','');
   await expect(page.locator('#collection-milestones [data-act="earn-milestone"]')).toHaveCount(1);
   await page.locator('#filter').selectOption('clue');
   await expect(page.locator('.collection-reward-group')).toHaveCount(1);
