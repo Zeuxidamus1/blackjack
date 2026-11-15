@@ -23,13 +23,17 @@ const mockCatalog=weights.map((weight,index)=>({
  ge:1155+index,guide:(index+1)*1000,guideTime:new Date().toISOString(),
  found:3,circulation:5,salvage:0
 }));
-async function setup(page,gp=1000000000,{large=false,pulls={}}={}){
- const catalogForTest=large?Array.from({length:49},(_,i)=>({
+async function setup(page,gp=1000000000,{large=false,pulls={},orphan=false}={}){
+ let catalogForTest=large?Array.from({length:49},(_,i)=>({
   id:'pool_item_'+i,pack:'boss',name:i===48?'Twisted bow':'OSRS Item '+i,
   ge:i===48?20997:1100+i,
   guide:i===48?1375875485:(i<23?200+i*25:1200+(i-23)*200),
   guideTime:new Date().toISOString(),found:0,circulation:0
  })):mockCatalog;
+ if(orphan)catalogForTest.push({
+   id:'orphan_item',pack:'boss',weight:1,name:'Unassigned collectible',
+   ge:20000,guide:700000,guideTime:new Date().toISOString(),found:0,circulation:0,salvage:0
+ });
  const ordinaryLow=Math.floor(840000000000/23);
  const winTotal=160000000000-10000;
  const ordinaryWin=Math.floor(winTotal/25);
@@ -164,8 +168,12 @@ test('Collection Log renders real OSRS icons only for unlocked personally pulled
  await expect(unlocked.nth(1).locator('img.collection-item-icon')).toHaveAttribute(
    'src','https://static.runelite.net/cache/item/icon/1156.png');
  await expect(unlocked.nth(0)).toContainText('×2');
- await expect(page.locator('#items .collection-locked img')).toHaveCount(0);
+ await expect(page.locator('#items .collection-locked img.collection-item-icon')).toHaveCount(8);
+ await expect(page.locator('#items .collection-locked .collection-lock-overlay')).toHaveCount(8);
  await expect(page.locator('#items .collection-locked .symbol').first()).toContainText('🔒');
+ await expect(page.locator('#items .collection-unlocked .collection-lock-overlay')).toHaveCount(0);
+ await expect(page.locator('#items .item [data-act="collection-info"]')).toHaveCount(10);
+ await expect(page.locator('#items')).not.toContainText('Updated');
  await page.reload();
  await page.locator('#games [data-act="game"]').click();
  await page.getByRole('button',{name:'Collection log'}).click();
@@ -230,5 +238,89 @@ test('Collection Log falls back gracefully if an unlocked OSRS item icon fails t
  await expect(unlocked.locator('.collection-item-icon')).toBeHidden();
  await expect(unlocked.locator('.collection-icon-fallback')).toBeVisible();
  await expect(unlocked).toContainText('OSRS Item 0');
+ expect(errors).toEqual([]);
+});
+
+
+test('Locked items show visible OSRS artwork under a translucent lock and retain clean prices',async({page})=>{
+ const errors=await setup(page);
+ await page.getByRole('button',{name:'Collection log'}).click();
+ const entry=page.locator('#items .collection-locked').first();
+ await expect(entry.locator('img.collection-item-icon')).toHaveAttribute(
+   'src','https://static.runelite.net/cache/item/icon/1155.png');
+ await expect(entry.locator('.collection-lock-overlay')).toContainText('🔒');
+ await expect(entry.locator('.collection-item-icon')).toBeVisible();
+ await expect(entry).toContainText('GE guide · 1,000 GP');
+ await expect(entry).not.toContainText('Updated');
+ const opacity=await entry.locator('img').evaluate(e=>getComputedStyle(e).opacity);
+ expect(Number(opacity)).toBeGreaterThan(0.3);
+ expect(Number(opacity)).toBeLessThan(1);
+ expect(errors).toEqual([]);
+});
+
+test('More Info lists every pack currently containing a locked item with actual case odds',async({page})=>{
+ const errors=await setup(page);
+ await page.getByRole('button',{name:'Collection log'}).click();
+ await page.locator('#items .collection-locked').first()
+   .getByRole('button',{name:'More Info'}).click();
+ const dialog=page.locator('#modal');
+ await expect(dialog).toBeVisible();
+ await expect(dialog).toContainText('OSRS Item 0');
+ await expect(dialog).toContainText('Not collected');
+ await expect(dialog.getByRole('heading',{name:'Found in 10 packs'})).toBeVisible();
+ await expect(dialog.locator('.collection-source')).toHaveCount(10);
+ await expect(dialog.locator('.collection-source').first()).toContainText('Starter Loot');
+ await expect(dialog.locator('.collection-source').first()).toContainText('1,000 GP');
+ await expect(dialog.locator('.collection-source').first()).toContainText('50%');
+ await expect(dialog.locator('.collection-source').last()).toContainText('God Tier Loot');
+ await expect(dialog.locator('.collection-source').last()).toContainText('5,000,000 GP');
+ await dialog.getByRole('button',{name:'✕'}).click();
+ await expect(dialog).not.toBeVisible();
+ expect(errors).toEqual([]);
+});
+
+test('More Info is available for collected items and shows their owned status',async({page})=>{
+ const errors=await setup(page,1000000000,{pulls:{boss_1:{count:3}}});
+ await page.getByRole('button',{name:'Collection log'}).click();
+ await page.locator('#items .collection-unlocked').first()
+   .getByRole('button',{name:'More Info'}).click();
+ const dialog=page.locator('#modal');
+ await expect(dialog).toContainText('OSRS Item 1');
+ await expect(dialog).toContainText('Collected');
+ await expect(dialog.getByRole('heading',{name:'Found in 10 packs'})).toBeVisible();
+ await expect(dialog).not.toContainText('Updated');
+ expect(errors).toEqual([]);
+});
+
+test('More Info does not invent pack sources for items absent from all active reward pools',async({page})=>{
+ const errors=await setup(page,1000000000,{orphan:true});
+ await page.getByRole('button',{name:'Collection log'}).click();
+ const entry=page.locator('#items .collection-locked')
+   .filter({hasText:'Unassigned collectible'});
+ await expect(entry).toBeVisible();
+ await entry.getByRole('button',{name:'More Info'}).click();
+ const dialog=page.locator('#modal');
+ await expect(dialog.getByRole('heading',{name:'Found in 0 packs'})).toBeVisible();
+ await expect(dialog).toContainText('not currently obtainable from an active pack');
+ await expect(dialog.locator('.collection-source')).toHaveCount(0);
+ expect(errors).toEqual([]);
+});
+
+test('Collection item detail list scrolls on narrow phones without overflowing the screen',async({page})=>{
+ await page.setViewportSize({width:320,height:700});
+ const errors=await setup(page);
+ await page.getByRole('button',{name:'Collection log'}).click();
+ await page.locator('#items .collection-locked').first().getByRole('button',{name:'More Info'}).click();
+ const dialog=page.locator('#modal');
+ await expect(dialog.locator('.collection-source')).toHaveCount(10);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+ const sizing=await dialog.evaluate(e=>({
+   width:e.getBoundingClientRect().width,
+   height:e.getBoundingClientRect().height,
+   viewport:window.innerHeight,
+   scroll:e.scrollHeight
+ }));
+ expect(sizing.width).toBeLessThanOrEqual(320);
+ expect(sizing.height).toBeLessThanOrEqual(sizing.viewport);
  expect(errors).toEqual([]);
 });
