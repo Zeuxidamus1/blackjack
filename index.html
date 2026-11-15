@@ -389,6 +389,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <link rel="stylesheet" href="./motion.css?v=1">
 <link rel="stylesheet" href="./progression.css?v=3">
 <link rel="stylesheet" href="./economy.css?v=2">
+<link rel="stylesheet" href="./missions.css?v=1">
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><button id="pwa-install-login" class="pwa-install-button" type="button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install as app</span></button><form id="auth" method="post">
 <label><span id="auth-identifier-text">Username or email</span><input name="username" autocomplete="username" maxlength="254" title="Enter your username or registration email" required></label>
@@ -419,7 +420,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <section id="games" class="game-library" aria-label="Choose a game" hidden><div class="game-library-grid" id="game-library-grid"></div></section>
 <div id="game-navigation" class="game-navigation" hidden><button type="button" class="game-back-link" data-act="all-games" aria-label="Back to all games"><span aria-hidden="true">←</span> All games</button></div>
 <section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1><p>Spend GP on packs and build your Old School RuneScape collection.</p></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button><span id="daily-timer"></span></div></section>
-<nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="earn">Earn GP</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button></nav>
+<nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="earn">Earn GP</button><button data-view="missions">Missions</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button></nav>
 <div id="game-status"></div>
 <section id="inventory" hidden>
   <div class="section inventory-heading"><h2>Your inventory</h2><button type="button" class="quiet" id="inventory-mode-button" data-act="inventory-mode" aria-pressed="false">Select items</button></div>
@@ -428,6 +429,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 </section>
 <section id="shop" class="grid" aria-label="Packs"></section>
 <section id="earn" aria-label="Earn GP" hidden><div id="earn-dashboard"></div></section>
+<section id="missions" aria-label="Daily and weekly missions" hidden><div id="missions-dashboard"></div></section>
 <section id="collection" hidden>
   <div class="section collection-heading"><h2 id="progress"></h2></div>
   <div id="collection-progress"></div>
@@ -467,6 +469,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <script src="./reveal.js?v=4"></script>
 <script src="./progression.js?v=2"></script>
 <script src="./economy.js?v=6"></script>
+<script src="./missions.js?v=1"></script>
 <script src="./wallet-feedback.js?v=2"></script>
 <script defer src="./app-install.js"></script>
 <script>
@@ -492,6 +495,7 @@ const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 const sharedId = new URLSearchParams(location.search).get('shelf');
 let session, state, shared, busy=false;
 let economyStatus=null,economyLoading=false,economyError=false,economyGeneration=0;
+let missionsStatus=null,missionsLoading=false,missionsError=false,missionsGeneration=0;
 let view = sharedId ? 'shared' : 'games';
 const onboardingKey='challenger-rips-pending-onboarding';
 function notice(message='') { el('status').textContent=message; }
@@ -552,6 +556,13 @@ function renderDaily(){
   el('daily').hidden=!state||remaining>0;
   el('daily-timer').textContent=state&&remaining>0?'Next claim in '+Math.floor(minutes/60)+'h '+minutes%60+'m':'';
   if(view==='earn')window.ChallengerEconomy?.tick(el('earn-dashboard'),economyStatus,state,clockOffset);
+  if(view==='missions'&&missionsStatus){
+    window.ChallengerMissions?.tick(el('missions-dashboard'),missionsStatus,clockOffset);
+    if(Date.now()+clockOffset>=Math.min(Date.parse(missionsStatus.dailyResetAt),Date.parse(missionsStatus.weeklyResetAt))){
+      missionsStatus=null;missionsError=false;
+      if(!missionsLoading)void loadMissions();
+    }
+  }
 }
 setInterval(renderDaily,1000);
 async function loadEconomy(){
@@ -587,10 +598,40 @@ function renderEarn(){
   window.ChallengerEconomy?.tick(root,economyStatus,state,clockOffset);
   if(session&&state&&!economyStatus&&!economyLoading&&!economyError)void loadEconomy();
 }
+async function loadMissions(){
+  if(!session||missionsLoading)return;
+  const generation=missionsGeneration;
+  missionsLoading=true;
+  try {
+    const result=await rpc('mission_status');
+    if(generation===missionsGeneration){
+      missionsStatus=result;
+      missionsError=!result;
+    }
+  }catch(error){
+    if(generation===missionsGeneration){
+      missionsStatus=null;
+      missionsError=true;
+      notice('Missions are temporarily unavailable.');
+    }
+  }finally{
+    missionsLoading=false;
+    if(view==='missions')renderMissions();
+  }
+}
+function renderMissions(){
+  const root=el('missions-dashboard');
+  root.innerHTML=window.ChallengerMissions?.render(missionsStatus,missionsError)||'';
+  window.ChallengerMissions?.tick(root,missionsStatus,clockOffset);
+  if(session&&state&&!missionsStatus&&!missionsLoading&&!missionsError)void loadMissions();
+}
 async function load() {
   economyGeneration++;
   economyStatus=null;
   economyError=false;
+  missionsGeneration++;
+  missionsStatus=null;
+  missionsError=false;
   state=session ? await rpc('state') : null;
   if(state){
     clockOffset=Date.parse(state.serverTime)-Date.now();
@@ -845,13 +886,14 @@ function render() {
     window.ChallengerWallet?.reset();
   }
   renderDaily();
-  for(const id of ['games','shop','collection','earn','inventory','showcase','shared']) el(id).hidden=id!==view;
+  for(const id of ['games','shop','collection','earn','missions','inventory','showcase','shared']) el(id).hidden=id!==view;
   el('game-navigation').hidden=view==='games'||view==='shared';
   document.querySelector('nav.tabs').hidden=view==='games'||view==='shared';
   document.querySelectorAll('[data-view]').forEach(b=>b.dataset.view===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   if(view==='games')renderGameLibrary();
   if(view==='shop') renderShop(ready);
   if(view==='earn') renderEarn();
+  if(view==='missions')renderMissions();
   if(view==='collection') {
     const pulls=state?.pulls||{};
     const progressCatalog=[...catalog.values()];
@@ -1200,9 +1242,28 @@ document.addEventListener('click',event=>{
     if(view==='inventory'&&b.dataset.view!=='inventory'){
       inventoryMode=false;inventorySelected.clear();
     }
+    if(b.dataset.view==='missions'){missionsGeneration++;missionsStatus=null;missionsError=false;}
     view=b.dataset.view;notice();render();return;
   }
   const {act,id}=b.dataset;
+  if(act==='mission-refresh'){
+    missionsGeneration++;missionsStatus=null;missionsError=false;
+    renderMissions();return;
+  }
+  if(act==='mission-claim'){
+    if(view!=='missions'||!missionsStatus)return;
+    const m=[...(missionsStatus.daily||[]),...(missionsStatus.weekly||[])].find(x=>x.id===id);
+    if(!m||m.claimed||!m.available)return;
+    run(async()=>{
+      const before=state?.gp;
+      const result=await rpc('mission_claim',{id});
+      await load();
+      missionsStatus=result;missionsError=false;
+      window.ChallengerWallet?.record(before,state?.gp,'reward');
+      notice('Mission reward claimed: +'+price(result.claimedAmount)+'.');
+    });
+    return;
+  }
   if(act==='collection-info'){showCollectionItemInfo(id);return;}
   if(act==='earn-refresh'){
     economyError=false;
