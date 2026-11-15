@@ -96,3 +96,29 @@ Boss Loot, Clue Casket, and Pet Hunt use the **same** horizontal drag-and-swipe 
 The existing Supabase case IDs, prices, reward pools, weights, accounts, GP balances, and inventory are unchanged. Clue and Pet tiers have the same existing purchase values. Pet Hunt has non-GE, custom guide values; its preview identifies them correctly, and its GE sale action is disabled when no verified tradable quote exists, leaving Vault available.
 
 Implementation is shared in `index.html` and `premium-packs.css`, with the unchanged underlying secure reveal workflow in `reveal.js` and its supporting CSS. The PWA caches the shared styling. `tests/premium-categories.spec.js` covers the category artwork, switching, swipe/drag, reward previews, purchases, vault flow, and mobile layout using mocked accounts rather than real GP purchases.
+
+
+## Collection Log: every item must be obtainable
+
+The 2026-11-15 reward-pool coverage audit found 522 items in `rips.catalog` that were not in any `rips.case_rewards` pool: 14 Boss Loot, 443 Clue Caskets, and 65 Pet Hunt. The migration `supabase/migrations/20261115010000_complete_collection_reward_coverage.sql` assigns each missing item to an existing category-appropriate case.
+
+After the migration there are **877 catalog items, zero unobtainable items, 16 valid reward pools**, each totaling 1,000,000,000,000 draw tickets. All 10 Boss Loot cases still meet their original 72% target returns. Clue/Pet cases use expanded precision; the newly included rewards collectively receive 2% probability in the affected cases, and historical rewards retain 98% of their original odds there. Pack prices, player GP, inventories, existing rewards, and past purchases are unchanged. The draw denominator in `rips.command` is now consistent across all packs.
+
+This is a live data coverage requirement, not a display filter. Every time catalog items or pack pools are added, verify:
+
+```sql
+select count(*) as unobtainable
+from rips.catalog i
+where not exists (
+  select 1 from rips.case_rewards r
+  join rips.cases c on c.id=r.case_id
+  where r.item=i.id and r.weight>0
+);
+
+select c.id, sum(r.weight) as tickets
+from rips.cases c join rips.case_rewards r on r.case_id=c.id
+group by c.id
+having sum(r.weight)<>1000000000000;
+```
+
+Both queries must return zero or no rows respectively. The Collection Log's **More Info** control also refreshes stale case lists if an item appears to have no source, so existing PWA sessions pick up newly added pack assignments.
