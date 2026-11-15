@@ -551,8 +551,7 @@ function renderBossShop(resume) {
  const items=bossCases();
  if(!items.length){el('shop').innerHTML=empty('Boss Loot packs are not available.');return;}
  bossIndex=Math.max(0,Math.min(items.length-1,bossIndex));
- el('shop').innerHTML='<div class="boss-shell"><div class="boss-top">'+button('← Explore Packs','categories')+
-   (batch?button('Resume opening','resume'):'')+'</div>'+
+ el('shop').innerHTML='<div class="boss-shell"><div class="boss-top">'+button('← Explore Packs','categories')+'</div>'+
    '<h2 class="boss-heading">BOSS LOOT</h2>'+
    '<div class="boss-carousel" role="region" aria-label="Boss loot packs">'+
    items.map((entry,i)=>'<div class="boss-slide '+(i===bossIndex?'is-active':'')+'" data-index="'+i+'">'+
