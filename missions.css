@@ -1,12 +1,8 @@
 /* Premium RuneScape-inspired mission dashboards */
 .mission-page{margin:8px auto 22px;max-width:1140px;color:#eff9f4}
-.mission-hero{padding:clamp(22px,4vw,34px);border:1px solid #436b63;border-radius:23px;background:radial-gradient(ellipse at 76% 12%,#234f49a1,transparent 57%),linear-gradient(145deg,#183237,#0b1b20);margin-bottom:18px;overflow:hidden}
-.mission-eyebrow{font-size:.7rem;color:#93e0bc;font-weight:900;letter-spacing:.18em}
-.mission-hero h2{font-size:clamp(1.65rem,4vw,2.6rem);letter-spacing:-.055em;margin:10px 0 7px}
-.mission-hero p{max-width:660px;color:#abc5be;font-size:.94rem;line-height:1.6}
-.mission-hero-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:22px}
-.mission-hero-footer span{font-size:.85rem;font-weight:900;color:#b4f5d0}
-.mission-hero-footer button{border-radius:999px;font-size:.78rem;padding:8px 13px}
+.mission-group-tools{display:flex;flex-direction:column;align-items:flex-end;gap:9px;min-width:94px}
+.mission-refresh{border:1px solid #477d6c;border-radius:10px;padding:5px 8px;font-size:.73rem;color:#b7efdb;white-space:nowrap}
+.mission-refresh:hover{background:#1c5142;color:#f3fff9}
 .mission-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
 .mission-group{border:1px solid #304b4c;border-radius:21px;padding:18px;background:linear-gradient(156deg,#152d33,#0a171c);min-width:0}
 .mission-group-head{display:flex;justify-content:space-between;align-items:start;gap:14px;padding:4px 2px 17px}
@@ -36,5 +32,5 @@
 .mission-loading button{display:inline-block;margin-left:8px;border-radius:10px}
 .mission-footnote{font-size:.74rem;line-height:1.6;color:#93aead;margin:16px 5px}
 @media(max-width:800px){.mission-columns{grid-template-columns:1fr}.mission-group{padding:14px}}
-@media(max-width:470px){.mission-hero{padding:19px}.mission-card{padding:14px}.mission-top{flex-wrap:wrap}.mission-reward{margin-left:47px}.mission-timer{min-width:84px}.mission-group-head p{font-size:.72rem}}
+@media(max-width:470px){.mission-card{padding:14px}.mission-top{flex-wrap:wrap}.mission-reward{margin-left:47px}.mission-timer{min-width:84px}.mission-group-head p{font-size:.72rem}}
 @media(prefers-reduced-motion:reduce){.mission-fill{transition:none}}
