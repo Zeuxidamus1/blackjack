@@ -121,7 +121,9 @@ test('RuneScape, Boss Loot, categories and All games navigate without economy ac
   await back.click();
   await expect(page.locator('.premium-category')).toHaveCount(3);
   await page.locator('[data-act="category"][data-id="clue"]').click();
-  await expect(page.locator('.other-case-heading h2')).toHaveText('Clue Casket');
+  await expect(page.locator('.boss-shell')).toHaveAttribute('data-pack','clue');
+  await expect(page.locator('.boss-heading')).toHaveText('CLUE CASKET');
+  await expect(page.locator('#boss-details h2')).toHaveText('Starter');
   await page.locator('[data-act="categories"]').click();
   await expect(page.locator('.premium-category')).toHaveCount(3);
   await page.locator('[data-act="all-games"]').click();
