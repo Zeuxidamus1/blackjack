@@ -21,7 +21,7 @@
   const itemIcon = (session,r) => {
     const item=catalogItem(session,r);
     const url=window.ChallengerArtwork?.src(item);
-    const fallback=item?.pack==='pets'?'🐾':'✦';
+    const fallback=window.ChallengerArtwork?.fallback(item)||'✦';
     return url
       ? '<img draggable="false" alt="'+itemName(session,r)+'" loading="eager" src="'+h(url)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
         '<span class="cr-unknown" hidden aria-hidden="true">'+fallback+'</span>'
