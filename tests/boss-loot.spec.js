@@ -86,8 +86,8 @@ test('What’s inside displays actual individual odds, item images, guide prices
  await expect(page.locator('dialog.boss-inside')).toBeVisible();
  await expect(page.locator('.inside-item')).toHaveCount(10);
  await expect(page.locator('.inside-item img')).toHaveCount(10);
- await expect(page.locator('dialog')).toContainText('Grails / Ultra-Rare Jackpots');
- await expect(page.locator('dialog')).toContainText('0.0001%');
+ await expect(page.locator('#modal')).toContainText('Grails / Ultra-Rare Jackpots');
+ await expect(page.locator('#modal')).toContainText('0.0001%');
  const total=weights.reduce((a,b)=>a+b,0); expect(total).toBe(1000000);
  expect(errors).toEqual([]);
 });
@@ -117,7 +117,7 @@ test('insufficient funds disable expensive opening while keeping preview availab
  await page.getByRole('button',{name:'Select God Tier Loot'}).click();
  await expect(page.locator('#boss-details button[data-act="purchase"]')).toBeDisabled();
  await page.getByRole('button',{name:/What.s inside/}).click();
- await expect(page.locator('dialog')).toContainText('5,000,000 GP');
+ await expect(page.locator('#modal')).toContainText('5,000,000 GP');
  expect(errors).toEqual([]);
 });
 
@@ -143,9 +143,9 @@ test('49-item preview shows item-specific odds without profit summary boxes',asy
  await expect(page.getByText('Combined chance of profit')).toHaveCount(0);
  await expect(page.locator('.inside-source-note')).toHaveCount(0);
  await expect(page.locator('.inside-item-details').last()).toContainText('0.000001%');
- await expect(page.locator('dialog')).toContainText('Profit Drops');
- await expect(page.locator('dialog')).toContainText('Big Wins');
- await expect(page.locator('dialog')).toContainText('Grails / Ultra-Rare Jackpots');
+ await expect(page.locator('#modal')).toContainText('Profit Drops');
+ await expect(page.locator('#modal')).toContainText('Big Wins');
+ await expect(page.locator('#modal')).toContainText('Grails / Ultra-Rare Jackpots');
  const smallest=await page.locator('.inside-item-details').first().textContent();
  expect(smallest).toContain('200 GP');
  expect(errors).toEqual([]);
