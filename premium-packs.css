@@ -42,3 +42,10 @@
 
 /* Keep the layout consistent, but explain non-tradeable custom rewards. */
 .cr-sale-note{text-align:center;font-size:.76rem;color:#bad1c7;margin:4px 10px 8px;line-height:1.35}
+
+/* Keep the miniature foil readable in the What's Inside dialog header. */
+.inside-head .boss-foil[data-foil-pack="clue"] .foil-title,
+.inside-head .boss-foil[data-foil-pack="pets"] .foil-title{font-size:.56rem;letter-spacing:.01em}
+.inside-head .boss-foil[data-foil-pack="pets"] .foil-fallback{font-size:1.3rem}
+.inside-head .boss-foil[data-foil-pack="clue"] .foil-rune,
+.inside-head .boss-foil[data-foil-pack="pets"] .foil-rune{display:none}
