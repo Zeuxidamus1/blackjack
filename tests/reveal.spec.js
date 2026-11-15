@@ -458,13 +458,16 @@ test('Sell All credits validated server prices exactly once',async({page})=>{
 test('pack purchase shows red real-balance debit, single sale shows green server-credit',async({page})=>{
  const errors=await setup(page);
  await expect(page.locator('#balance')).toHaveText('100,000 GP');
- await purchase(page,1);
+ await page.locator('.boss-qty [data-id="1"]').click();
+ await page.locator('#boss-details [data-act="purchase"]').click();
+ await expect(page.locator('#cr-reveal')).toBeVisible();
  await expect(page.locator('#balance')).toHaveText('99,000 GP');
  await expect(page.locator('#gp-delta-inline')).toHaveText('−1,000 GP');
  await expect(page.locator('#gp-delta-inline')).toHaveClass(/gp-negative/);
  await expect(page.locator('#gp-wallet-live')).toContainText('99,000 GP');
  await expect(page.locator('#gp-wallet-live .gp-wallet-change')).toHaveText('−1,000 GP');
  await expect(page.locator('#gp-wallet-live .gp-wallet-change')).toHaveClass(/gp-negative/);
+ await ripPack(page);
  await expect(page.locator('.cr-single-info')).toContainText('12,000 GP');
  await page.locator('[data-cr="sell"]').click();
  await expect(page.locator('#cr-reveal')).toBeHidden();
