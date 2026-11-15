@@ -53,7 +53,7 @@ async function setup(page,gp=1000000000,{large=false,pulls={}}={}){
        const state={id:'test',name:'Playwright',gp,items:[],market:[],pulls,
          nextDailyAt:new Date(Date.now()+86400000).toISOString(),serverTime:new Date().toISOString()};
        const values={
-         catalog,cases,state,case_batch:null,
+         catalog,cases,state,case_batch:null,reward_batch:null,
          case_purchase:{id:'11111111-1111-4111-8111-111111111111',case:payload?.case??'boss-starter',
            paid:1000,rewards:[{slot:1,item:null}]}
        };
