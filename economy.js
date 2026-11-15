@@ -50,7 +50,7 @@
       const info=named.get(pack);
       return '<button type="button" class="earn-pack-tab'+(active?' is-active':'')+
         '" data-act="earn-pack-tab" data-id="'+esc(pack)+'" role="tab" aria-selected="'+active+
-        '" aria-controls="earn-milestone-panel" tabindex="'+(active?'0':'-1')+'">'+
+        '" aria-controls="earn-milestone-panel" tabindex="0">'+
         '<span class="earn-pack-icon" aria-hidden="true">'+esc(info?.icon||'✦')+'</span>'+
         '<span class="earn-pack-name">'+esc(info?.name||pack)+'</span>'+
         '<span class="earn-pack-count">'+related.length+'</span></button>';
@@ -123,8 +123,9 @@
     set('earn-recover','recovery',canRecovery,
       recovery.pendingPack?'Finish current pack':recovery.balanceTooHigh?'Unavailable':'Claimed',recoverySeconds);
   }
-  function choosePack(id,board){
-    const exists=Array.isArray(board?.milestones)&&board.milestones.some(item=>item.pack===id);
+  function choosePack(id,board,packs=[]){
+    const exists=(Array.isArray(board?.milestones)&&board.milestones.some(item=>item.pack===id))||
+      packs.some(pack=>pack.id===id);
     if(exists){selectedPack=id;return true;}
     return false;
   }
