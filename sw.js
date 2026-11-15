@@ -1,7 +1,7 @@
 /* Network-first app navigation; no caching of Supabase or authenticated data. */
-const NAME='challenger-rips-shell-20261114-v4', PREFIX='challenger-rips-shell-';
+const NAME='challenger-rips-shell-20261114-v5', PREFIX='challenger-rips-shell-';
 const BASE=new URL(self.registration.scope),OFFLINE=new URL('offline.html',BASE).href;
-const ASSETS=['offline.html','manifest.json','app-install.js','reveal.js','reveal.css','wallet-feedback.js','wallet-feedback.css','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png'];
+const ASSETS=['offline.html','manifest.json','app-install.js','reveal.js','reveal.css','motion.css','wallet-feedback.js','wallet-feedback.css','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png'];
 const ASSET_PATHS=new Set(ASSETS.map(p=>new URL(p,BASE).pathname));
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const cache=await caches.open(NAME);await cache.addAll(ASSETS.map(p=>new URL(p,BASE).href));await self.skipWaiting();
