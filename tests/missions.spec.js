@@ -88,6 +88,8 @@ async function setup(page,opts={}){
 test('daily and weekly missions render actual server progress, rewards and reset clocks',async({page})=>{
  const errors=await setup(page,{opened:2,discovered:1,sold:0});
  await expect(page.locator('.mission-card')).toHaveCount(6);
+ await expect(page.locator('.mission-hero')).toHaveCount(0);
+ await expect(page.locator('.mission-refresh')).toHaveCount(1);
  await expect(page.locator('.mission-group').first()).toContainText('Open 3 packs');
  await expect(page.locator('.mission-group').first()).toContainText('2 / 3');
  await expect(page.locator('.mission-group').first()).toContainText('+2,000 GP');
