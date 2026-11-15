@@ -385,6 +385,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 @media(max-width:520px){.game-library-grid{grid-template-columns:minmax(0,1fr)}.game-card{min-height:170px}.game-card-art{min-height:170px}.game-card-copy{padding:15px}.game-navigation{margin:2px 0 6px}.boss-shell{padding-top:12px}.boss-heading{margin-top:12px}.boss-carousel{padding-top:18px}.premium-categories{padding:18px 14px}.premium-categories-heading{margin:0 auto 16px}}
 </style>
 <link rel="stylesheet" href="./reveal.css?v=5">
+<link rel="stylesheet" href="./premium-packs.css?v=1">
 <link rel="stylesheet" href="./wallet-feedback.css?v=2">
 <link rel="stylesheet" href="./motion.css?v=1">
 <link rel="stylesheet" href="./progression.css?v=3">
@@ -814,7 +815,10 @@ function showInside() {
    .filter(x=>x.item && Number(x.item.guide)>0)
    .sort((a,b)=>estimate(a.item)-estimate(b.item));
  const total=entry.rewards.reduce((sum,r)=>sum+Number(r.weight),0);
- const groups=[
+ const brand=packs.find(p=>p.id===entry.pack)?.name||'Boss Loot';
+ const groups=entry.pack==='pets'?
+   [['Companion Rewards',()=>true]]:
+   [
    ['Common Drops',x=>!x.r.chase&&estimate(x.item)<entry.price*.5],
    ['Uncommon Drops',x=>!x.r.chase&&estimate(x.item)>=entry.price*.5&&estimate(x.item)<=entry.price],
    ['Profit Drops',x=>!x.r.chase&&estimate(x.item)>entry.price&&estimate(x.item)<entry.price*2.5],
@@ -822,17 +826,23 @@ function showInside() {
    ['Grails / Ultra-Rare Jackpots',x=>x.r.chase||estimate(x.item)>=entry.price*10]
  ];
  const vals=rows.map(x=>estimate(x.item));
+ const note=entry.pack==='pets'?
+   '<p class="inside-custom-note">Pet rewards use configured in-game guide values rather than live Grand Exchange quotes.</p>':'';
  modal.classList.add('boss-inside');
- showModal('<div class="inside-head">'+foilArt(entry)+'<div><span class="boss-tag">BOSS LOOT</span>'+
+ showModal('<div class="inside-head">'+foilArt(entry)+'<div><span class="boss-tag">'+safe(brand.toUpperCase())+'</span>'+
    '<h2 id="modalTitle">'+safe(entry.name)+'</h2><p>Every possible reward and its actual chance.</p></div>'+
    button('✕','close')+'</div><div class="inside-content"><div class="inside-facts">'+
    '<div><small>Opening cost</small><strong>'+price(entry.price)+'</strong></div>'+
-   '<div><small>Minimum</small><strong>'+price(Math.min(...vals))+'</strong></div>'+
-   '<div><small>Maximum</small><strong>'+price(Math.max(...vals))+'</strong></div>'+
-   '<div><small>Possible rewards</small><strong>'+rows.length+'</strong></div></div>'+
+   '<div><small>Minimum</small><strong>'+(vals.length?price(Math.min(...vals)):'Unavailable')+'</strong></div>'+
+   '<div><small>Maximum</small><strong>'+(vals.length?price(Math.max(...vals)):'Unavailable')+'</strong></div>'+
+   '<div><small>Possible rewards</small><strong>'+rows.length+'</strong></div></div>'+note+
    groups.filter(([label,test])=>rows.some(test)).map(([label,test])=>
      '<section class="inside-group"><h3>'+label+'</h3><div class="inside-grid">'+rows.filter(test).map(({r,item})=>
-       '<article class="inside-item"><div class="inside-icon"><img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+'.png" alt="'+safe(item.name)+'" onerror="this.replaceWith(document.createTextNode(\'⚔\'))"></div>'+
+       '<article class="inside-item"><div class="inside-icon">'+
+       (Number.isSafeInteger(Number(item.ge))&&Number(item.ge)>0?
+         '<img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+'.png" alt="'+safe(item.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="inside-art-fallback" hidden aria-hidden="true">⚔</span>':
+         '<span class="inside-art-fallback" aria-hidden="true">'+(entry.pack==='pets'?'🐾':'⚔')+'</span>')+
+       '</div>'+
        '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
        '<small>Drop chance · '+pct(r.weight,total)+'</small>'+ (r.chase?'<small class="inside-jackpot">Ultra-rare jackpot</small>':'')+
        '<small>'+safe(guideValue(item))+'</small></div></article>'
