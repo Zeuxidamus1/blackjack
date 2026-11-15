@@ -739,7 +739,8 @@ function navigateToGames(){
   notice();render();
 }
 function navigateToRuneScape(){
-  view='shop';category='boss';selected=null;bossIndex=0;quantity=1;
+  // Choose a pack category before entering any individual pack browser.
+  view='shop';category=null;selected=null;bossIndex=0;quantity=1;
   notice();render();
 }
 function navigateToCategories(){
