@@ -62,7 +62,7 @@
    change.className='gp-wallet-change '+klass+' gp-pop';
    inline.hidden=false;
    change.hidden=false;
-   timer=window.setTimeout(clear,4000);
+   timer=window.setTimeout(clear,7000);
    return true;
  }
  function reset(){
