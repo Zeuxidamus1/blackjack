@@ -139,7 +139,12 @@ test('signup retains restricted username rules and does not accept email in user
   await expect(page.locator('#auth-forgot')).toBeHidden();
   await page.locator('#auth-mode').click();
   await expect(page.locator('#auth-identifier-text')).toHaveText('Username or email');
-  await expect(page.locator('#auth [name="username"]')).not.toHaveAttribute('pattern','[A-Za-z0-9_]{3,24}');
+  expect(await page.locator('#auth [name="username"]').evaluate(input=>input.hasAttribute('pattern'))).toBe(false);
   await expect(page.locator('#auth-forgot')).toBeVisible();
+  await page.locator('#auth [name="username"]').fill('test_player');
+  await page.locator('#auth [name="password"]').fill('correct-password');
+  expect(await page.locator('#auth [name="username"]').evaluate(input=>input.checkValidity())).toBe(true);
+  await page.locator('#auth-submit').click();
+  await expect(page.locator('#balance')).toHaveText('100,000 GP');
   expect(errors).toEqual([]);
 });
