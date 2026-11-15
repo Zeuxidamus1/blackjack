@@ -1075,6 +1075,37 @@ document.addEventListener('submit',event=>{
     await load();
     if(signup&&!session) { el('auth-mode').click(); notice('Check your email to confirm your account, then sign in.'); }
   });
+  if(event.target.id==='auth-recovery-request') run(async()=>{
+    const email=String(data.get('email')||'').trim().toLowerCase();
+    if(!email)throw new Error('Enter your registration email.');
+    const redirectTo=new URL(location.pathname,location.origin).href;
+    const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error)throw new Error('Unable to send a reset link. Please try again.');
+    notice('If that email is registered, a password reset link has been requested. Check your inbox.');
+  });
+  if(event.target.id==='auth-recovery-update') run(async()=>{
+    const password=String(data.get('password')||'');
+    const confirm=String(data.get('confirm')||'');
+    if(password.length<8){
+      el('recovery-status').textContent='New password must contain at least 8 characters.';
+      return;
+    }
+    if(password!==confirm){
+      el('recovery-status').textContent='The passwords do not match.';
+      return;
+    }
+    const {error}=await db.auth.updateUser({password});
+    if(error){
+      el('recovery-status').textContent='Could not update your password. Request a new reset link.';
+      return;
+    }
+    el('password-recovery-dialog').close();
+    el('recovery-status').textContent='';
+    const clean=new URL(location.href);
+    clean.hash='';
+    history.replaceState(history.state,'',clean.href);
+    notice('Password updated. Your account and GP are unchanged.');
+  });
 });
 document.addEventListener('keydown',event=>{
   const tile=event.target.closest('article[data-category]');
@@ -1236,9 +1267,26 @@ el('share').onclick=async()=>{
   try {await navigator.clipboard.writeText(url.href);notice('Showroom link copied.');}
   catch {prompt('Copy your showroom link',url.href);}
 };
+function showRecoveryDialog(){
+  const dialog=el('password-recovery-dialog');
+  if(!dialog.open)dialog.showModal();
+  el('recovery-status').textContent='';
+  dialog.querySelector('[name="password"]').focus();
+}
+let recoverySignIn=false;
+if(db?.auth?.onAuthStateChange){
+  db.auth.onAuthStateChange(event=>{
+    if(event==='PASSWORD_RECOVERY'){
+      recoverySignIn=true;
+      showRecoveryDialog();
+    }
+  });
+}
 render();
 if(db) run(async()=>{
   session=(await db.auth.getSession()).data.session;
+  if(session&&(recoverySignIn||new URLSearchParams(location.hash.slice(1)).get('type')==='recovery'))
+    showRecoveryDialog();
   await load();
   // An email-confirmed new account can return with an authenticated session.
   // Only the matching pending signup sees the category overview once.
