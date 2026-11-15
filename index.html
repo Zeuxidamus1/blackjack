@@ -1011,7 +1011,18 @@ el('share').onclick=async()=>{
   catch {prompt('Copy your showroom link',url.href);}
 };
 render();
-if(db) run(async()=>{session=(await db.auth.getSession()).data.session;await load();});
+if(db) run(async()=>{
+  session=(await db.auth.getSession()).data.session;
+  await load();
+  // An email-confirmed new account can return with an authenticated session.
+  // Only the matching pending signup sees the category overview once.
+  const pending=sessionStorage.getItem(onboardingKey);
+  const username=String(state?.name||session?.user?.user_metadata?.username||'').toLowerCase();
+  if(session&&!sharedId&&pending&&pending===username){
+    view='shop';category=null;selected=null;
+    sessionStorage.removeItem(onboardingKey);
+  }
+});
 else notice('Account service failed to load. Refresh to try again.');
 </script>
 </html>
