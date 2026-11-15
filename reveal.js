@@ -43,7 +43,14 @@
       this.timer=null;
       this.epoch=0;
       this.toast='';
+      this.rip=null;
+      this.ripped=false;
       root.addEventListener('click', e => this.click(e));
+      root.addEventListener('pointerdown', e => this.ripStart(e));
+      root.addEventListener('pointermove', e => this.ripMove(e));
+      root.addEventListener('pointerup', e => this.ripEnd(e));
+      root.addEventListener('pointercancel', e => this.ripEnd(e,true));
+      root.addEventListener('lostpointercapture', e => this.ripEnd(e,true));
       window.addEventListener('keydown', e => {
         if(!root.hidden && e.key==='Escape'){
           e.preventDefault();this.close();
@@ -60,13 +67,16 @@
       this.toast='';
       this.detail=false;
       this.busy=false;
+      this.rip=null;
+      this.ripped=false;
+      root.style.setProperty('--cr-rip-progress','0');
+      root.classList.remove('cr-rip-dragging','cr-rip-progress');
       const allRevealed=batch.rewards.every(r=>r.revealed || r.item);
       const anythingRevealed=batch.rewards.some(r=>r.revealed || r.item);
       this.phase=allRevealed?(batch.rewards.length===1?'single':'results'):(anythingRevealed?'cards':'opening');
       root.hidden=false;
       document.body.classList.add('cr-reveal-active');
       this.render();
-      if(this.phase==='opening')this.startOpening();
     }
     stopTimer(){
       if(this.timer!==null)window.clearTimeout(this.timer);
@@ -81,8 +91,43 @@
         if(generation===this.epoch && !root.hidden)fn();
       },reduced()?5:ms);
     }
-    startOpening(){
-      this.schedule(()=>this.advanceOpening(),this.batch.rewards.length===1?1400:1750);
+    // Opening is deliberately user controlled: a tap or an elapsed timer cannot unseal a pack.
+    ripStart(e){
+      if(root.hidden||this.phase!=='opening'||this.ripped||this.busy||this.rip)return;
+      if(e.pointerType==='mouse'&&e.button!==0)return;
+      const grip=e.target.closest('.cr-rip-target');
+      if(!grip)return;
+      const bounds=grip.getBoundingClientRect();
+      this.rip={id:e.pointerId,startX:e.clientX,required:Math.max(80,bounds.width*.62),progress:0};
+      root.classList.add('cr-rip-dragging');
+      try{grip.setPointerCapture(e.pointerId);}catch{}
+    }
+    ripMove(e){
+      if(!this.rip||this.rip.id!==e.pointerId)return;
+      const progress=Math.min(1,Math.abs(e.clientX-this.rip.startX)/this.rip.required);
+      this.rip.progress=progress;
+      root.style.setProperty('--cr-rip-progress',progress.toFixed(3));
+      root.classList.toggle('cr-rip-progress',progress>.03);
+      if(e.cancelable)e.preventDefault();
+    }
+    ripEnd(e,cancelled=false){
+      if(!this.rip||this.rip.id!==e.pointerId)return;
+      const progress=this.rip.progress;
+      this.rip=null;
+      root.classList.remove('cr-rip-dragging','cr-rip-progress');
+      if(!cancelled&&progress>=.8){this.completeRip();return;}
+      root.style.setProperty('--cr-rip-progress','0');
+    }
+    completeRip(){
+      if(root.hidden||this.phase!=='opening'||this.ripped||this.busy)return;
+      this.ripped=true;
+      this.rip=null;
+      root.style.setProperty('--cr-rip-progress','1');
+      root.classList.remove('cr-rip-dragging','cr-rip-progress');
+      root.querySelector('.cr-opening')?.classList.add('cr-ripped');
+      const note=root.querySelector('.cr-opening-note');
+      if(note)note.textContent='Pack torn open!';
+      this.schedule(()=>this.advanceOpening(),620);
     }
     advanceOpening(){
       if(this.busy)return;
@@ -101,6 +146,10 @@
       this.stopTimer();
       root.hidden=true;
       root.replaceChildren();
+      root.style.setProperty('--cr-rip-progress','0');
+      root.classList.remove('cr-rip-dragging','cr-rip-progress');
+      this.rip=null;
+      this.ripped=false;
       document.body.classList.remove('cr-reveal-active');
       this.detail=false;
       this.busy=false;
@@ -134,20 +183,20 @@
       const entry=this.entry();
       const tone=/^#[0-9a-f]{3,8}$/i.test(entry.accent||'')?entry.accent:'#ce8954';
       root.style.setProperty('--cr-glow',tone);
-      const skip=this.phase==='opening'?'<button class="cr-pill" data-cr="skip">Skip animation</button>':'';
-      const top=this.toolbar(skip);
+      const top=this.toolbar();
       let inside='';
       if(this.phase==='opening'){
         const count=this.batch.rewards.length;
         const packs=Array.from({length:count},(_,i)=>{
           const delta=(i-(count-1)/2);
           return '<div class="cr-pack-piece" style="--dx:'+Math.round(delta*15)+'px;--dy:'+Math.round(-i*11)+'px;--rotate:'+Math.round(delta*3)+'deg;--delay:'+i*95+'ms">'+
-            this.ctx.foilArt(entry)+'<div class="cr-tear"></div></div>';
+            this.ctx.foilArt(entry)+'<div class="cr-tear" aria-hidden="true"></div>'+
+            (i===count-1?'<button type="button" class="cr-rip-target" data-cr="rip" aria-label="Swipe left or right across the pack to rip it open. Press Enter or Space to open using a keyboard."><span class="cr-swipe-cue" aria-hidden="true">⇠ &nbsp; SWIPE TO RIP &nbsp; ⇢</span></button>':'')+'</div>';
         }).join('');
-        inside='<section class="cr-stage cr-opening" data-cr="speed-up">'+
+        inside='<section class="cr-stage cr-opening">'+
           '<div class="cr-burst"></div><div class="cr-stack">'+packs+'</div>'+
-          '<div class="cr-opening-title">Unsealing '+(count===1?'your pack':count+' packs')+'</div>'+
-          '<p class="cr-opening-note">Tap to speed up</p></section>';
+          '<div class="cr-opening-title">Rip open '+(count===1?'your pack':count+' packs')+'</div>'+
+          '<p class="cr-opening-note">Swipe across the pack to tear the seal</p></section>';
       }else if(this.phase==='cards'){
         const cards=this.batch.rewards.map(r=>{
           const flipped=Boolean(r.revealed||r.item);
@@ -236,6 +285,10 @@
         }
       }catch(error){
         this.busy=false;this.toast=error.message||'Unable to reveal this reward.';
+        if(this.phase==='opening'){
+          this.ripped=false;
+          root.style.setProperty('--cr-rip-progress','0');
+        }
         this.render();
       }
     }
@@ -275,17 +328,16 @@
       }
     }
     click(e){
-      const btn=e.target.closest('button[data-cr]');
-      const target=btn||e.target.closest('[data-cr="speed-up"]');
+      const target=e.target.closest('button[data-cr]');
       if(!target || root.hidden)return;
       const action=target.dataset.cr;
       if(action==='back'){this.close();return;}
       if(action==='info'){this.detail=!this.detail;this.render();return;}
       if(this.busy)return;
-      if(action==='skip'||action==='speed-up'){
-        if(this.phase==='opening'){
-          this.stopTimer();this.advanceOpening();
-        }return;
+      if(action==='rip'){
+        // Native keyboard/assistive-tech activation is available without making a tap open the pack.
+        if(e.detail===0)this.completeRip();
+        return;
       }
       if(action==='flip'){
         if(this.phase==='cards')this.revealSlot(Number(target.dataset.slot));
