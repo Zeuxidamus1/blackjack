@@ -123,7 +123,10 @@ test('RuneScape, Boss Loot, categories and All games navigate without economy ac
   await page.locator('[data-act="category"][data-id="clue"]').click();
   await expect(page.locator('.boss-shell')).toHaveAttribute('data-pack','clue');
   await expect(page.locator('.boss-heading')).toHaveText('CLUE CASKET');
-  await expect(page.locator('#boss-details h2')).toHaveText('Starter');
+  // This navigation fixture only supplies Boss Loot cases. An empty category must
+  // keep premium navigation instead of trapping the player in the old grid.
+  await expect(page.locator('#shop')).toContainText('Clue Casket packs are not available right now.');
+  await expect(page.locator('.boss-top [data-act="categories"]')).toBeVisible();
   await page.locator('[data-act="categories"]').click();
   await expect(page.locator('.premium-category')).toHaveCount(3);
   await page.locator('[data-act="all-games"]').click();
