@@ -62,6 +62,8 @@ async function setup(page,gp=1000000000,{large=false,pulls={}}={}){
    })};
  },{catalog:catalogForTest,cases:casesForTest,gp,pulls});
  await page.goto('/');
+ await expect(page.locator('#games [data-act="game"][data-id="runescape"]')).toBeVisible();
+ await page.locator('#games [data-act="game"][data-id="runescape"]').click();
  await expect(page.locator('.boss-carousel')).toBeVisible();
  await expect(page.locator('.boss-slide')).toHaveCount(10);
  return errors;
@@ -117,7 +119,7 @@ test('insufficient funds disable expensive opening while keeping preview availab
  expect(errors).toEqual([]);
 });
 
-test('premium Boss Loot is the default after login and other categories stay accessible',async({page})=>{
+test('RuneScape opens Boss Loot and other categories stay accessible',async({page})=>{
  const errors=await setup(page);
  await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
  await expect(page.locator('#shop .tile')).toHaveCount(0);
@@ -163,6 +165,7 @@ test('Collection Log renders real OSRS icons only for unlocked personally pulled
  await expect(page.locator('#items .collection-locked img')).toHaveCount(0);
  await expect(page.locator('#items .collection-locked .symbol').first()).toContainText('🔒');
  await page.reload();
+ await page.locator('#games [data-act="game"]').click();
  await page.getByRole('button',{name:'Collection log'}).click();
  await expect(page.locator('#items .collection-unlocked img')).toHaveCount(2);
  expect(errors).toEqual([]);
