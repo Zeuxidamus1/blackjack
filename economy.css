@@ -32,3 +32,5 @@
 @media(max-width:900px){.earn-groups{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.earn-quick-grid,.earn-groups{grid-template-columns:1fr}.earn-quick{padding:16px}.earn-quick button{width:100%}.earn-milestone{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"info reward action";gap:8px}.earn-section-heading{margin-top:22px}}
 @media(max-width:375px){.earn-milestone{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"info reward" "info action"}}
+
+#storefront:has(#earn:not([hidden])) .hero{display:none}
