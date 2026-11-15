@@ -84,7 +84,9 @@ test('returning session starts on single RuneScape game card and resets to Games
   await expect(page.locator('nav.tabs')).toBeHidden();
   await expect(page.locator('#balance')).toHaveText('100,000 GP');
   await page.locator('#games .game-card').click();
-  await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
+  await expect(page.locator('#shop .premium-categories h2')).toHaveText('Choose your adventure');
+  await expect(page.locator('#shop .premium-category')).toHaveCount(3);
+  await expect(page.locator('#shop .boss-carousel')).toHaveCount(0);
   await page.reload();
   await expect(page.locator('#games .game-card')).toHaveCount(1);
   await expect(page.locator('#shop')).toBeHidden();
@@ -93,6 +95,11 @@ test('returning session starts on single RuneScape game card and resets to Games
 test('RuneScape, Boss Loot, categories and All games navigate without economy actions',async({page})=>{
   const errors=await setup(page);
   await page.locator('#games .game-card').click();
+  await expect(page.locator('#shop .premium-categories h2')).toHaveText('Choose your adventure');
+  await expect(page.locator('#shop .premium-category')).toHaveCount(3);
+  await expect(page.locator('#shop .boss-carousel')).toHaveCount(0);
+  await expect(page.locator('#balance')).toHaveText('100,000 GP');
+  await page.locator('[data-act="category"][data-id="boss"]').click();
   await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
   await expect(page.locator('#shop')).not.toContainText('Mystery Collectibles');
   await expect(page.locator('#shop')).not.toContainText('Swipe to discover your next treasure');
@@ -118,6 +125,8 @@ test('RuneScape, Boss Loot, categories and All games navigate without economy ac
 test('compact Boss Loot back button does not wrap or overflow on Android and iPhone widths',async({page})=>{
   const errors=await setup(page);
   await page.locator('#games .game-card').click();
+  await expect(page.locator('.premium-category')).toHaveCount(3);
+  await page.locator('[data-act="category"][data-id="boss"]').click();
   const back=page.locator('.boss-top [data-act="categories"]');
   for(const width of [320,375,390,430]){
     await page.setViewportSize({width,height:812});
