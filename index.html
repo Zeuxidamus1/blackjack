@@ -130,7 +130,8 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .inside-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .inside-item{border:1px solid #ffffff28;border-radius:14px;overflow:hidden;background:linear-gradient(150deg,#1d3036,#0e1a20);min-width:0}
 .inside-icon{height:118px;display:grid;place-items:center;background:radial-gradient(circle,#ffffff14,transparent 70%)}
-.inside-icon img{image-rendering:auto;width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 9px 9px #000a)}
+.inside-icon img{image-rendering:pixelated;width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 9px 9px #000a)}
+.inside-art-fallback{font-size:3.1rem;line-height:1}
 .inside-item-details{padding:11px;background:#050f13b3}
 .inside-item-details strong{display:block;font-size:.85rem;min-height:2.3em;overflow-wrap:anywhere}
 .inside-item-details small{display:block;font-size:.73rem;color:#9baeb1;margin-top:4px}
@@ -491,7 +492,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 100K starter GP · Daily claim resets 24 hours after each claim.</footer></div>
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3/dist/umd/supabase.js"></script>
-<script src="./reveal.js?v=7"></script>
+<script src="./reveal.js?v=8"></script>
 <script src="./progression.js?v=2"></script>
 <script src="./economy.js?v=6"></script>
 <script src="./missions.js?v=2"></script>
@@ -505,6 +506,27 @@ const packs = [
   {id:'pets', name:'Pet Hunt', icon:'🐾', color:'#bd5c37', note:'Boss, skilling and companion pets'}
 ];
 const catalog = new Map();
+// Nontradeable OSRS pets still have artwork and in-game GP values.
+const PET_SPRITES=Object.freeze({pets_abyssal_orphan:13262});
+function artworkUrl(item){
+  if(!item)return '';
+  const ge=Number(item.ge),sprite=Number(PET_SPRITES[item.id]||ge);
+  if(Number.isSafeInteger(sprite)&&sprite>0)
+    return 'https://static.runelite.net/cache/item/icon/'+sprite+'.png';
+  if(item.pack==='pets'&&item.name){
+    const filename=item.name.trim().replace(/\s+/g,'_')+'.png';
+    return 'https://oldschool.runescape.wiki/Special:Redirect/file/'+encodeURIComponent(filename);
+  }
+  return '';
+}
+function fixedPetGuide(item){return Boolean(item&&item.pack==='pets'&&!item.ge&&Number(item.guide)>0);}
+function eligibleCatalogSale(item){
+  if(!item||Number(item.guide)<=0)return false;
+  if(fixedPetGuide(item))return true;
+  const last=Date.parse(item.guideTime);
+  return Number(item.ge)>0&&Number.isFinite(last)&&last>Date.now()-24*60*60*1000;
+}
+window.ChallengerArtwork={src:artworkUrl,saleable:eligibleCatalogSale,fixedPet:fixedPetGuide};
 const tiers = [['Common','#b7afca'],['Uncommon','#7eeac2'],['Rare','#82c8ff'],['Epic','#d2a3ff'],['Legendary','#ffc966']];
 const db = window.supabase?.createClient('https://iopjjrbjyscqsydbypzp.supabase.co','sb_publishable_9WNxEa3-YQx_689pMkKpOw_gnDZ-smG');
 const el = id => document.getElementById(id);
@@ -715,11 +737,10 @@ function packVisual(entry){
    ]
  };
  const look=(themes[entry.pack]||themes.clue)[rank];
- // Use an actual eligible OSRS icon for clue-pack cover artwork.
- // Pet rewards have custom, non-GE IDs: use decorative pet illustrations instead.
- const cover=entry.pack==='clue'?
+ // Use an actual reward icon for clue and pet pack cover artwork.
+ const cover=entry.pack==='clue'||entry.pack==='pets'?
    [...(entry.rewards||[])].sort((a,b)=>Number(b.weight)-Number(a.weight))
-      .map(r=>catalog.get(r.id)).find(item=>Number.isSafeInteger(Number(item?.ge))&&Number(item.ge)>0)?.ge:null;
+      .map(r=>artworkUrl(catalog.get(r.id))).find(Boolean)||null:null;
  return {...entry,...look,cover,series:packs.find(p=>p.id===entry.pack)?.name||entry.pack};
 }
 function foilArt(source){
@@ -727,14 +748,14 @@ function foilArt(source){
  if(!entry)return '';
  const tint=safe(entry.accent||'#ce834d'),theme=safe(entry.theme||'bronze');
  const covers={bronze:1155,iron:1191,steel:1119,mithril:1071,adamant:1123,rune:1127,dragon:4087,ancient:4151,infernal:21018,divine:20997};
- const icon=entry.pack==='boss'?covers[theme]:entry.cover;
+ const iconUrl=entry.pack==='boss'?'https://static.runelite.net/cache/item/icon/'+covers[theme]+'.png':entry.cover;
  const brand=entry.pack==='boss'?'BOSS LOOT':(entry.series||'MYSTERY PACK');
  const mark=entry.pack==='boss'?'ᚱ':entry.mark;
  return '<div class="boss-foil" data-theme="'+theme+'" data-foil-pack="'+safe(entry.pack)+'" style="--foil:'+tint+'">'+
    '<div class="foil-lines"></div><div class="foil-crest">CHALLENGER RIPS</div>'+
    '<div class="foil-rune">'+safe(mark)+'</div>'+
    '<div class="foil-emblem" aria-hidden="true"><span class="foil-fallback">'+safe(entry.symbol||'⚔')+'</span>'+
-   (icon?'<img class="foil-item" loading="lazy" alt="" src="https://static.runelite.net/cache/item/icon/'+Number(icon)+'.png" onerror="this.hidden=true">':'')+'</div>'+
+   (iconUrl?'<img class="foil-item" loading="lazy" alt="" src="'+safe(iconUrl)+'" onerror="this.hidden=true">':'')+'</div>'+
    '<div class="foil-title">'+safe(entry.name).replace(' ','<br>')+'</div>'+
    '<div class="foil-footer">'+safe(brand.toUpperCase())+' · OSRS</div></div>';
 }
@@ -881,8 +902,8 @@ function showInside() {
    groups.filter(([label,test])=>rows.some(test)).map(([label,test])=>
      '<section class="inside-group"><h3>'+label+'</h3><div class="inside-grid">'+rows.filter(test).map(({r,item})=>
        '<article class="inside-item"><div class="inside-icon">'+
-       (Number.isSafeInteger(Number(item.ge))&&Number(item.ge)>0?
-         '<img loading="lazy" src="https://static.runelite.net/cache/item/icon/'+Number(item.ge)+'.png" alt="'+safe(item.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="inside-art-fallback" hidden aria-hidden="true">⚔</span>':
+       (Boolean(artworkUrl(item))?
+         '<img loading="lazy" src="'+safe(artworkUrl(item))+'" alt="'+safe(item.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="inside-art-fallback" hidden aria-hidden="true">⚔</span>':
          '<span class="inside-art-fallback" aria-hidden="true">'+(entry.pack==='pets'?'🐾':'⚔')+'</span>')+
        '</div>'+
        '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
@@ -897,11 +918,11 @@ function packArt(pack,shake=false) {
   return '<div class="art" style="--glow:'+pack.color+'"><div class="pack '+(shake?'shake':'')+'"><span class="symbol" aria-hidden="true">'+pack.icon+'</span>'+pack.name.toUpperCase()+'</div></div>';
 }
 function card(item,detail,controls='',locked=false,collectionEntry=false,collectionChance=null) {
-  const geId=Number(item.ge);
+  const artSrc=artworkUrl(item);
   // Show authentic OSRS artwork under a translucent lock in the Collection Log.
-  const hasImage=(!locked||collectionEntry)&&Number.isSafeInteger(geId)&&geId>0;
+  const hasImage=(!locked||collectionEntry)&&Boolean(artSrc);
   const symbol=(hasImage?
-    '<img class="item-icon'+(collectionEntry?' collection-item-icon':'')+'" src="https://static.runelite.net/cache/item/icon/'+geId+'.png" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
+    '<img class="item-icon'+(collectionEntry?' collection-item-icon':'')+'" src="'+safe(artSrc)+'" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
     '<span class="item-icon-fallback'+(collectionEntry?' collection-icon-fallback':'')+'" hidden>'+safe(item.icon||'⚔')+'</span>':
     safe(item.icon||'⚔'))+
     (locked&&collectionEntry?'<span class="collection-lock-overlay" aria-hidden="true">🔒</span>':'');
@@ -917,9 +938,7 @@ function button(label,action,id='',primary=false,disabled=false) {
 const empty = msg => '<p class="empty">'+msg+'</p>';
 function eligibleForInventorySale(asset){
   const item=catalog.get(asset.item);
-  const last=Date.parse(item?.guideTime);
-  return Boolean(!asset.protected&&!asset.listing&&item&&Number(item.ge)>0&&Number(item.guide)>0&&
-    Number.isFinite(last)&&last>Date.now()-24*60*60*1000);
+  return Boolean(!asset.protected&&!asset.listing&&eligibleCatalogSale(item));
 }
 function inventoryGroups(items){
   const grouped=new Map();
@@ -965,7 +984,7 @@ function inventoryItemMarkup(asset,counts,eligibility){
     const actions=asset.listing?button('Cancel existing listing','cancel',asset.listing):
       button(locked?'Unlock item':'Protect item','inventory-lock',asset.id)+
       button(asset.pinned?'Remove from showroom':'Display in showroom','pin',asset.id)+
-      (!locked&&item.ge?button('Sell to GE · '+price(estimate(item)),'sell',asset.id):'')+
+      (!locked&&eligibleCatalogSale(item)?button((fixedPetGuide(item)?'Sell for assigned GP · ':'Sell to GE · ')+price(estimate(item)),'sell',asset.id):'')+
       (!locked&&duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
     return card(item,detail,tag+'<div class="actions">'+actions+'</div>')
       .replace('<article class="item"','<article class="item'+(locked?' inventory-protected':'')+'"');
@@ -973,7 +992,7 @@ function inventoryItemMarkup(asset,counts,eligibility){
   const canSell=eligibility.has(asset.id);
   const active=inventorySelected.has(asset.id);
   const reason=locked?'Protected — unlock this item to sell':
-    asset.listing?'Listed — cancel the listing first':'Current GE quote unavailable';
+    asset.listing?'Listed — cancel the listing first':'No available sale value';
   const html=card(item,detail,tag+(canSell?'<p class="inventory-item-hint">'+
     (active?'Selected for sale':'Tap item to select')+'</p>':
     '<p class="inventory-item-unavailable">'+reason+'</p>'));
@@ -1042,8 +1061,8 @@ function renderInventory(){
   const estimated=chosen.reduce((sum,a)=>sum+value(a),0);
   if(inventoryMode){
     toolbar.innerHTML='<div class="inventory-selection-summary"><strong>'+
-      chosen.length+' selected</strong><span>Estimated GE value: <b>'+price(estimated)+'</b></span>'+
-      '<small>Protected, listed and stale-quote items cannot be selected. Final prices are verified by the server.</small></div>'+
+      chosen.length+' selected</strong><span>Estimated sale value: <b>'+price(estimated)+'</b></span>'+
+      '<small>Protected and listed items cannot be selected. GE quotes must be current; pet values are assigned by the game. The server confirms payouts.</small></div>'+
       '<div class="inventory-selection-actions">'+
       button('Select visible eligible','inventory-all','',false,!visible.some(a=>eligibleIds.has(a.id)))+
       button('Select spare duplicates','inventory-spares','',false,!visible.length)+
@@ -1175,9 +1194,9 @@ function showCollectionItemInfo(itemId){
   const item=catalog.get(itemId);
   if(!item||view!=='collection')return;
   const owned=Number(state?.pulls?.[itemId]?.count??0)>0;
-  const ge=Number(item.ge);
-  const image=Number.isSafeInteger(ge)&&ge>0?
-    '<img src="https://static.runelite.net/cache/item/icon/'+ge+'.png" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
+  const artSrc=artworkUrl(item);
+  const image=Boolean(artSrc)?
+    '<img src="'+safe(artSrc)+'" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
     '<span hidden>'+safe(item.icon||'⚔')+'</span>':
     '<span>'+safe(item.icon||'⚔')+'</span>';
   const sources=cases.flatMap(entry=>{
@@ -1615,7 +1634,7 @@ document.addEventListener('click',event=>{
     }
     const estimated=assets.reduce((n,a)=>n+Number(catalog.get(a.item)?.guide||0),0);
     if(!confirm('Sell '+assets.length+' selected items? Estimated total: '+price(estimated)+
-      '. Actual GP credited will be based on validated server Grand Exchange prices.'))return;
+      '. Server payouts use verified GE prices or assigned Pet Hunt values.'))return;
     const ids=assets.map(a=>a.id);
     run(async()=>{
       const before=state?.gp;
@@ -1672,13 +1691,13 @@ document.addEventListener('click',event=>{
   }
   if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;view=sharedId?'shared':'games';category=null;selected=null;await load();});
   if(['cancel','pin','salvage','sell'].includes(act)) {
-     if(act==='sell'&&!confirm('Sell this item for the server-verified Grand Exchange price?'))return;
+     if(act==='sell'&&!confirm('Sell this item for its current server-assigned value?'))return;
     run(async()=>{
       const previousGp=state?.gp;
       await rpc(act,{id});
       await load();
       if(act==='sell')window.ChallengerWallet?.record(previousGp,state?.gp,'sell');
-      notice(({cancel:'Existing listing canceled.',pin:'Showroom updated.',salvage:'Duplicate salvaged.',sell:'Item sold for the verified Grand Exchange price.'})[act]);
+      notice(({cancel:'Existing listing canceled.',pin:'Showroom updated.',salvage:'Duplicate salvaged.',sell:'Item sold for its current server-assigned value.'})[act]);
     });
   }
 });
