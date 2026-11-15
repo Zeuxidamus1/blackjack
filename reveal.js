@@ -102,6 +102,8 @@
       const bounds=grip.getBoundingClientRect();
       this.rip={id:e.pointerId,startX:e.clientX,required:Math.max(80,bounds.width*.62),progress:0};
       root.classList.add('cr-rip-dragging');
+      root.style.setProperty('--cr-rip-light-x','2%');
+      root.style.setProperty('--cr-rip-lift','0px');
       try{grip.setPointerCapture(e.pointerId);}catch{}
     }
     ripMove(e){
@@ -110,6 +112,8 @@
       const progress=Math.min(1,Math.abs(delta)/this.rip.required);
       this.rip.progress=progress;
       root.style.setProperty('--cr-rip-progress',progress.toFixed(3));
+      root.style.setProperty('--cr-rip-light-x',(delta<0?98-progress*96:2+progress*96).toFixed(2)+'%');
+      root.style.setProperty('--cr-rip-lift',(-4*progress).toFixed(2)+'px');
       root.classList.toggle('cr-rip-reverse',delta<0);
       root.classList.toggle('cr-rip-progress',progress>.03);
       if(e.cancelable)e.preventDefault();
@@ -121,6 +125,8 @@
       root.classList.remove('cr-rip-dragging','cr-rip-progress');
       if(!cancelled&&progress>=.8){this.completeRip();return;}
       root.style.setProperty('--cr-rip-progress','0');
+      root.style.setProperty('--cr-rip-light-x','2%');
+      root.style.setProperty('--cr-rip-lift','0px');
       root.classList.remove('cr-rip-reverse');
     }
     completeRip(){
