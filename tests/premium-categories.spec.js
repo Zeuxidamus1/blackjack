@@ -175,7 +175,7 @@ test('Pet Hunt preserves its three prices and shows custom-valued companions wit
  await expect(page.locator('.inside-item')).toHaveCount(2);
  await expect(page.locator('.inside-item img')).toHaveCount(0);
  await expect(page.locator('.inside-art-fallback')).toHaveCount(2);
- await expect(page.locator('.inside-custom-note')).toContainText('not live Grand Exchange quotes');
+ await expect(page.locator('.inside-custom-note')).toContainText('rather than live Grand Exchange quotes');
  await expect(page.locator('#modal')).toContainText('Custom guide');
  expect(errors).toEqual([]);
 });
