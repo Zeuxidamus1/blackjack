@@ -24,7 +24,24 @@ body:has(#login-screen:not([hidden])){background:radial-gradient(ellipse at top,
 .login-card label{display:block;margin:12px 0}
 .login-card input{display:block;width:100%;margin-top:6px}
 .login-card .primary{width:100%;background:#adbcff;color:#101830}
-#auth-mode{margin-top:12px}
+#auth-mode{margin-top:0}
+.login-secondary{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px}
+#auth-forgot{border:none;background:transparent;color:#b8e9d6;padding:9px 4px;font-size:.84rem;font-weight:850;text-decoration:underline;text-underline-offset:3px}
+.auth-password-field{position:relative;display:block}
+.auth-password-field input{padding-right:78px}
+#auth-show-password{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:#283b42;border:1px solid #5a7a78;color:#ddf9ee;border-radius:8px;padding:5px 9px;font-size:.8rem;font-weight:800}
+#auth-recovery-request{margin-top:14px}
+#auth-recovery-request h2{font-size:1.35rem;margin-bottom:10px}
+#auth-recovery-request p{font-size:.86rem;line-height:1.5;color:#bdcfce;margin:0 0 8px}
+#auth-recovery-request .primary{margin-top:10px}
+#auth-recovery-back{margin-top:12px}
+#password-recovery-dialog{border:1px solid #608d83;border-radius:20px;background:#102429;color:#effbf5;width:min(430px,calc(100vw - 28px));padding:25px;box-shadow:0 28px 85px #000b}
+#password-recovery-dialog::backdrop{background:#000b}
+#password-recovery-dialog h2{font-size:1.45rem;margin-bottom:16px}
+#password-recovery-dialog label{display:block;font-size:.88rem;font-weight:800;margin:12px 0}
+#password-recovery-dialog input{display:block;width:100%;margin:7px 0 0;background:#122e34;border-color:#5a817a}
+#password-recovery-dialog button.primary{width:100%;margin-top:10px;min-height:44px}
+#recovery-status{color:#b9f2d5;font-size:.82rem;margin-top:9px}
 .case-toolbar{grid-column:1/-1;display:flex;gap:.75rem}
 .pack-carousel{position:relative;display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:18px max(12%,calc((100% - 245px)/2));background:radial-gradient(ellipse,#342448,#080710 72%);border-radius:16px}
 .pack-slide{flex:0 0 min(76vw,245px);display:grid;place-items:center;scroll-snap-align:center;min-height:240px}
@@ -346,12 +363,29 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <link rel="stylesheet" href="./economy.css?v=1">
 <section id="login-screen"><div class="login-card">
 <h1>Challenger Rips</h1><button id="pwa-install-login" class="pwa-install-button" type="button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install as app</span></button><form id="auth" method="post">
-<label>Username<input name="username" autocomplete="username" pattern="[A-Za-z0-9_]{3,24}" title="3 to 24 letters, digits, or underscores" required></label>
+<label><span id="auth-identifier-text">Username or email</span><input name="username" autocomplete="username" maxlength="254" title="Enter your username or registration email" required></label>
 <label id="signup-email" hidden>Email<input name="email" type="email" autocomplete="email" disabled></label>
-<label>Password<input name="password" type="password" autocomplete="current-password" maxlength="1024" required></label>
+<label>Password<span class="auth-password-field"><input name="password" type="password" autocomplete="current-password" maxlength="1024" required><button id="auth-show-password" type="button" aria-label="Show password" aria-pressed="false">Show</button></span></label>
 <button id="auth-submit" class="primary" name="mode" value="login">Sign in</button>
-</form><button id="auth-mode" type="button" class="quiet">Create account</button>
+</form>
+<div class="login-secondary"><button id="auth-mode" type="button" class="quiet">Create account</button><button id="auth-forgot" type="button">Forgot password?</button></div>
+<form id="auth-recovery-request" method="post" hidden>
+<h2>Reset your password</h2>
+<p>Enter your registration email to receive a password reset link.</p>
+<label>Email<input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+<button class="primary" type="submit">Send reset link</button>
+<button id="auth-recovery-back" class="quiet" type="button">Back to sign in</button>
+</form>
 <p id="status" role="status"></p></div></section>
+<dialog id="password-recovery-dialog" aria-labelledby="password-recovery-title">
+<h2 id="password-recovery-title">Set a new password</h2>
+<form id="auth-recovery-update" method="post">
+<label>New password<input name="password" type="password" minlength="8" maxlength="1024" autocomplete="new-password" required></label>
+<label>Confirm password<input name="confirm" type="password" minlength="8" maxlength="1024" autocomplete="new-password" required></label>
+<button class="primary" type="submit">Save new password</button>
+</form>
+<p id="recovery-status" role="status"></p>
+</dialog>
 <div id="storefront" hidden><header><div class="bar"><div class="brand">CHALLENGER<span> RIPS</span></div><div class="bar-right"><div class="gp-balance-wrap"><div class="balance" id="balance"></div></div><button id="pwa-install" type="button" class="pwa-install-button" aria-label="Install Challenger Rips app" title="Install Challenger Rips" hidden>↓ <span>Install</span></button><button class="quiet header-signout" data-act="logout">Sign out</button></div></div></header>
 <main>
 <section id="games" class="game-library" aria-label="Choose a game" hidden><div class="game-library-grid" id="game-library-grid"></div></section>
