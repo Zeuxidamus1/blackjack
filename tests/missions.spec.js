@@ -2,10 +2,10 @@ import {test,expect} from '@playwright/test';
 
 const missions=[
  {id:'daily_open_3',cadence:'daily',title:'Open 3 packs',description:'Open any three mystery packs.',metric:'packs',goal:3,reward:2000,sort:1},
- {id:'daily_discover_2',cadence:'daily',title:'Discover 2 new items',description:'Find two items you have never collected before.',metric:'discovery',goal:2,reward:4000,sort:2},
+ {id:'daily_discover_2',cadence:'daily',title:'Collect 2 different items',description:'Reveal two different item types from packs today.',metric:'discovery',goal:2,reward:4000,sort:2},
  {id:'daily_sell_3',cadence:'daily',title:'Sell 3 items',description:'Sell three items through the GE or player market.',metric:'sales',goal:3,reward:3000,sort:3},
  {id:'weekly_open_25',cadence:'weekly',title:'Open 25 packs',description:'Open 25 mystery packs this week.',metric:'packs',goal:25,reward:25000,sort:1},
- {id:'weekly_discover_8',cadence:'weekly',title:'Discover 8 new items',description:'Add eight never-before-collected items to your collection.',metric:'discovery',goal:8,reward:30000,sort:2},
+ {id:'weekly_discover_8',cadence:'weekly',title:'Collect 8 different items',description:'Reveal eight different item types from packs this week.',metric:'discovery',goal:8,reward:30000,sort:2},
  {id:'weekly_sell_15',cadence:'weekly',title:'Sell 15 items',description:'Sell fifteen items through the GE or player market.',metric:'sales',goal:15,reward:18000,sort:3}
 ];
 async function setup(page,opts={}){
