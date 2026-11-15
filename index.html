@@ -386,6 +386,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 </style>
 <link rel="stylesheet" href="./reveal.css?v=5">
 <link rel="stylesheet" href="./premium-packs.css?v=1">
+<link rel="stylesheet" href="./inventory-step5.css?v=1">
 <link rel="stylesheet" href="./wallet-feedback.css?v=2">
 <link rel="stylesheet" href="./motion.css?v=1">
 <link rel="stylesheet" href="./progression.css?v=3">
@@ -424,7 +425,28 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="earn">Earn GP</button><button data-view="missions">Missions</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button></nav>
 <div id="game-status"></div>
 <section id="inventory" hidden>
-  <div class="section inventory-heading"><h2>Your inventory</h2><button type="button" class="quiet" id="inventory-mode-button" data-act="inventory-mode" aria-pressed="false">Select items</button></div>
+  <div class="section inventory-heading"><div><h2>Your inventory</h2><p class="inventory-subtitle">Browse, protect, and manage your collection.</p></div>
+    <button type="button" class="quiet" id="inventory-mode-button" data-act="inventory-mode" aria-pressed="false">Select items</button></div>
+  <div id="inventory-overview" class="inventory-overview" aria-label="Inventory value overview"></div>
+  <div class="inventory-filters" role="group" aria-label="Inventory search and filters">
+    <label class="inventory-search-label">Search items<input id="inventory-search" type="search" autocomplete="off" placeholder="Search by item name…"></label>
+    <label>Filter<select id="inventory-filter">
+      <option value="all">All items</option><option value="sellable">Available to sell</option>
+      <option value="duplicates">Duplicates</option><option value="protected">Protected</option>
+      <option value="unprotected">Unprotected</option><option value="listed">Listed</option>
+      <option value="boss">Boss Loot</option><option value="clue">Clue Caskets</option><option value="pets">Pet Hunt</option>
+    </select></label>
+    <label>Sort<select id="inventory-sort">
+      <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+      <option value="value-high">Value: high to low</option><option value="value-low">Value: low to high</option>
+      <option value="rarity-high">Rarest first</option><option value="rarity-low">Most common first</option>
+      <option value="name-asc">Name: A to Z</option><option value="name-desc">Name: Z to A</option>
+      <option value="duplicates">Most duplicates first</option>
+    </select></label>
+    <label class="inventory-stack-toggle"><input id="inventory-group" type="checkbox"> Stack duplicates</label>
+  </div>
+  <div class="inventory-results-bar"><p id="inventory-results" role="status" aria-live="polite"></p>
+    <button type="button" class="quiet" data-act="inventory-spares" title="Keep one copy of each item and select only eligible spare copies.">Select spare duplicates</button></div>
   <div id="inventory-toolbar" class="inventory-toolbar" hidden></div>
   <div class="grid" id="owned"></div>
 </section>
@@ -490,6 +512,7 @@ let cases=[], category=null, selected=null, quantity=1, batch=null, activeSlot=1
 const supportedGames=[{id:'runescape',name:'RuneScape',art:[20997,4151,1127]}];
 let inventoryMode=false;
 const inventorySelected=new Set();
+const inventoryExpanded=new Set();
 const inventoryMaxSelect=100;
 const purchaseKey='challenger-pending-purchase';
 const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -882,61 +905,155 @@ const empty = msg => '<p class="empty">'+msg+'</p>';
 function eligibleForInventorySale(asset){
   const item=catalog.get(asset.item);
   const last=Date.parse(item?.guideTime);
-  return Boolean(!asset.listing&&item&&Number(item.ge)>0&&Number(item.guide)>0&&
+  return Boolean(!asset.protected&&!asset.listing&&item&&Number(item.ge)>0&&Number(item.guide)>0&&
     Number.isFinite(last)&&last>Date.now()-24*60*60*1000);
+}
+function inventoryGroups(items){
+  const grouped=new Map();
+  for(const item of items){
+    if(!grouped.has(item.item))grouped.set(item.item,[]);
+    grouped.get(item.item).push(item);
+  }
+  return grouped;
+}
+function inventoryBestChances(){
+  const chances=new Map();
+  for(const entry of cases){
+    const rewards=Array.isArray(entry.rewards)?entry.rewards:[];
+    const total=rewards.reduce((sum,r)=>sum+Number(r.weight||0),0);
+    if(total<=0)continue;
+    for(const reward of rewards){
+      const chance=Number(reward.weight)/total;
+      if(chance>(chances.get(reward.id)||0))chances.set(reward.id,chance);
+    }
+  }
+  return chances;
+}
+function inventorySummary(items,grouped){
+  const total=items.reduce((sum,a)=>sum+Number(catalog.get(a.item)?.guide||0),0);
+  const duplicates=[...grouped.values()].reduce((sum,g)=>sum+Math.max(0,g.length-1),0);
+  const most=items.map(a=>catalog.get(a.item)).filter(Boolean).sort((a,b)=>Number(b.guide||0)-Number(a.guide||0))[0];
+  const protectedCount=items.filter(a=>a.protected).length;
+  return '<div class="inventory-stat is-primary"><span>Inventory guide value</span><strong>'+price(total)+'</strong>'+
+    '<small>Estimated values, not guaranteed sale proceeds</small></div>'+
+    '<div class="inventory-stat"><span>Total items</span><strong>'+items.length+'</strong><small>'+grouped.size+' unique types</small></div>'+
+    '<div class="inventory-stat"><span>Extra copies</span><strong>'+duplicates+'</strong><small>'+protectedCount+' protected items</small></div>'+
+    '<div class="inventory-stat is-most"><span>Most valuable item</span><strong>'+safe(most?.name||'—')+'</strong>'+
+    '<small>'+(most?price(most.guide):'No items yet')+'</small></div>';
+}
+function inventoryItemMarkup(asset,counts,eligibility){
+  const item=catalog.get(asset.item);
+  if(!item)return '';
+  const detail=(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item);
+  const locked=Boolean(asset.protected);
+  const duplicate=(counts.get(asset.item)||0)>1;
+  const tag=locked?'<span class="inventory-protected-tag">🔒 Protected</span>':'';
+  if(!inventoryMode){
+    const actions=asset.listing?button('Cancel existing listing','cancel',asset.listing):
+      button(locked?'Unlock item':'Protect item','inventory-lock',asset.id)+
+      button(asset.pinned?'Remove from showroom':'Display in showroom','pin',asset.id)+
+      (!locked&&item.ge?button('Sell to GE · '+price(estimate(item)),'sell',asset.id):'')+
+      (!locked&&duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
+    return card(item,detail,tag+'<div class="actions">'+actions+'</div>')
+      .replace('<article class="item"','<article class="item'+(locked?' inventory-protected':'')+'"');
+  }
+  const canSell=eligibility.has(asset.id);
+  const active=inventorySelected.has(asset.id);
+  const reason=locked?'Protected — unlock this item to sell':
+    asset.listing?'Listed — cancel the listing first':'Current GE quote unavailable';
+  const html=card(item,detail,tag+(canSell?'<p class="inventory-item-hint">'+
+    (active?'Selected for sale':'Tap item to select')+'</p>':
+    '<p class="inventory-item-unavailable">'+reason+'</p>'));
+  return html.replace('<article class="item"','<article class="item inventory-entry'+
+    (active?' is-selected':'')+(canSell?'':' is-unavailable')+(locked?' inventory-protected':'')+'"')
+    .replace('</article>',canSell?
+      '<span class="inventory-selection-mark" aria-hidden="true">'+(active?'✓':'+')+'</span>'+
+      '<button type="button" class="inventory-select-overlay" data-act="inventory-toggle" data-id="'+asset.id+
+      '" aria-label="'+(active?'Deselect ':'Select ')+safe(item.name)+'" aria-pressed="'+active+'"></button></article>':
+      '</article>');
 }
 function renderInventory(){
   const items=state?.items||[];
+  const grouped=inventoryGroups(items);
+  const counts=new Map([...grouped].map(([key,value])=>[key,value.length]));
   const eligible=items.filter(eligibleForInventorySale);
   const eligibleIds=new Set(eligible.map(asset=>asset.id));
   for(const id of inventorySelected){
     if(!eligibleIds.has(id))inventorySelected.delete(id);
   }
+  el('inventory-overview').innerHTML=inventorySummary(items,grouped);
+  const query=el('inventory-search').value.trim().toLowerCase();
+  const filter=el('inventory-filter').value;
+  const sort=el('inventory-sort').value;
+  const stack=el('inventory-group').checked&&!inventoryMode;
+  const chances=inventoryBestChances();
+  let visible=items.filter(a=>{
+    const item=catalog.get(a.item);
+    if(!item)return false;
+    if(query&&!item.name.toLowerCase().includes(query))return false;
+    if(filter==='duplicates')return (counts.get(a.item)||0)>1;
+    if(filter==='sellable')return eligibleIds.has(a.id);
+    if(filter==='protected')return Boolean(a.protected);
+    if(filter==='unprotected')return !a.protected;
+    if(filter==='listed')return Boolean(a.listing);
+    if(['boss','clue','pets'].includes(filter))return item.pack===filter;
+    return true;
+  });
+  const name=a=>catalog.get(a.item)?.name||'';
+  const value=a=>Number(catalog.get(a.item)?.guide||0);
+  const time=a=>Number.isFinite(Date.parse(a.acquired))?Date.parse(a.acquired):0;
+  const comparator={
+    newest:(a,b)=>time(b)-time(a),oldest:(a,b)=>time(a)-time(b),
+    'value-high':(a,b)=>value(b)-value(a),
+    'value-low':(a,b)=>value(a)-value(b),
+    'rarity-high':(a,b)=>(chances.get(a.item)||0)-(chances.get(b.item)||0),
+    'rarity-low':(a,b)=>(chances.get(b.item)||0)-(chances.get(a.item)||0),
+    'name-asc':(a,b)=>name(a).localeCompare(name(b)),
+    'name-desc':(a,b)=>name(b).localeCompare(name(a)),
+    duplicates:(a,b)=>(counts.get(b.item)||0)-(counts.get(a.item)||0)
+  }[sort]||(()=>0);
+  visible.sort((a,b)=>comparator(a,b)||name(a).localeCompare(name(b))||String(a.id).localeCompare(String(b.id)));
+  el('inventory-results').textContent='Showing '+visible.length+' of '+items.length+' items'+
+    (inventoryMode?' · '+inventorySelected.size+' selected':'');
   const mode=el('inventory-mode-button');
   mode.textContent=inventoryMode?'Cancel selection':'Select items';
   mode.setAttribute('aria-pressed',String(inventoryMode));
   mode.disabled=!items.length&&!inventoryMode;
   const toolbar=el('inventory-toolbar');
   toolbar.hidden=!inventoryMode;
-  const chosen=eligible.filter(asset=>inventorySelected.has(asset.id));
-  const estimated=chosen.reduce((sum,asset)=>sum+Number(catalog.get(asset.item)?.guide||0),0);
+  const chosen=eligible.filter(a=>inventorySelected.has(a.id));
+  const estimated=chosen.reduce((sum,a)=>sum+value(a),0);
   if(inventoryMode){
     toolbar.innerHTML='<div class="inventory-selection-summary"><strong>'+
       chosen.length+' selected</strong><span>Estimated GE value: <b>'+price(estimated)+'</b></span>'+
-      '<small>Final sale prices are verified by the server. Listed items and items without current GE quotes cannot be selected.</small></div>'+
+      '<small>Protected, listed and stale-quote items cannot be selected. Final prices are verified by the server.</small></div>'+
       '<div class="inventory-selection-actions">'+
-      button('Select all eligible','inventory-all','',false,!eligible.length)+
+      button('Select visible eligible','inventory-all','',false,!visible.some(a=>eligibleIds.has(a.id)))+
+      button('Select spare duplicates','inventory-spares','',false,!visible.length)+
       button('Clear','inventory-clear','',false,!chosen.length)+
       button('Refresh quotes','inventory-refresh')+
       button('Sell selected ('+chosen.length+')','inventory-sell','',true,!chosen.length)+
       '</div>';
   }
-  el('owned').innerHTML=items.map(asset=>{
-    const item=catalog.get(asset.item);
-    if(!item)return '';
-    const detail=(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item);
-    if(!inventoryMode){
-      const duplicate=items.filter(i=>i.item===asset.item).length>1;
-      const actions=asset.listing?button('Cancel existing listing','cancel',asset.listing):
-        button(asset.pinned?'Remove from showroom':'Display in showroom','pin',asset.id)+
-        (item.ge?button('Sell to GE · '+price(estimate(item)),'sell',asset.id):'')+
-        (duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
-      return card(item,detail,'<div class="actions">'+actions+'</div>');
-    }
-    const canSell=eligibleIds.has(asset.id);
-    const active=inventorySelected.has(asset.id);
-    const reason=asset.listing?'Listed — cancel the listing first':'Current GE quote unavailable';
-    const html=card(item,detail,canSell?'<p class="inventory-item-hint">'+
-      (active?'Selected for sale':'Tap item to select')+'</p>':
-      '<p class="inventory-item-unavailable">'+reason+'</p>');
-    return html.replace('<article class="item"','<article class="item inventory-entry'+
-      (active?' is-selected':'')+(canSell?'':' is-unavailable')+'"')
-      .replace('</article>',canSell?
-        '<span class="inventory-selection-mark" aria-hidden="true">'+(active?'✓':'+')+'</span>'+
-        '<button type="button" class="inventory-select-overlay" data-act="inventory-toggle" data-id="'+asset.id+
-        '" aria-label="'+(active?'Deselect ':'Select ')+safe(item.name)+'" aria-pressed="'+active+'"></button></article>':
-        '</article>');
-  }).join('')||empty('Open a pack to fill your inventory.');
+  if(!stack){
+    el('owned').innerHTML=visible.map(a=>inventoryItemMarkup(a,counts,eligibleIds)).join('')||
+      empty(items.length?'No items match your inventory filters.':'Open a pack to fill your inventory.');
+    return;
+  }
+  // Stack duplicates visually without merging or changing real item instances.
+  const visibleGroups=inventoryGroups(visible);
+  el('owned').innerHTML=[...visibleGroups].map(([id,group])=>{
+    if(group.length===1)return inventoryItemMarkup(group[0],counts,eligibleIds);
+    const item=catalog.get(id);
+    const open=inventoryExpanded.has(id);
+    const cardContent=card(item,group.length+' owned copies · Combined guide '+price(value(group[0])*group.length),
+      '<div class="actions">'+button(open?'Hide individual copies':'View '+group.length+' copies','inventory-expand',safe(id))+'</div>')
+        .replace('<article class="item"','<article class="item inventory-stack-card"');
+    return '<div class="inventory-stack" data-stack="'+safe(id)+'">'+
+      '<span class="inventory-stack-count">×'+group.length+'</span>'+cardContent+
+      (open?'<div class="inventory-stack-copies">'+group.map(a=>inventoryItemMarkup(a,counts,eligibleIds)).join('')+'</div>':'')+
+      '</div>';
+  }).join('')||empty(items.length?'No items match your inventory filters.':'Open a pack to fill your inventory.');
 }
 // Transition only when switching screens/categories, not during normal state redraws.
 let lastScreenKey=null;
@@ -1363,6 +1480,37 @@ document.addEventListener('click',event=>{
     render();
     return;
   }
+  if(act==='inventory-expand'){
+    if(inventoryExpanded.has(id))inventoryExpanded.delete(id);
+    else inventoryExpanded.add(id);
+    renderInventory();return;
+  }
+  if(act==='inventory-lock'){
+    const asset=state?.items?.find(a=>a.id===id);
+    if(!asset||asset.listing)return;
+    run(async()=>{
+      await rpc('lock',{id});
+      await load();
+      notice(asset.protected?'Item protection removed.':'Item protected from accidental selling and salvaging.');
+    });
+    return;
+  }
+  if(act==='inventory-spares'){
+    inventoryMode=true;
+    inventorySelected.clear();
+    const all=state?.items||[];
+    const visibleTypes=new Set([...el('owned').querySelectorAll('.item h3')].map(node=>node.textContent));
+    for(const group of inventoryGroups(all).values()){
+      if(group.length<2 || !visibleTypes.has(catalog.get(group[0].item)?.name))continue;
+      const sorted=[...group].sort((a,b)=>Number(b.protected)-Number(a.protected)||
+        Date.parse(a.acquired)-Date.parse(b.acquired));
+      for(const asset of sorted.slice(1)){
+        if(eligibleForInventorySale(asset)&&inventorySelected.size<inventoryMaxSelect)
+          inventorySelected.add(asset.id);
+      }
+    }
+    renderInventory();return;
+  }
   if(act==='inventory-mode'){
     inventoryMode=!inventoryMode;
     inventorySelected.clear();
@@ -1382,7 +1530,8 @@ document.addEventListener('click',event=>{
   if(act==='inventory-all'){
     if(!inventoryMode)return;
     inventorySelected.clear();
-    for(const asset of (state?.items||[]).filter(eligibleForInventorySale).slice(0,inventoryMaxSelect)){
+    const visibleIds=new Set([...el('owned').querySelectorAll('[data-act="inventory-toggle"]')].map(b=>b.dataset.id));
+    for(const asset of (state?.items||[]).filter(a=>visibleIds.has(a.id)&&eligibleForInventorySale(a)).slice(0,inventoryMaxSelect)){
       inventorySelected.add(asset.id);
     }
     render();return;
@@ -1474,6 +1623,18 @@ document.addEventListener('click',event=>{
     });
   }
 });
+for(const id of ['inventory-search']){
+  el(id).addEventListener('input',()=>{
+    inventorySelected.clear();
+    if(view==='inventory')renderInventory();
+  });
+}
+for(const id of ['inventory-filter','inventory-sort','inventory-group']){
+  el(id).addEventListener('change',()=>{
+    inventorySelected.clear();
+    if(view==='inventory')renderInventory();
+  });
+}
 el('daily').onclick=()=>run(async()=>{
   const before=state?.gp;
   await rpc('daily');
