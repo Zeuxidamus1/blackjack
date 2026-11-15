@@ -226,10 +226,8 @@
             '</span></span></button>';
         }).join('');
         const remaining=this.batch.rewards.filter(r=>!r.revealed&&!r.item).length;
-        inside='<section class="cr-stage"><div class="cr-deck"><h2 class="cr-deck-heading">'+
-          (remaining?'Tap cards to reveal your loot':'All rewards revealed')+'</h2>'+
-          '<div class="cr-reveal-grid">'+cards+'</div>'+
-          '<p class="cr-deck-help">'+(remaining?remaining+' card'+(remaining===1?'':'s')+' remaining':'Preparing your rewards')+'</p></div>'+
+        inside='<section class="cr-stage"><div class="cr-deck">'+
+          '<div class="cr-reveal-grid">'+cards+'</div></div>'+
           '<div class="cr-subactions">'+(remaining?'<button data-cr="reveal-all"'+(this.busy?' disabled':'')+'>Reveal all</button>':'')+
           '</div></section>';
       }else if(this.phase==='single'){
@@ -238,8 +236,7 @@
         inside='<section class="cr-stage cr-single" style="--cr-item-tint:'+tint+'">'+
           '<div class="cr-single-art">'+itemIcon(this,r)+'</div>'+
           '<div class="cr-single-info"><div class="cr-summary-value">'+gp(itemValue(this,r))+'</div>'+
-          '<div class="cr-single-name">'+itemName(this,r)+'</div>'+
-          '<p class="cr-small-note">Grand Exchange guide value</p></div></section>'+
+          '<div class="cr-single-name">'+itemName(this,r)+'</div></div></section>'+
           this.actions([r],false);
       }else{
         const rows=this.available().filter(r=>r.revealed||r.item);
