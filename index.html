@@ -589,12 +589,17 @@ const PET_SPRITES=Object.freeze({
   "yami": 30888,
   "youngllef": 23757
 });
+const PET_CATEGORY_ICONS=Object.freeze({cats:'🐈',dogs:'🐕','pet fish':'🐟'});
+function artworkFallback(item){
+  const name=String(item?.name||'').toLowerCase();
+  return PET_CATEGORY_ICONS[name]||(item?.pack==='pets'?'🐾':'⚔');
+}
 function artworkUrl(item){
   if(!item)return '';
   const ge=Number(item.ge),sprite=Number(PET_SPRITES[String(item.name||'').toLowerCase()]||ge);
   if(Number.isSafeInteger(sprite)&&sprite>0)
     return 'https://static.runelite.net/cache/item/icon/'+sprite+'.png';
-  if(item.pack==='pets'&&item.name){
+  if(item.pack==='pets'&&item.name&&!PET_CATEGORY_ICONS[String(item.name).toLowerCase()]){
     const filename=item.name.trim().replace(/\s+/g,'_')+'.png';
     return 'https://oldschool.runescape.wiki/Special:Redirect/file/'+encodeURIComponent(filename);
   }
@@ -607,7 +612,7 @@ function eligibleCatalogSale(item){
   const last=Date.parse(item.guideTime);
   return Number(item.ge)>0&&Number.isFinite(last)&&last>Date.now()-24*60*60*1000;
 }
-window.ChallengerArtwork={src:artworkUrl,saleable:eligibleCatalogSale,fixedPet:fixedPetGuide};
+window.ChallengerArtwork={src:artworkUrl,fallback:artworkFallback,saleable:eligibleCatalogSale,fixedPet:fixedPetGuide};
 const tiers = [['Common','#b7afca'],['Uncommon','#7eeac2'],['Rare','#82c8ff'],['Epic','#d2a3ff'],['Legendary','#ffc966']];
 const db = window.supabase?.createClient('https://iopjjrbjyscqsydbypzp.supabase.co','sb_publishable_9WNxEa3-YQx_689pMkKpOw_gnDZ-smG');
 const el = id => document.getElementById(id);
@@ -985,7 +990,7 @@ function showInside() {
        '<article class="inside-item"><div class="inside-icon">'+
        (Boolean(artworkUrl(item))?
          '<img loading="lazy" src="'+safe(artworkUrl(item))+'" alt="'+safe(item.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="inside-art-fallback" hidden aria-hidden="true">⚔</span>':
-         '<span class="inside-art-fallback" aria-hidden="true">'+(entry.pack==='pets'?'🐾':'⚔')+'</span>')+
+         '<span class="inside-art-fallback" aria-hidden="true">'+safe(artworkFallback(item))+'</span>')+
        '</div>'+
        '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
        '<small>Drop chance · '+pct(r.weight,total)+'</small>'+ (r.chase?'<small class="inside-jackpot">Ultra-rare jackpot</small>':'')+
@@ -1004,8 +1009,8 @@ function card(item,detail,controls='',locked=false,collectionEntry=false,collect
   const hasImage=(!locked||collectionEntry)&&Boolean(artSrc);
   const symbol=(hasImage?
     '<img class="item-icon'+(collectionEntry?' collection-item-icon':'')+'" src="'+safe(artSrc)+'" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
-    '<span class="item-icon-fallback'+(collectionEntry?' collection-icon-fallback':'')+'" hidden>'+safe(item.icon||'⚔')+'</span>':
-    safe(item.icon||'⚔'))+
+    '<span class="item-icon-fallback'+(collectionEntry?' collection-icon-fallback':'')+'" hidden>'+safe(artworkFallback(item))+'</span>':
+    safe(artworkFallback(item)))+
     (locked&&collectionEntry?'<span class="collection-lock-overlay" aria-hidden="true">🔒</span>':'');
   return '<article class="item'+(collectionEntry?(locked?' collection-locked':' collection-unlocked'):'')+'" style="--rarity:'+item.color+'">'+
     '<div class="symbol" aria-hidden="true">'+symbol+'</div><h3>'+safe(item.name)+'</h3>'+
@@ -1278,8 +1283,8 @@ function showCollectionItemInfo(itemId){
   const artSrc=artworkUrl(item);
   const image=Boolean(artSrc)?
     '<img src="'+safe(artSrc)+'" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
-    '<span hidden>'+safe(item.icon||'⚔')+'</span>':
-    '<span>'+safe(item.icon||'⚔')+'</span>';
+    '<span hidden>'+safe(artworkFallback(item))+'</span>':
+    '<span>'+safe(artworkFallback(item))+'</span>';
   const sources=cases.flatMap(entry=>{
     const rewards=Array.isArray(entry.rewards)?entry.rewards:[];
     const matches=rewards.filter(reward=>reward.id===itemId&&Number(reward.weight)>0);
