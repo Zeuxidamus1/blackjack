@@ -68,3 +68,22 @@ The Collection Log uses its existing pack progress controls and filter to show u
 ### Collection Log consolidation
 
 Collection Log now contains the milestone GP reward board immediately below the collection progress cards. Selecting a pack with a progress card or the Pack filter displays that pack's items **and** its outstanding milestone rewards; selecting All packs shows outstanding milestones across all categories. Claimed milestones disappear from the board after server confirmation, but the existing collection discovery history and completion percentage remain visible. The Earn GP page contains only the existing Daily GP and Bonus GP claim cards with their cooldown timers. The API actions `economy_status` and `economy_claim`, server-owned reward eligibility, claim history, amounts, and wallet logic are unchanged.
+
+## Daily and weekly missions (Step 3)
+
+The premium Missions tab includes six server-authoritative objectives:
+
+| Frequency | Objective | GP reward |
+| --- | --- | ---: |
+| Daily | Open 3 mystery packs | 2,000 |
+| Daily | Discover 2 new collection items | 4,000 |
+| Daily | Sell 3 items | 3,000 |
+| Weekly | Open 25 mystery packs | 25,000 |
+| Weekly | Discover 8 new collection items | 30,000 |
+| Weekly | Sell 15 items | 18,000 |
+
+Daily missions reset at 00:00 UTC. Weekly missions reset on Monday at 00:00 UTC. Reset countdowns appear in the Missions tab. Mission rewards are credited atomically, only when server-computed progress meets the target, and only once per mission per period. Browser clients cannot supply progress counts or GP amounts.
+
+Progress derives from authenticated pack purchases (batches.quantity), first-ever collection discoveries (pulls.first), and verified new sales (sales.seller). New GE sales, bulk sales, reward-reveal sales, and market trades now attribute sales to the actual seller. Historical sales remain untouched and cannot be retroactively credited if they lack seller information.
+
+Schema: supabase/migrations/20261114145000_mission_sales_owner.sql and supabase/migrations/20261114150000_daily_weekly_missions.sql. Frontend: missions.js and missions.css. Browser coverage: tests/missions.spec.js. Existing GP accounts, inventory, game odds, transactions and purchases remain intact.
