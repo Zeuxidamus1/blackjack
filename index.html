@@ -860,7 +860,7 @@ function packArt(pack,shake=false) {
   }
   return '<div class="art" style="--glow:'+pack.color+'"><div class="pack '+(shake?'shake':'')+'"><span class="symbol" aria-hidden="true">'+pack.icon+'</span>'+pack.name.toUpperCase()+'</div></div>';
 }
-function card(item,detail,controls='',locked=false,collectionEntry=false) {
+function card(item,detail,controls='',locked=false,collectionEntry=false,collectionChance=null) {
   const geId=Number(item.ge);
   // Show authentic OSRS artwork under a translucent lock in the Collection Log.
   const hasImage=(!locked||collectionEntry)&&Number.isSafeInteger(geId)&&geId>0;
@@ -871,7 +871,9 @@ function card(item,detail,controls='',locked=false,collectionEntry=false) {
     (locked&&collectionEntry?'<span class="collection-lock-overlay" aria-hidden="true">🔒</span>':'');
   return '<article class="item'+(collectionEntry?(locked?' collection-locked':' collection-unlocked'):'')+'" style="--rarity:'+item.color+'">'+
     '<div class="symbol" aria-hidden="true">'+symbol+'</div><h3>'+safe(item.name)+'</h3>'+
-    '<div class="rare">'+item.tier+' · '+odds(item)+'</div><p>'+safe(detail)+'</p>'+controls+'</article>';
+    '<div class="rare">'+safe(item.tier)+(collectionEntry?
+      ' · Best pack chance '+(collectionChance>0?pct(collectionChance,1):'Unavailable'):
+      ' · '+odds(item))+'</div><p>'+safe(detail)+'</p>'+controls+'</article>';
 }
 function button(label,action,id='',primary=false,disabled=false) {
   return '<button type="button" class="'+(primary?'primary':'quiet')+'" data-act="'+action+'" data-id="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
@@ -969,7 +971,20 @@ function render() {
     const status=el('collection-status').value;
     const sort=el('collection-sort').value;
     const isCollected=item=>Boolean(pulls[item.id])&&Number(pulls[item.id].count??1)>0;
-    const chance=item=>Number(item.weight)/Number(item.total);
+    // The catalog's legacy weight is not a pack drop probability. Use the
+    // highest current *per-pack* chance for Collection Log labels and sorting.
+    // More Info continues to show the precise chance in every eligible pack.
+    const liveChances=new Map();
+    for(const entry of cases){
+      const rewards=Array.isArray(entry.rewards)?entry.rewards:[];
+      const total=rewards.reduce((sum,r)=>sum+Number(r.weight||0),0);
+      if(total<=0)continue;
+      for(const reward of rewards){
+        const value=Number(reward.weight)/total;
+        if(value>(liveChances.get(reward.id)||0))liveChances.set(reward.id,value);
+      }
+    }
+    const chance=item=>liveChances.get(item.id)||0;
     const tie=(a,b)=>a.name.localeCompare(b.name);
     const rows=[...catalog.values()].filter(item=>
       (pack==='all'||item.pack===pack)&&
@@ -988,7 +1003,7 @@ function render() {
     el('collection-count').textContent='Showing '+rows.length+' of '+catalog.size+' items';
     el('items').innerHTML=rows.map(item=>card(item,
       (isCollected(item)?'×'+pulls[item.id].count:'Undiscovered')+' · '+collectionGuideValue(item),
-      button('More Info','collection-info',safe(item.id)),!isCollected(item),true)).join('')||
+      button('More Info','collection-info',safe(item.id)),!isCollected(item),true,chance(item))).join('')||
       empty('No items match these filters.');
   }
   if(view==='inventory') renderInventory();
