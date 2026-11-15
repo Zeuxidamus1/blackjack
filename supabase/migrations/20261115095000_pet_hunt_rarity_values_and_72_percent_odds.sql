@@ -79,7 +79,7 @@ begin
     if (select count(*) from rips.case_rewards where case_id=pack_row.id and chase)<>1
       or (select count(*) from rips.case_rewards r join rips.catalog c on c.id=r.item
           where r.case_id=pack_row.id and r.chase
-            and (c.id<>'pets_mr_mcgroot' or c.guide<>jackpot_value))<>1
+            and (c.id<>'pets_mr_mcgroot' or c.guide<>jackpot_value))<>0
     then raise exception 'Pack % jackpot integrity mismatch',pack_row.id; end if;
     if pack_row.target_return<>0.72
     then raise exception 'Pack % target return differs from 72 percent',pack_row.id; end if;
