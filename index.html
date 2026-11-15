@@ -618,7 +618,18 @@ const db = window.supabase?.createClient('https://iopjjrbjyscqsydbypzp.supabase.
 const el = id => document.getElementById(id);
 const modal = el('modal');
 const price = gp => Number(gp).toLocaleString()+' GP';
-const odds = item => (item.weight / item.total * 100).toFixed(6).replace(/\.?0+$/, '')+'%';
+// Use actual configured pack chances, not the old catalog weight.
+const odds = item => {
+  let best=0;
+  for(const entry of cases){
+    const rows=entry.rewards||[];
+    const total=rows.reduce((sum,r)=>sum+Number(r.weight||0),0);
+    if(!total)continue;
+    for(const reward of rows)if(reward.id===item.id)
+      best=Math.max(best,Number(reward.weight||0)/total);
+  }
+  return best>0?(best*100).toFixed(6).replace(/\.?0+$/,'')+'%':'Unavailable';
+};
 let cases=[], category=null, selected=null, quantity=1, batch=null, activeSlot=1, bossIndex=0, currentBatchShown=null;
 const supportedGames=[{id:'runescape',name:'RuneScape',art:[20997,4151,1127]}];
 let inventoryMode=false;
@@ -674,6 +685,18 @@ function guideValue(item){
   const updated=new Date(last).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
   return 'GE guide · '+price(item.guide)+' · Updated '+updated+(stale?' (stale)':'');
 }
+// Pet Hunt in-game value bands are mirrored in the live server's rarity odds.
+function petRarityIndex(item){
+  const value=Number(item.guide)||0;
+  if(value>=100000000)return 4; // Jackpot
+  if(value>=40000000)return 3;  // Epic premium
+  if(value>=18000000)return 2;  // Rare premium
+  if(value>=9000000)return 1;   // Uncommon premium
+  if(value>=3000000)return 0;   // Common premium
+  if(value>=10000)return 2;     // Rare Select
+  if(value>=1000)return 1;      // Uncommon Starter / Select
+  return 0;
+}
 async function loadCatalog(){
   const rows=await rpc('catalog');
   const totals=new Map();
@@ -682,7 +705,9 @@ async function loadCatalog(){
   for(const row of rows){
     const total=totals.get(row.pack);
     const share=row.weight/total;
-    const [tier,color]=tiers[share<0.0005?4:share<0.002?3:share<0.008?2:share<0.02?1:0];
+    const tierIndex=row.pack==='pets'?petRarityIndex(row):
+      share<0.0005?4:share<0.002?3:share<0.008?2:share<0.02?1:0;
+    const [tier,color]=tiers[tierIndex];
     catalog.set(row.id,{...row,total,tier,color,icon:packs.find(pack=>pack.id===row.pack).icon});
   }
 }
@@ -966,7 +991,13 @@ function showInside() {
  const total=entry.rewards.reduce((sum,r)=>sum+Number(r.weight),0);
  const brand=packs.find(p=>p.id===entry.pack)?.name||'Boss Loot';
  const groups=entry.pack==='pets'?
-   [['Companion Rewards',()=>true]]:
+   [
+   ['Common Pets and Rewards',x=>!x.r.chase&&x.item.tier==='Common'],
+   ['Uncommon Pets',x=>!x.r.chase&&x.item.tier==='Uncommon'],
+   ['Rare Pets',x=>!x.r.chase&&x.item.tier==='Rare'],
+   ['Epic Pets',x=>!x.r.chase&&x.item.tier==='Epic'],
+   ['Legendary Jackpot',x=>x.r.chase||x.item.tier==='Legendary']
+   ]:
    [
    ['Common Drops',x=>!x.r.chase&&estimate(x.item)<entry.price*.5],
    ['Uncommon Drops',x=>!x.r.chase&&estimate(x.item)>=entry.price*.5&&estimate(x.item)<=entry.price],
@@ -989,7 +1020,7 @@ function showInside() {
      '<section class="inside-group"><h3>'+label+'</h3><div class="inside-grid">'+rows.filter(test).map(({r,item})=>
        '<article class="inside-item"><div class="inside-icon">'+
        (Boolean(artworkUrl(item))?
-         '<img loading="lazy" src="'+safe(artworkUrl(item))+'" alt="'+safe(item.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="inside-art-fallback" hidden aria-hidden="true">⚔</span>':
+         '<img loading="lazy" src="'+safe(artworkUrl(item))+'" alt="'+safe(item.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="inside-art-fallback" hidden aria-hidden="true">'+safe(artworkFallback(item))+'</span>':
          '<span class="inside-art-fallback" aria-hidden="true">'+safe(artworkFallback(item))+'</span>')+
        '</div>'+
        '<div class="inside-item-details"><div class="inside-value">'+price(estimate(item))+'</div><strong>'+safe(item.name)+'</strong>'+
@@ -1016,7 +1047,7 @@ function card(item,detail,controls='',locked=false,collectionEntry=false,collect
     '<div class="symbol" aria-hidden="true">'+symbol+'</div><h3>'+safe(item.name)+'</h3>'+
     '<div class="rare">'+safe(item.tier)+(collectionEntry?
       ' · Best pack chance '+(collectionChance>0?pct(collectionChance,1):'Unavailable'):
-      ' · '+odds(item))+'</div><p>'+safe(detail)+'</p>'+controls+'</article>';
+      ' · Best pack chance '+odds(item))+'</div><p>'+safe(detail)+'</p>'+controls+'</article>';
 }
 function button(label,action,id='',primary=false,disabled=false) {
   return '<button type="button" class="'+(primary?'primary':'quiet')+'" data-act="'+action+'" data-id="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
