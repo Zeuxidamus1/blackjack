@@ -160,3 +160,35 @@ test('shared showroom deep link still opens shared view instead of Games',async(
   await expect(page.locator('#shared')).toContainText('Friend');
   expect(errors).toEqual([]);
 });
+
+test('screen motion happens on navigation, not every button selection',async({page})=>{
+  const errors=await setup(page);
+  await expect(page.locator('#games .game-card')).toHaveCount(1);
+  await page.evaluate(()=>{
+    window.__motionStarts=0;
+    document.getElementById('shop').addEventListener('animationstart',e=>{
+      if(e.animationName==='cr-screen-fade')window.__motionStarts++;
+    });
+  });
+  await page.locator('#games .game-card').click();
+  await expect(page.locator('#shop .premium-category')).toHaveCount(3);
+  await page.waitForFunction(()=>window.__motionStarts===1);
+  await page.locator('[data-act="category"][data-id="boss"]').click();
+  await expect(page.locator('.boss-carousel')).toBeVisible();
+  await page.waitForFunction(()=>window.__motionStarts===2);
+  await page.locator('.boss-qty [data-id="2"]').click();
+  await expect(page.locator('.boss-qty [data-id="2"]')).toHaveAttribute('aria-pressed','true');
+  await page.waitForTimeout(450);
+  expect(await page.evaluate(()=>window.__motionStarts)).toBe(2);
+  expect(errors).toEqual([]);
+});
+test('reduced motion skips screen entrance animations but keeps navigation working',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  const errors=await setup(page);
+  await page.locator('#games .game-card').click();
+  await expect(page.locator('#shop .premium-categories')).toBeVisible();
+  expect(await page.locator('#shop').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+  await page.locator('[data-act="category"][data-id="boss"]').click();
+  await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
+  expect(errors).toEqual([]);
+});
