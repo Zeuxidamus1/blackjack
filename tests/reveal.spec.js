@@ -346,6 +346,79 @@ for(const qty of [2,3,5]){
     expect(errors).toEqual([]);
   });
 }
+for(const viewport of [{width:1280,height:850},{width:375,height:812}]){
+  test('four-pack flips keep the entire scene and previous cards mounted ('+viewport.width+'px)',async({page})=>{
+    const errors=await setup(page,{viewport});
+    await purchase(page,4);
+    await expect(page.locator('.cr-turn')).toHaveCount(4);
+    await page.evaluate(()=>{
+      window.__steadyReveal={
+        background:document.querySelector('#cr-reveal .cr-sky'),
+        glow:document.querySelector('#cr-reveal .cr-light'),
+        shell:document.querySelector('#cr-reveal .cr-shell'),
+        stage:document.querySelector('#cr-reveal .cr-stage'),
+        deck:document.querySelector('#cr-reveal .cr-deck'),
+        cards:[...document.querySelectorAll('#cr-reveal .cr-turn')]
+      };
+    });
+    // The first three flips must not replace the other cards, animated sky
+    // or backdrop. That full DOM replacement caused the repeated screen flash.
+    for(let slot=1;slot<=3;slot++){
+      await page.locator('.cr-turn[data-slot="'+slot+'"]').click();
+      await expect(page.locator('.cr-turn[data-slot="'+slot+'"]')).toHaveClass(/cr-flipped/);
+      await expect(page.locator('.cr-turn[data-slot="'+slot+'"] .cr-card-front h3')).toBeVisible();
+      const stability=await page.evaluate(()=>{
+        const old=window.__steadyReveal;
+        return {
+          background:document.querySelector('#cr-reveal .cr-sky')===old.background,
+          glow:document.querySelector('#cr-reveal .cr-light')===old.glow,
+          shell:document.querySelector('#cr-reveal .cr-shell')===old.shell,
+          stage:document.querySelector('#cr-reveal .cr-stage')===old.stage,
+          deck:document.querySelector('#cr-reveal .cr-deck')===old.deck,
+          cards:old.cards.every((node,index)=>document.querySelectorAll('#cr-reveal .cr-turn')[index]===node),
+          flipped:document.querySelectorAll('#cr-reveal .cr-turn.cr-flipped').length
+        };
+      });
+      expect(stability).toMatchObject({
+        background:true,glow:true,shell:true,stage:true,deck:true,cards:true,flipped:slot
+      });
+      await expect(page.locator('.cr-turn')).toHaveCount(4);
+    }
+    await page.locator('.cr-turn[data-slot="4"]').click();
+    await expect(page.locator('.cr-turn[data-slot="4"]')).toHaveClass(/cr-flipped/);
+    await expect(page.locator('.cr-result-card')).toHaveCount(4);
+    await page.locator('[data-cr="vault"]').click();
+    await expect(page.locator('#cr-reveal')).toBeHidden();
+    const record=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+    expect(record.purchases).toBe(1);
+    expect(record.batch.rewards.every(r=>r.revealed&&r.status==='vaulted')).toBe(true);
+    expect(errors).toEqual([]);
+  });
+}
+test('Reveal all preserves the existing scene while every card flips',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await purchase(page,5);
+  await page.locator('.cr-turn[data-slot="1"]').click();
+  await expect(page.locator('.cr-turn[data-slot="1"]')).toHaveClass(/cr-flipped/);
+  await page.evaluate(()=>{
+    window.__steadyBatch={
+      background:document.querySelector('#cr-reveal .cr-sky'),
+      cards:[...document.querySelectorAll('#cr-reveal .cr-turn')]
+    };
+  });
+  await page.locator('[data-cr="reveal-all"]').click();
+  await expect(page.locator('.cr-turn.cr-flipped')).toHaveCount(5);
+  const sameNodes=await page.evaluate(()=>{
+    const old=window.__steadyBatch;
+    return document.querySelector('#cr-reveal .cr-sky')===old.background &&
+      old.cards.every((card,index)=>document.querySelectorAll('#cr-reveal .cr-turn')[index]===card);
+  });
+  expect(sameNodes).toBe(true);
+  await expect(page.locator('.cr-result-card')).toHaveCount(5);
+  await page.locator('[data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
+
 test('four-packs: select 2, sell only selected, vault the rest atomically',async({page})=>{
   const errors=await setup(page);
   await purchase(page,4);
