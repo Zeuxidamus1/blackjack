@@ -45,12 +45,13 @@
     const ready=remaining.filter(m=>m.available).length;
     const named=new Map((packs||[]).map(p=>[p.id,p]));
     const categories=selectedPack==='all'?[...named.keys()]:[selectedPack];
-    const groups=categories.map(id=>{
+    const groups=categories.map((id,index)=>{
       const pack=named.get(id);
       if(!pack)return '';
       const items=remaining.filter(m=>m.pack===id);
       const claimed=all.filter(m=>m.pack===id&&m.claimed).length;
       const total=all.filter(m=>m.pack===id).length;
+      const expanded=selectedPack!=='all'||items.some(m=>m.available)||(ready===0&&index===0);
       const cards=items.map(m=>{
         const found=Math.max(0,Number(m.found)||0);
         const goal=Math.max(1,Number(m.goal)||1);
@@ -70,10 +71,12 @@
       }).join('');
       const complete='<div class="collection-rewards-complete">'+
         '<span aria-hidden="true">✦</span><strong>All rewards claimed</strong></div>';
-      return '<div class="collection-reward-group"><div class="collection-reward-group-heading">'+
+      return '<details class="collection-reward-group"'+(expanded?' open':'')+'>'+
+        '<summary class="collection-reward-group-heading">'+
         '<strong>'+esc(pack.icon||'✦')+' '+esc(pack.name)+'</strong>'+
-        '<span>'+claimed+' / '+total+' claimed</span></div>'+
-        (cards?'<div class="earn-milestones">'+cards+'</div>':complete)+'</div>';
+        '<span>'+claimed+' / '+total+' claimed</span>'+
+        '<span class="collection-reward-toggle" aria-hidden="true">▾</span></summary>'+
+        (cards?'<div class="earn-milestones">'+cards+'</div>':complete)+'</details>';
     }).join('');
     return '<section class="collection-rewards" aria-label="Collection milestone rewards">'+
       '<div class="collection-rewards-heading"><h3>Milestone rewards</h3>'+
