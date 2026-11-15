@@ -45,6 +45,7 @@
       this.toast='';
       this.rip=null;
       this.ripped=false;
+      this.renderedPhase=null;
       root.addEventListener('click', e => this.click(e));
       root.addEventListener('pointerdown', e => this.ripStart(e));
       root.addEventListener('pointermove', e => this.ripMove(e));
@@ -69,6 +70,7 @@
       this.busy=false;
       this.rip=null;
       this.ripped=false;
+      this.renderedPhase=null;
       root.style.setProperty('--cr-rip-progress','0');
       root.classList.remove('cr-rip-dragging','cr-rip-progress');
       const allRevealed=batch.rewards.every(r=>r.revealed || r.item);
@@ -180,6 +182,8 @@
     }
     render(){
       if(root.hidden||!this.batch)return;
+      const phaseChanged=this.phase!==this.renderedPhase;
+      this.renderedPhase=this.phase;
       const entry=this.entry();
       const tone=/^#[0-9a-f]{3,8}$/i.test(entry.accent||'')?entry.accent:'#ce8954';
       root.style.setProperty('--cr-glow',tone);
@@ -246,6 +250,7 @@
       root.innerHTML=this.ambient()+'<div class="cr-shell">'+top+inside+
         (this.phase==='opening'?'<p class="cr-progress">Rewards were securely selected when you purchased.</p>':'')+
         this.info()+(this.toast?'<div class="cr-toast" role="status">'+h(this.toast)+'</div>':'')+'</div>';
+      if(phaseChanged)root.querySelector('.cr-stage')?.classList.add('cr-phase-enter');
       if(this.phase==='cards' && this.newFlips.size){
         const flipped=[...this.newFlips];
         this.newFlips.clear();
