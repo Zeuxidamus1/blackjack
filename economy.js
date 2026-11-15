@@ -121,7 +121,7 @@
     };
     set('earn-daily','daily',canDaily,'Claimed',daily);
     set('earn-recover','recovery',canRecovery,
-      recovery.pendingPack?'Finish current pack':recovery.balanceTooHigh?'Unavailable':'Claimed',recoverySeconds);
+      recoverySeconds>0?'Claimed':recovery.pendingPack?'Finish current pack':recovery.balanceTooHigh?'Unavailable':'On cooldown',recoverySeconds);
   }
   function choosePack(id,board,packs=[]){
     const exists=(Array.isArray(board?.milestones)&&board.milestones.some(item=>item.pack===id))||
