@@ -7,7 +7,6 @@
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   })[ch]);
   const money=n=>(Number(n)||0).toLocaleString('en-US')+' GP';
-  let selectedPack=null;
 
   const secondsRemaining=(date,offset=0,now=Date.now())=>{
     if(!date)return 0;
@@ -34,61 +33,52 @@
         '<div class="earn-countdown" data-countdown="recovery" role="timer" aria-live="off" hidden></div>'+
       '</article></div>';
   }
-  function milestones(board,packs){
-    const milestones=Array.isArray(board.milestones)?board.milestones:[];
-    const pending=milestones.filter(item=>!item.claimed);
-    const categories=[...new Set([
-      ...(packs||[]).map(pack=>pack.id),
-      ...milestones.map(item=>item.pack)
-    ])];
-    const named=new Map((packs||[]).map(pack=>[pack.id,pack]));
-    if(!categories.includes(selectedPack))selectedPack=categories[0]||null;
-    const ready=pending.filter(item=>item.available).length;
-    const tabs=categories.map(pack=>{
-      const related=pending.filter(item=>item.pack===pack);
-      const active=pack===selectedPack;
-      const info=named.get(pack);
-      return '<button type="button" class="earn-pack-tab'+(active?' is-active':'')+
-        '" data-act="earn-pack-tab" data-id="'+esc(pack)+'" role="tab" aria-selected="'+active+
-        '" aria-controls="earn-milestone-panel" tabindex="0">'+
-        '<span class="earn-pack-icon" aria-hidden="true">'+esc(info?.icon||'✦')+'</span>'+
-        '<span class="earn-pack-name">'+esc(info?.name||pack)+'</span>'+
-        '<span class="earn-pack-count">'+related.length+'</span></button>';
+  // The Collection Log owns all milestone claims. GP eligibility is server-provided.
+  function renderMilestones(board,packs,selectedPack='all',error=false){
+    if(!board)return '<section class="collection-rewards" aria-label="Collection milestone rewards">'+
+      '<div class="collection-rewards-heading"><h3>Milestone rewards</h3></div>'+
+      (error?'<p class="collection-rewards-empty">Milestones are unavailable right now. '+
+        '<button type="button" class="quiet" data-act="earn-refresh">Try again</button></p>':
+        '<p class="collection-rewards-empty" role="status">Loading milestone rewards…</p>')+'</section>';
+    const all=Array.isArray(board.milestones)?board.milestones:[];
+    const remaining=all.filter(m=>!m.claimed);
+    const ready=remaining.filter(m=>m.available).length;
+    const named=new Map((packs||[]).map(p=>[p.id,p]));
+    const categories=selectedPack==='all'?[...named.keys()]:[selectedPack];
+    const groups=categories.map(id=>{
+      const pack=named.get(id);
+      if(!pack)return '';
+      const items=remaining.filter(m=>m.pack===id);
+      const claimed=all.filter(m=>m.pack===id&&m.claimed).length;
+      const total=all.filter(m=>m.pack===id).length;
+      const cards=items.map(m=>{
+        const found=Math.max(0,Number(m.found)||0);
+        const goal=Math.max(1,Number(m.goal)||1);
+        const progress=Math.min(100,found/goal*100);
+        const unlocked=Boolean(m.available);
+        return '<article class="earn-milestone'+(unlocked?' is-ready':'')+'">'+
+          '<div class="earn-milestone-top">'+
+            '<span class="earn-milestone-info"><strong>'+esc(m.title)+'</strong>'+
+            '<small>'+found.toLocaleString()+' / '+goal.toLocaleString()+' unique items</small></span>'+
+            '<span class="earn-milestone-prize">+'+money(m.amount)+'</span></div>'+
+          '<div class="earn-milestone-track" role="progressbar" aria-label="'+esc(m.title)+' progress"'+
+            ' aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+Math.min(found,goal)+'">'+
+            '<span style="width:'+progress.toFixed(2)+'%"></span></div>'+
+          '<button type="button" class="'+(unlocked?'primary':'quiet')+'" data-act="earn-milestone"'+
+            ' data-id="'+esc(m.code)+'"'+(unlocked?'':' disabled')+'>'+
+            (unlocked?'Claim +'+money(m.amount):'Locked')+'</button></article>';
+      }).join('');
+      const complete='<div class="collection-rewards-complete">'+
+        '<span aria-hidden="true">✦</span><strong>All rewards claimed</strong></div>';
+      return '<div class="collection-reward-group"><div class="collection-reward-group-heading">'+
+        '<strong>'+esc(pack.icon||'✦')+' '+esc(pack.name)+'</strong>'+
+        '<span>'+claimed+' / '+total+' claimed</span></div>'+
+        (cards?'<div class="earn-milestones">'+cards+'</div>':complete)+'</div>';
     }).join('');
-    const visible=pending.filter(item=>item.pack===selectedPack);
-    const totalForPack=milestones.filter(item=>item.pack===selectedPack).length;
-    const available=visible.filter(item=>item.available).length;
-    const rows=visible.map(item=>{
-      const found=Math.max(0,Number(item.found)||0);
-      const goal=Math.max(1,Number(item.goal)||1);
-      const progress=Math.max(0,Math.min(100,found/goal*100));
-      const ready=Boolean(item.available);
-      return '<div class="earn-milestone'+(ready?' is-ready':'')+'">'+
-        '<div class="earn-milestone-top">'+
-          '<span class="earn-milestone-info"><strong>'+esc(item.title)+'</strong>'+
-          '<small>'+found.toLocaleString()+' / '+goal.toLocaleString()+' unique items</small></span>'+
-          '<span class="earn-milestone-prize">+'+money(item.amount)+'</span></div>'+
-        '<div class="earn-milestone-track" role="progressbar" aria-label="'+esc(item.title)+' progress" '+
-          'aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+Math.min(found,goal)+'">'+
-          '<span style="width:'+progress.toFixed(2)+'%"></span></div>'+
-        '<button type="button" class="'+(ready?'primary':'quiet')+'" data-act="earn-milestone" '+
-          'data-id="'+esc(item.code)+'"'+(ready?'':' disabled')+'>'+
-          (ready?'Claim reward':'Locked')+'</button>'+
-      '</div>';
-    }).join('');
-    const empty='<div class="earn-milestone-empty">'+
-      '<span aria-hidden="true">✦</span><strong>Collection complete</strong>'+
-      '<p>All GP milestones claimed for this collection.</p></div>';
-    return '<section class="earn-milestone-section" aria-label="Collection milestones">'+
-      '<div class="earn-section-heading"><h3>Collection milestones</h3>'+
-        '<span>'+ready+' ready · '+pending.length+' remaining</span></div>'+
-      '<div class="earn-log-shell">'+
-        '<div class="earn-pack-tabs" role="tablist" aria-label="Collection categories">'+tabs+'</div>'+
-        '<div class="earn-log-panel" id="earn-milestone-panel" role="tabpanel">'+
-          '<div class="earn-log-top"><strong>'+esc(named.get(selectedPack)?.name||selectedPack||'Collections')+'</strong>'+
-          '<span>'+available+' ready · '+visible.length+' / '+totalForPack+' remaining</span></div>'+
-          (rows?'<div class="earn-milestones">'+rows+'</div>':empty)+
-        '</div></div></section>';
+    return '<section class="collection-rewards" aria-label="Collection milestone rewards">'+
+      '<div class="collection-rewards-heading"><h3>Milestone rewards</h3>'+
+      '<span>'+ready+' ready to claim · '+remaining.length+' remaining</span></div>'+
+      '<div class="collection-reward-groups">'+groups+'</div></section>';
   }
   function render(board,state,packs,error=false){
     const head='<div class="earn-heading"><div><span class="earn-eyebrow">PLAYER REWARDS</span>'+
@@ -96,7 +86,7 @@
     if(!board)return '<div class="earn-dashboard">'+head+
       (error?'<p class="earn-empty">Rewards are unavailable right now.</p><button type="button" class="quiet" data-act="earn-refresh">Try again</button>':
         '<p class="earn-empty" role="status">Loading rewards…</p>')+'</div>';
-    return '<div class="earn-dashboard">'+head+cards(board,state)+milestones(board,packs)+'</div>';
+    return '<div class="earn-dashboard">'+head+cards(board,state)+'</div>';
   }
   function tick(root,board,state,offset=0,now=Date.now()){
     if(!root||!board||!state)return;
@@ -123,11 +113,5 @@
     set('earn-recover','recovery',canRecovery,
       recoverySeconds>0?'Claimed':recovery.pendingPack?'Finish current pack':recovery.balanceTooHigh?'Unavailable':'On cooldown',recoverySeconds);
   }
-  function choosePack(id,board,packs=[]){
-    const exists=(Array.isArray(board?.milestones)&&board.milestones.some(item=>item.pack===id))||
-      packs.some(pack=>pack.id===id);
-    if(exists){selectedPack=id;return true;}
-    return false;
-  }
-  window.ChallengerEconomy={render,tick,choosePack,secondsRemaining,clock};
+  window.ChallengerEconomy={render,renderMilestones,tick,secondsRemaining,clock};
 })();
