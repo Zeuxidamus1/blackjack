@@ -2,14 +2,14 @@ import {test,expect} from '@playwright/test';
 
 const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WpJwA8AAAAASUVORK5CYII=','base64');
 
-async function setup(page,{signedIn=true,signupHasSession=true,path='/',width=375,pendingConfirmed=false}={}){
+async function setup(page,{signedIn=true,signupHasSession=true,path='/',width=375,pendingConfirmed=false,pulls={}}={}){
   await page.setViewportSize({width,height:812});
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>route.fulfill({status:200,contentType:'application/javascript',body:''}));
   await page.route('https://static.runelite.net/**',route=>route.fulfill({status:200,contentType:'image/png',body:tinyPng}));
   await page.route('https://prices.runescape.wiki/**',route=>route.fulfill({status:200,contentType:'application/json',body:'{"data":{}}'}));
-  await page.addInitScript(({signedIn,signupHasSession,pendingConfirmed})=>{
+  await page.addInitScript(({signedIn,signupHasSession,pendingConfirmed,pulls})=>{
     if(pendingConfirmed)sessionStorage.setItem('challenger-rips-pending-onboarding','playwright');
     const account={access_token:'mock',user:{id:'11111111-1111-4111-8111-111111111111'}};
     let session=signedIn?account:null;
@@ -27,12 +27,12 @@ async function setup(page,{signedIn=true,signupHasSession=true,path='/',width=37
         const now=new Date().toISOString();
         const catalog=[{id:'boss_0',pack:'boss',weight:100,ge:4151,name:'Abyssal whip',guide:1000000,guideTime:now,found:0,circulation:0,salvage:0}];
         const cases=[{id:'boss-starter',pack:'boss',name:'Starter Loot',price:1000,theme:'bronze',accent:'#ce834d',symbol:'⚔',description:'Starter prizes',rewards:[{id:'boss_0',weight:1000000000000}]}];
-        const state={id:account.user.id,name:'Playwright',gp:100000,items:[],market:[],pulls:{},serverTime:now,nextDailyAt:new Date(Date.now()+86400000).toISOString()};
+        const state={id:account.user.id,name:'Playwright',gp:100000,items:[],market:[],pulls,serverTime:now,nextDailyAt:new Date(Date.now()+86400000).toISOString()};
         const values={catalog,cases,state,reward_batch:null,showcase:{name:'Friend',items:[]}};
         return {data:values[action]??null,error:null};
       }
     })};
-  },{signedIn,signupHasSession,pendingConfirmed});
+  },{signedIn,signupHasSession,pendingConfirmed,pulls});
   await page.goto(path);
   return errors;
 }
@@ -190,5 +190,43 @@ test('reduced motion skips screen entrance animations but keeps navigation worki
   expect(await page.locator('#shop').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
   await page.locator('[data-act="category"][data-id="boss"]').click();
   await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
+  expect(errors).toEqual([]);
+});
+
+test('collection journey reflects personally pulled items and filters by pack',async({page})=>{
+  const errors=await setup(page,{pulls:{boss_0:{count:2},not_a_catalog_item:{count:10}}});
+  await page.locator('#games .game-card').click();
+  await page.getByRole('button',{name:'Collection log'}).click();
+  await expect(page.locator('#collection-progress')).toBeVisible();
+  await expect(page.locator('#progress')).toHaveText('1 / 1 personally pulled');
+  await expect(page.locator('.collection-journey-total strong')).toHaveText('1 / 1');
+  await expect(page.locator('.collection-goal')).toHaveCount(3);
+  const boss=page.locator('.collection-goal[data-id="boss"]');
+  await expect(boss).toContainText('Collection complete');
+  await boss.click();
+  await expect(page.locator('#filter')).toHaveValue('boss');
+  await expect(boss).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#collection-count')).toContainText('Showing 1 of 1');
+  expect(errors).toEqual([]);
+});
+test('milestones use server pull history, never duplicate counts or GP',async({page})=>{
+  const errors=await setup(page);
+  const result=await page.evaluate(()=>{
+    const catalog=[
+      ...Array.from({length:10},(_,i)=>({id:'b'+i,pack:'boss'})),
+      {id:'c1',pack:'clue'},{id:'c2',pack:'clue'}
+    ];
+    const pulls={b0:{count:7},b1:{count:1},b2:{count:1},c1:{count:1},ghost:{count:2}};
+    return window.ChallengerProgression.model(catalog,pulls,[
+      {id:'boss',name:'Boss Loot'},{id:'clue',name:'Clue Casket'},{id:'pets',name:'Pet Hunt'}
+    ]);
+  });
+  expect(result.found).toBe(4);
+  expect(result.total).toBe(12);
+  expect(result.groups[0].found).toBe(3);
+  expect(result.groups[0].earned.name).toBe('Collector');
+  expect(result.groups[0].next.count).toBe(5);
+  expect(result.groups[1].found).toBe(1);
+  expect(result.groups[2].total).toBe(0);
   expect(errors).toEqual([]);
 });
