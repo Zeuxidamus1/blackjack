@@ -161,7 +161,7 @@ test('Clue What’s Inside uses premium item grid and exact server-reported odds
  await expect(page.locator('.odds')).toHaveCount(0);
  expect(errors).toEqual([]);
 });
-test('Pet Hunt preserves its three prices and shows custom-valued companions without fake GE artwork',async({page})=>{
+test('Pet Hunt preserves prices, shows genuine pet icons and groups rewards by rarity',async({page})=>{
  const errors=await setup(page);
  await go(page,'pets');
  await expect(page.locator('.boss-slide')).toHaveCount(3);
@@ -173,10 +173,12 @@ test('Pet Hunt preserves its three prices and shows custom-valued companions wit
  await page.getByRole('button',{name:/What.s inside/}).click();
  await expect(page.locator('#modal')).toContainText('PET HUNT');
  await expect(page.locator('.inside-item')).toHaveCount(2);
- await expect(page.locator('.inside-item img')).toHaveCount(0);
- await expect(page.locator('.inside-art-fallback')).toHaveCount(2);
- await expect(page.locator('.inside-custom-note')).toContainText('rather than live Grand Exchange quotes');
- await expect(page.locator('#modal')).toContainText('Custom guide');
+ await expect(page.locator('.inside-item img')).toHaveCount(2);
+ await expect(page.locator('.inside-custom-note')).toContainText('server-assigned GP values');
+ await expect(page.locator('#modal')).toContainText('Pet Hunt value');
+ await expect(page.locator('#modal')).toContainText('Common Pets and Rewards');
+ await expect(page.locator('#modal')).toContainText('Legendary Jackpot');
+ await expect(page.locator('#modal')).toContainText('Rarity · Common');
  expect(errors).toEqual([]);
 });
 test('Mouse dragging and tapping a neighboring Clue pack work',async({page})=>{
@@ -252,5 +254,14 @@ test('Unfunded Pet Premium pack remains viewable but cannot be purchased',async(
  await expect(page.locator('#boss-details [data-act="purchase"]')).toBeDisabled();
  await page.getByRole('button',{name:/What.s inside/}).click();
  await expect(page.locator('#modal')).toContainText('12,000,000 GP');
+ expect(errors).toEqual([]);
+});
+
+test('Pet Hunt maps the rarity price bands from Common to Legendary',async({page})=>{
+ const errors=await setup(page);
+ const indices=await page.evaluate(()=>[
+   450,1550,12000,3500000,9000000,18000000,42000000,150000000
+ ].map(guide=>window.petRarityIndex({guide})));
+ expect(indices).toEqual([0,1,2,0,1,2,3,4]);
  expect(errors).toEqual([]);
 });
