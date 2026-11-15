@@ -237,6 +237,8 @@ test('claimed milestones remain hidden in Collection Log, with unclaimed progres
   expect(data.boss).not.toContain('data-id="boss:first"');
   expect(data.boss).toContain('data-id="boss:scout"');
   expect(data.boss).toContain('4 / 10 unique items');
+  expect(data.boss).toContain('0 ready to claim · 1 remaining');
+  expect(data.clue).toContain('1 ready to claim · 1 remaining');
   expect(data.clue).toContain('data-id="clue:first"');
   expect(data.clue).not.toContain('data-id="boss:scout"');
   expect(data.all).toContain('data-id="boss:scout"');
