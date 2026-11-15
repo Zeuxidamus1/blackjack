@@ -136,6 +136,8 @@ async function setup(page,{gp=100000,viewport}={}){
     })};
   },{mockCatalog,boss,gp});
   await page.goto('/');
+  await expect(page.locator('#games [data-act="game"][data-id="runescape"]')).toBeVisible();
+  await page.locator('#games [data-act="game"][data-id="runescape"]').click();
   await expect(page.locator('#shop.boss-shop .boss-carousel')).toBeVisible();
   await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
   return errors;
@@ -204,6 +206,7 @@ test('reload during uncompleted reveal resumes without new purchase',async({page
   await page.locator('.cr-turn').first().click();
   await expect(page.locator('.cr-turn').first()).toHaveClass(/cr-flipped/);
   await page.reload();
+  await page.locator('#games [data-act="game"][data-id="runescape"]').click();
   await expect(page.locator('[data-act="resume"]')).toBeVisible();
   await page.locator('[data-act="resume"]').first().click();
   await expect(page.locator('.cr-turn')).toHaveCount(3);
@@ -399,6 +402,7 @@ test('Listed inventory items cannot be selected for bulk sale',async({page})=>{
    sessionStorage.setItem('reveal-mock',JSON.stringify(backend));
  });
  await page.reload();
+ await page.locator('#games [data-act="game"][data-id="runescape"]').click();
  await page.getByRole('button',{name:'Inventory'}).click();
  await page.locator('#inventory-mode-button').click();
  await expect(page.locator('#owned .inventory-entry.is-unavailable')).toHaveCount(1);
