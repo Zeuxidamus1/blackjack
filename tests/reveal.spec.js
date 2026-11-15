@@ -13,11 +13,17 @@ const boss={
   rewards:mockCatalog.map((v,i)=>({id:v.id,weight:i===4?992000:2000,chase:i===0})),
   configVersion:2
 };
-async function setup(page,{gp=100000,viewport,customPet=false}={}){
-  const testCatalog=customPet?mockCatalog.map((item,i)=>i===0?{
-    ...item,id:'pets_abyssal_orphan',pack:'pets',name:'Abyssal orphan',
-    ge:null,guide:5000000,guideTime:null
-  }:item):mockCatalog;
+async function setup(page,{gp=100000,viewport,customPet=false,staleGeHours=null}={}){
+  const testCatalog=mockCatalog.map((item,i)=>{
+    if(i!==0)return item;
+    if(customPet)return {
+      ...item,id:'pets_abyssal_orphan',pack:'pets',name:'Abyssal orphan',
+      ge:null,guide:5000000,guideTime:null
+    };
+    return staleGeHours===null?item:{
+      ...item,guideTime:new Date(Date.now()-staleGeHours*3600000).toISOString()
+    };
+  });
   const testCase=customPet?{
     ...boss,rewards:boss.rewards.map((reward,i)=>i===0?
       {...reward,id:'pets_abyssal_orphan'}:reward)
@@ -733,16 +739,15 @@ test('Inventory multi-select works on a phone width without horizontal overflow'
 });
 
 
-test('Inventory dashboard reports combined guide values, unique types and top item without changing GP',async({page})=>{
+test('Inventory shows only value and total item cards without changing GP',async({page})=>{
  const errors=await setup(page);
  await prepareInventory(page,4);
  const dash=page.locator('#inventory-overview');
  await expect(dash).toContainText('119,000 GP');
- await expect(dash).toContainText('4');
  await expect(dash).toContainText('4 unique types');
- await expect(dash).toContainText('0');
- await expect(dash).toContainText('Dragon boots');
- await expect(dash).toContainText('49,000 GP');
+ await expect(dash.locator('.inventory-stat')).toHaveCount(2);
+ await expect(dash).not.toContainText('Extra copies');
+ await expect(dash).not.toContainText('Most valuable item');
  await expect(page.locator('#balance')).toHaveText('96,000 GP');
  expect(errors).toEqual([]);
 });
@@ -774,7 +779,7 @@ test('Protected inventory blocks individual and bulk sales, and unlock restores 
  const lock=page.locator('#owned [data-act="inventory-lock"]').first();
  await lock.click();
  await expect(page.locator('#owned .inventory-protected')).toHaveCount(1);
- await expect(page.locator('#inventory-overview')).toContainText('1 protected items');
+ await expect(page.locator('#owned .inventory-protected-tag')).toHaveCount(1);
  await page.locator('#inventory-filter').selectOption('protected');
  await expect(page.locator('#owned .item')).toHaveCount(1);
  await page.locator('#inventory-filter').selectOption('all');
@@ -836,7 +841,7 @@ test('Duplicate stacking, expansion and select-spares sell extra copies while pr
 test('Step 5 inventory fits a small phone with value cards and filters',async({page})=>{
  const errors=await setup(page,{viewport:{width:375,height:812}});
  await prepareInventory(page,5);
- await expect(page.locator('#inventory-overview .inventory-stat')).toHaveCount(4);
+ await expect(page.locator('#inventory-overview .inventory-stat')).toHaveCount(2);
  await expect(page.locator('#inventory-search')).toBeVisible();
  await page.locator('#inventory-group').check();
  await expect(page.locator('#inventory-results')).toContainText('Showing 5 of 5');
@@ -902,4 +907,41 @@ test('pet catalog images and category fallbacks respect custom-value selling rul
   expect(art.genericFallback).toBe('🐈');
   expect(art.genericIcon).toBe('');
   expect(art.nonPetEligible).toBe(false);
+});
+
+test('hero removes promotional subtitle and duplicate daily timer while Earn GP remains',async({page})=>{
+  const errors=await setup(page);
+  await expect(page.locator('.hero')).not.toContainText('Spend GP on packs');
+  await expect(page.locator('#daily-timer')).toHaveCount(0);
+  await page.getByRole('button',{name:'Earn GP'}).click();
+  await expect(page.locator('#earn-dashboard')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('34-hour verified GE quote enables direct inventory sale with age disclosure',async({page})=>{
+  const errors=await setup(page,{staleGeHours:34});
+  await prepareInventory(page,1);
+  await expect(page.locator('#owned')).toContainText('older verified quote');
+  await expect(page.locator('#owned [data-act="sell"]')).toHaveCount(1);
+  await expect(page.locator('#owned [data-act="sell"]')).toContainText('Sell at last GE quote');
+  page.once('dialog',dialog=>{
+    expect(dialog.message()).toContain('older than 24 hours');
+    dialog.accept();
+  });
+  await page.locator('#owned [data-act="sell"]').click();
+  await expect(page.locator('#owned .item')).toHaveCount(0);
+  await expect(page.locator('#balance')).toHaveText('111,000 GP');
+  expect(errors).toEqual([]);
+});
+
+test('GE quote older than 72 hours hides Sell and offers a refresh control',async({page})=>{
+  const errors=await setup(page,{staleGeHours:80});
+  await prepareInventory(page,1);
+  await expect(page.locator('#owned')).toContainText('expired quote');
+  await expect(page.locator('#owned [data-act="sell"]')).toHaveCount(0);
+  await expect(page.locator('#owned [data-act="inventory-refresh"]')).toHaveCount(1);
+  await page.locator('#inventory-mode-button').click();
+  await expect(page.locator('#owned [data-act="inventory-toggle"]')).toHaveCount(0);
+  await expect(page.locator('#owned .inventory-item-unavailable')).toContainText('Verified GE quote expired');
+  expect(errors).toEqual([]);
 });
