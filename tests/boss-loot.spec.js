@@ -173,6 +173,55 @@ test('Collection Log renders real OSRS icons only for unlocked personally pulled
  expect(errors).toEqual([]);
 });
 
+test('Collection Log filters collected status, sorts GE value and rarity, and combines pack selection',async({page})=>{
+ const errors=await setup(page,1000000000,{pulls:{boss_0:{count:2},boss_1:{count:1}}});
+ await page.getByRole('button',{name:'Collection log'}).click();
+ await expect(page.locator('#items .item')).toHaveCount(10);
+ await expect(page.locator('#collection-count')).toHaveText('Showing 10 of 10 items');
+
+ await page.locator('#collection-status').selectOption('collected');
+ await expect(page.locator('#items .collection-unlocked')).toHaveCount(2);
+ await expect(page.locator('#items .collection-locked')).toHaveCount(0);
+ await expect(page.locator('#items .item h3')).toHaveText(['OSRS Item 0','OSRS Item 1']);
+
+ await page.locator('#collection-sort').selectOption('value-high');
+ await expect(page.locator('#items .item h3')).toHaveText(['OSRS Item 1','OSRS Item 0']);
+ await page.locator('#collection-status').selectOption('uncollected');
+ await expect(page.locator('#items .item')).toHaveCount(8);
+ await expect(page.locator('#items .collection-unlocked')).toHaveCount(0);
+ await expect(page.locator('#items .item h3').first()).toHaveText('OSRS Item 9');
+
+ await page.locator('#collection-sort').selectOption('rare-high');
+ await expect(page.locator('#items .item h3').first()).toHaveText('OSRS Item 9');
+ await page.locator('#collection-sort').selectOption('rare-low');
+ await expect(page.locator('#items .item h3').first()).toHaveText('OSRS Item 2');
+
+ await page.locator('#collection-status').selectOption('all');
+ await page.locator('#collection-sort').selectOption('value-low');
+ await expect(page.locator('#items .item h3').first()).toHaveText('OSRS Item 0');
+ await page.locator('#collection-sort').selectOption('name-desc');
+ await expect(page.locator('#items .item h3').first()).toHaveText('OSRS Item 9');
+
+ await page.locator('#filter').selectOption('clue');
+ await expect(page.locator('#items .item')).toHaveCount(0);
+ await expect(page.locator('#items')).toContainText('No items match these filters.');
+ await page.locator('#filter').selectOption('boss');
+ await expect(page.locator('#items .item')).toHaveCount(10);
+ await expect(page.locator('#progress')).toContainText('2 / 10 personally pulled');
+ expect(errors).toEqual([]);
+});
+test('Collection Log filters remain usable without horizontal overflow on narrow phones',async({page})=>{
+ await page.setViewportSize({width:320,height:700});
+ const errors=await setup(page,1000000000,{pulls:{boss_0:{count:1}}});
+ await page.getByRole('button',{name:'Collection log'}).click();
+ await expect(page.locator('#collection .collection-controls select')).toHaveCount(3);
+ await page.locator('#collection-status').selectOption('collected');
+ await page.locator('#collection-sort').selectOption('rare-high');
+ await expect(page.locator('#items .item')).toHaveCount(1);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+ expect(errors).toEqual([]);
+});
+
 test('Collection Log falls back gracefully if an unlocked OSRS item icon fails to load',async({page})=>{
  const errors=await setup(page,1000000000,{pulls:{boss_0:{count:1}}});
  await page.route('https://static.runelite.net/cache/item/icon/1155.png',r=>r.abort());
