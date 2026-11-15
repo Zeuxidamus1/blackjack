@@ -1,0 +1,41 @@
+/* Step 4: consistent premium collection packaging and navigation across every OSRS pack.
+   No changes to reward pools, probability math, or purchase prices. */
+.premium-pack-nav{display:flex;justify-content:center;gap:7px;overflow-x:auto;scrollbar-width:none;margin:12px auto 2px;padding:4px 14px;max-width:100%;touch-action:pan-x}
+.premium-pack-nav::-webkit-scrollbar{display:none}
+.premium-pack-nav button{font-size:.76rem;flex:0 0 auto;white-space:nowrap;color:#b6c9cc;border:1px solid #ffffff30;border-radius:999px;background:#ffffff0c;padding:9px 13px;font-weight:800;transition:background .18s,border-color .18s,color .18s}
+.premium-pack-nav button[aria-pressed=true]{color:#d7fff0;background:#2c775e52;border-color:#73e0af}
+.premium-pack-nav button:hover{border-color:#89dec3;color:#fff}
+.boss-shell[data-pack="clue"]{background:radial-gradient(ellipse at 50% 10%,#544c3973 0%,#19282d 45%,#080f16 87%);border-color:#6e6658}
+.boss-shell[data-pack="pets"]{background:radial-gradient(ellipse at 50% 9%,#254b497a 0%,#16262c 44%,#070e15 88%);border-color:#426864}
+.boss-shell[data-pack="clue"] .boss-tag{color:#e4c592}
+.boss-shell[data-pack="pets"] .boss-tag{color:#9de1bc}
+.boss-shell[data-pack="clue"] .boss-open{background:linear-gradient(90deg,#b8914e,#f5c76e)!important;color:#231a0b!important}
+.boss-shell[data-pack="pets"] .boss-open{background:linear-gradient(90deg,#4aa18b,#94f0bb)!important;color:#0e2c22!important}
+.boss-foil[data-foil-pack="clue"],.boss-foil[data-foil-pack="pets"]{--deep:#1c2630}
+.boss-foil[data-theme="clue-parchment"]{background:radial-gradient(circle at 45% 43%,#a98b4a70,transparent 60%),repeating-linear-gradient(0deg,#e5d1990a 0 4px,transparent 4px 14px),linear-gradient(145deg,#5d4631,#1b2530 62%,#221b17)}
+.boss-foil[data-theme="clue-enchanted"]{background:radial-gradient(circle at 50% 43%,#5ac9b871,transparent 64%),repeating-linear-gradient(120deg,#ffffff09 0 2px,transparent 2px 18px),linear-gradient(145deg,#195f60,#0c1b2d 64%,#11373d)}
+.boss-foil[data-theme="clue-royal"]{background:radial-gradient(circle at 50% 42%,#bf9b5282,transparent 58%),repeating-linear-gradient(145deg,#ffffff0c 0 2px,transparent 2px 21px),linear-gradient(135deg,#553358,#131628 62%,#5f4424)}
+.boss-foil[data-theme="pet-woodland"]{background:radial-gradient(circle at 50% 44%,#68b46a75,transparent 66%),repeating-linear-gradient(110deg,#c0f4bc0b 0 2px,transparent 2px 15px),linear-gradient(145deg,#274b37,#12262a 65%,#234333)}
+.boss-foil[data-theme="pet-arcane"]{background:radial-gradient(circle at 50% 41%,#81aee689,transparent 64%),repeating-linear-gradient(135deg,#ffffff09 0 2px,transparent 2px 20px),linear-gradient(145deg,#253e69,#12182c 62%,#273f62)}
+.boss-foil[data-theme="pet-mythic"]{background:radial-gradient(circle at 50% 40%,#f7b26c89,transparent 60%),repeating-linear-gradient(145deg,#fcecb211 0 2px,transparent 2px 22px),linear-gradient(140deg,#633c2d,#201b31 60%,#5a2c3d)}
+.boss-foil[data-foil-pack="clue"] .foil-lines{border-color:#f8dbaa59}
+.boss-foil[data-foil-pack="pets"] .foil-lines{border-color:#a9f7cd5e;border-radius:4px}
+.boss-foil[data-foil-pack="clue"] .foil-title{font-family:Georgia,'Times New Roman',serif;font-size:clamp(1.7rem,3.5vw,2rem);letter-spacing:.035em}
+.boss-foil[data-foil-pack="pets"] .foil-title{font-size:clamp(1.7rem,3.5vw,2.1rem);letter-spacing:.08em}
+.boss-foil[data-foil-pack="clue"] .foil-rune,.boss-foil[data-foil-pack="pets"] .foil-rune{opacity:.18;font-size:11rem;top:25%;transform:rotate(-10deg)}
+.boss-foil[data-foil-pack="pets"] .foil-fallback{font-size:5.8rem;filter:drop-shadow(0 0 14px var(--foil));text-shadow:0 5px 10px #000a}
+.boss-foil[data-foil-pack="clue"] .foil-item{filter:drop-shadow(0 8px 10px #000c) drop-shadow(0 0 15px var(--foil))}
+.boss-foil[data-theme="clue-royal"],.boss-foil[data-theme="pet-mythic"]{box-shadow:0 12px 36px #000b,0 0 24px color-mix(in srgb,var(--foil),transparent 50%),inset 0 0 35px #0009}
+.boss-foil[data-foil-pack="clue"] .foil-crest,.boss-foil[data-foil-pack="pets"] .foil-crest{letter-spacing:.18em}
+.boss-foil[data-foil-pack="clue"] .foil-footer,.boss-foil[data-foil-pack="pets"] .foil-footer{font-size:.54rem;letter-spacing:.15em}
+.premium-category-art .boss-foil[data-foil-pack="clue"] .foil-title,.premium-category-art .boss-foil[data-foil-pack="pets"] .foil-title{font-size:1rem}
+.premium-category-art .boss-foil[data-foil-pack="pets"] .foil-fallback{font-size:3.1rem}
+.inside-art-fallback{font-size:3.1rem;filter:drop-shadow(0 4px 8px #0009);line-height:1}
+.inside-custom-note{color:#c5d3d0;font-size:.8rem;line-height:1.5;background:#213b3970;border:1px solid #5b81744c;padding:11px 13px;border-radius:12px;margin:-8px 0 20px}
+@media(max-width:650px){
+ .premium-pack-nav{justify-content:flex-start}
+ .boss-foil[data-foil-pack="clue"] .foil-title,.boss-foil[data-foil-pack="pets"] .foil-title{font-size:1.6rem}
+ .premium-category-art .boss-foil[data-foil-pack="clue"] .foil-title,.premium-category-art .boss-foil[data-foil-pack="pets"] .foil-title{font-size:.96rem}
+}
+@media(max-width:450px){.premium-pack-nav button{padding:8px 11px;font-size:.72rem}.premium-pack-nav{gap:5px}}
+@media(prefers-reduced-motion:reduce){.premium-pack-nav button{transition:none}}
