@@ -991,7 +991,8 @@ el('auth-mode').onclick=()=>{
   form.elements.email.disabled=!signup;
   form.elements.email.required=signup;
   form.elements.password.autocomplete=signup?'new-password':'current-password';
-  form.elements.username.pattern=signup?'[A-Za-z0-9_]{3,24}':'';
+  if(signup)form.elements.username.setAttribute('pattern','[A-Za-z0-9_]{3,24}');
+  else form.elements.username.removeAttribute('pattern');
   form.elements.username.maxLength=signup?24:254;
   form.elements.username.title=signup?'3 to 24 letters, digits, or underscores':'Enter your username or registration email';
   el('auth-identifier-text').textContent=signup?'Username':'Username or email';
