@@ -57,7 +57,7 @@ async function setup(page,gp=1000000000,{large=false,pulls={}}={}){
          case_purchase:{id:'11111111-1111-4111-8111-111111111111',case:payload?.case??'boss-starter',
            paid:1000,rewards:[{slot:1,item:null}]}
        };
-       return {data:values[action]??{},error:null};
+       return {data:Object.prototype.hasOwnProperty.call(values,action)?values[action]:{},error:null};
      }
    })};
  },{catalog:catalogForTest,cases:casesForTest,gp,pulls});
