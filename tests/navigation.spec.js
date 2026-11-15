@@ -92,6 +92,17 @@ test('returning session starts on single RuneScape game card and resets to Games
   await expect(page.locator('#shop')).toBeHidden();
   expect(errors).toEqual([]);
 });
+test('Collection Log has only the small header Sign out button',async({page})=>{
+  const errors=await setup(page,{width:375});
+  await page.locator('#games .game-card').click();
+  await page.getByRole('button',{name:'Collection log'}).click();
+  await expect(page.locator('#collection')).toBeVisible();
+  await expect(page.locator('#account')).toHaveCount(0);
+  await expect(page.locator('[data-act="logout"]')).toHaveCount(0);
+  await expect(page.locator('header .header-signout')).toBeVisible();
+  await expect(page.locator('header .header-signout')).toHaveText('Sign out');
+  expect(errors).toEqual([]);
+});
 test('RuneScape, Boss Loot, categories and All games navigate without economy actions',async({page})=>{
   const errors=await setup(page);
   await page.locator('#games .game-card').click();
