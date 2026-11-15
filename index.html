@@ -1308,7 +1308,20 @@ document.addEventListener('click',event=>{
     });
     return;
   }
-  if(act==='collection-info'){showCollectionItemInfo(id);return;}
+  if(act==='collection-info'){
+    // A long-running PWA session may have cached its pack pools before an update.
+    // Recheck only when the local pool is missing this item, so More Info never
+    // reports "0 packs" simply because the current tab has stale case data.
+    const linked=cases.some(entry=>Array.isArray(entry.rewards)&&
+      entry.rewards.some(reward=>reward.id===id&&Number(reward.weight)>0));
+    if(linked){showCollectionItemInfo(id);return;}
+    run(async()=>{
+      const current=await rpc('cases');
+      if(Array.isArray(current))cases=current;
+      showCollectionItemInfo(id);
+    });
+    return;
+  }
   if(act==='earn-refresh'){
     economyError=false;
     economyStatus=null;
