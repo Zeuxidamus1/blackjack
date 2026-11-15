@@ -1012,7 +1012,11 @@ function renderInventory(){
     'name-desc':(a,b)=>name(b).localeCompare(name(a)),
     duplicates:(a,b)=>(counts.get(b.item)||0)-(counts.get(a.item)||0)
   }[sort]||(()=>0);
-  visible.sort((a,b)=>comparator(a,b)||name(a).localeCompare(name(b))||String(a.id).localeCompare(String(b.id)));
+  const originalPosition=new Map(items.map((asset,index)=>[asset.id,index]));
+  visible.sort((a,b)=>comparator(a,b)||
+    (sort==='newest'||sort==='oldest'?
+      originalPosition.get(a.id)-originalPosition.get(b.id):
+      name(a).localeCompare(name(b))||String(a.id).localeCompare(String(b.id))));
   el('inventory-results').textContent='Showing '+visible.length+' of '+items.length+' items'+
     (inventoryMode?' · '+inventorySelected.size+' selected':'');
   const mode=el('inventory-mode-button');
