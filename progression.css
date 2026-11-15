@@ -35,3 +35,75 @@
 @media(prefers-reduced-motion:reduce){
   .collection-journey-track>span,.collection-goal-track>span,#collection .collection-goal{transition:none!important}
 }
+
+
+/* The Collection Log owns earned-GP milestones as well as item discovery. */
+#collection .collection-rewards{
+  margin:0 0 24px;padding:16px;
+  border:1px solid #3f6155;border-radius:18px;
+  background:linear-gradient(142deg,#122b28,#121f22 72%);
+}
+#collection .collection-rewards-heading{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  flex-wrap:wrap;margin:0 0 13px;
+}
+#collection .collection-rewards-heading h3{
+  font-size:1.15rem;font-weight:880;letter-spacing:-.02em;margin:0;color:#e6f5e9;
+}
+#collection .collection-rewards-heading>span{
+  color:#a5dec1;font-size:.76rem;font-weight:770;
+}
+#collection .collection-reward-groups{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+}
+#collection .collection-reward-groups:has(>.collection-reward-group:only-child){
+  grid-template-columns:minmax(0,1fr);
+}
+#collection .collection-reward-group{
+  border:1px solid #536052;background:#172724;border-radius:13px;
+  padding:12px;min-width:0;
+}
+#collection .collection-reward-group-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:0 0 10px;margin:0 0 9px;border-bottom:1px solid #ffffff21;
+}
+#collection .collection-reward-group-heading strong{
+  font-size:.87rem;color:#d4e9d7;
+}
+#collection .collection-reward-group-heading span{
+  font-size:.72rem;color:#a8c2b2;font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+#collection .collection-rewards .earn-milestones{
+  grid-template-columns:minmax(0,1fr);gap:8px;padding-top:0;
+}
+#collection .collection-reward-groups:has(>.collection-reward-group:only-child) .earn-milestones{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+#collection .collection-rewards .earn-milestone{
+  padding:11px;gap:8px;border-color:#547061;border-radius:10px;
+}
+#collection .collection-rewards .earn-milestone.is-ready{
+  border-color:#8bd6a1;
+  box-shadow:0 0 0 1px #8bd6a12b;
+}
+#collection .collection-rewards .earn-milestone button{
+  min-height:38px;font-size:.79rem;
+}
+#collection .collection-rewards-complete{
+  display:flex;gap:8px;justify-content:center;align-items:center;
+  padding:18px 8px;color:#b7dfbd;font-size:.84rem;
+}
+#collection .collection-rewards-complete>span{color:#efd99a;font-size:1.4rem}
+#collection .collection-rewards-empty{font-size:.85rem;color:#b2c9c0;margin:0}
+#collection .collection-rewards-empty button{padding:4px 12px;min-height:35px;margin-left:5px}
+@media(max-width:950px){
+  #collection .collection-reward-groups{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:660px){
+  #collection .collection-rewards{padding:12px;border-radius:15px;margin-bottom:18px}
+  #collection .collection-reward-groups{grid-template-columns:minmax(0,1fr)}
+  #collection .collection-reward-groups:has(>.collection-reward-group:only-child) .earn-milestones{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
