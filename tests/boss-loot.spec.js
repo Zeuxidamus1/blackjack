@@ -64,6 +64,8 @@ async function setup(page,gp=1000000000,{large=false,pulls={}}={}){
  await page.goto('/');
  await expect(page.locator('#games [data-act="game"][data-id="runescape"]')).toBeVisible();
  await page.locator('#games [data-act="game"][data-id="runescape"]').click();
+ await expect(page.locator('.premium-category')).toHaveCount(3);
+ await page.locator('[data-act="category"][data-id="boss"]').click();
  await expect(page.locator('.boss-carousel')).toBeVisible();
  await expect(page.locator('.boss-slide')).toHaveCount(10);
  return errors;
