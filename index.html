@@ -655,37 +655,77 @@ async function refreshServerPrices() {
 setInterval(()=>{if(session)void refreshServerPrices();},15*60*1000);
 const pct = (weight,total=1000000000000) => ((Number(weight)/Number(total))*100).toFixed(10).replace(/\.?0+$/,'')+'%';
 const caseValues = entry => entry.rewards.map(r=>catalog.get(r.id)).filter(Boolean).map(estimate);
-function foilArt(entry) {
-  const tint=safe(entry.accent || '#ce834d'),theme=safe(entry.theme||'bronze');
-  const covers={bronze:1155,iron:1191,steel:1119,mithril:1071,adamant:1123,rune:1127,dragon:4087,ancient:4151,infernal:21018,divine:20997};
-  const icon=covers[theme];
-  return '<div class="boss-foil" data-theme="'+theme+'" style="--foil:'+tint+'"><div class="foil-lines"></div>'+
-    '<div class="foil-crest">CHALLENGER RIPS</div><div class="foil-rune">ᚱ</div>'+
-    '<div class="foil-emblem" aria-hidden="true"><span class="foil-fallback">'+safe(entry.symbol||'⚔')+'</span>'+
-    (icon?'<img class="foil-item" loading="lazy" alt="" src="https://static.runelite.net/cache/item/icon/'+icon+'.png" onerror="this.hidden=true">':'')+'</div>'+
-    '<div class="foil-title">'+safe(entry.name).replace(' ','<br>')+'</div>'+
-    '<div class="foil-footer">BOSS LOOT · OSRS</div></div>';
+/* Shared premium storefront for Boss Loot, Clue Caskets, and Pet Hunt.
+   Cosmetic variants never modify the server's case IDs, values, or reward pools. */
+function packCases(packId=category){
+ return cases.filter(c=>c.pack===packId).sort((a,b)=>a.price-b.price||a.name.localeCompare(b.name));
 }
-function bossCases() {return cases.filter(c=>c.pack==='boss').sort((a,b)=>a.price-b.price);}
-function renderBossDetails() {
- const items=bossCases(),entry=items[bossIndex];
- if(!entry || !el('boss-details')) return;
+function bossCases(){return packCases('boss');}
+function packVisual(entry){
+ if(!entry || entry.pack==='boss')return entry;
+ const order=packCases(entry.pack).findIndex(c=>c.id===entry.id);
+ const rank=Math.max(0,Math.min(2,order));
+ const themes={
+   clue:[
+     {theme:'clue-parchment',accent:'#d7ad65',symbol:'🗝️',mark:'✧'},
+     {theme:'clue-enchanted',accent:'#6fe2c5',symbol:'📜',mark:'✦'},
+     {theme:'clue-royal',accent:'#dec088',symbol:'💎',mark:'✷'}
+   ],
+   pets:[
+     {theme:'pet-woodland',accent:'#94db8a',symbol:'🐾',mark:'❋'},
+     {theme:'pet-arcane',accent:'#9bc6f6',symbol:'🦊',mark:'✧'},
+     {theme:'pet-mythic',accent:'#efb97d',symbol:'🐉',mark:'✵'}
+   ]
+ };
+ const look=(themes[entry.pack]||themes.clue)[rank];
+ // Use an actual eligible OSRS icon for clue-pack cover artwork.
+ // Pet rewards have custom, non-GE IDs: use decorative pet illustrations instead.
+ const cover=entry.pack==='clue'?
+   [...(entry.rewards||[])].sort((a,b)=>Number(b.weight)-Number(a.weight))
+      .map(r=>catalog.get(r.id)).find(item=>Number.isSafeInteger(Number(item?.ge))&&Number(item.ge)>0)?.ge:null;
+ return {...entry,...look,cover,series:packs.find(p=>p.id===entry.pack)?.name||entry.pack};
+}
+function foilArt(source){
+ const entry=packVisual(source);
+ if(!entry)return '';
+ const tint=safe(entry.accent||'#ce834d'),theme=safe(entry.theme||'bronze');
+ const covers={bronze:1155,iron:1191,steel:1119,mithril:1071,adamant:1123,rune:1127,dragon:4087,ancient:4151,infernal:21018,divine:20997};
+ const icon=entry.pack==='boss'?covers[theme]:entry.cover;
+ const brand=entry.pack==='boss'?'BOSS LOOT':(entry.series||'MYSTERY PACK');
+ const mark=entry.pack==='boss'?'ᚱ':entry.mark;
+ return '<div class="boss-foil" data-theme="'+theme+'" data-foil-pack="'+safe(entry.pack)+'" style="--foil:'+tint+'">'+
+   '<div class="foil-lines"></div><div class="foil-crest">CHALLENGER RIPS</div>'+
+   '<div class="foil-rune">'+safe(mark)+'</div>'+
+   '<div class="foil-emblem" aria-hidden="true"><span class="foil-fallback">'+safe(entry.symbol||'⚔')+'</span>'+
+   (icon?'<img class="foil-item" loading="lazy" alt="" src="https://static.runelite.net/cache/item/icon/'+Number(icon)+'.png" onerror="this.hidden=true">':'')+'</div>'+
+   '<div class="foil-title">'+safe(entry.name).replace(' ','<br>')+'</div>'+
+   '<div class="foil-footer">'+safe(brand.toUpperCase())+' · OSRS</div></div>';
+}
+function renderBossDetails(){
+ const items=packCases(),entry=items[bossIndex];
+ if(!entry || !el('boss-details'))return;
  selected=entry;
  const values=caseValues(entry);
  const minimum=values.length?Math.min(...values):null;
  const maximum=values.length?Math.max(...values):null;
  const maxQty=Math.min(5,Math.floor((state?.gp||0)/entry.price));
  quantity=Math.min(quantity,Math.max(1,maxQty));
- el('boss-details').innerHTML='<span class="boss-tag">'+safe(entry.theme||'BOSS LOOT')+' series · '+(bossIndex+1)+' / '+items.length+'</span>'+
-   '<h2>'+safe(entry.name)+'</h2><p>'+safe(entry.description||'Open a mystery pack for unique rewards.')+'</p>'+
+ const brand=packs.find(p=>p.id===entry.pack)?.name||'Boss Loot';
+ const tier=entry.pack==='boss'?safe(entry.theme||'BOSS LOOT'):safe(brand);
+ el('boss-details').innerHTML='<span class="boss-tag">'+tier+' series · '+(bossIndex+1)+' / '+items.length+'</span>'+
+   '<h2>'+safe(entry.name)+'</h2><p>'+safe(entry.description||(
+     entry.pack==='clue'?'Unseal a mystery casket for authentic clue rewards.':
+     entry.pack==='pets'?'Open a collectible companion pack with unique pet rewards.':
+     'Open a mystery pack for unique rewards.'))+'</p>'+
    '<div class="boss-tools">'+button('◉ What’s inside','inside')+'</div>'+
    '<div class="boss-metrics"><div><small>Minimum pull</small><strong>'+(minimum===null?'Unavailable':price(minimum))+'</strong></div>'+
    '<div><small>Max pull</small><strong>'+(maximum===null?'Unavailable':price(maximum))+'</strong></div>'+
    '<div><small>Pack price</small><strong>'+price(entry.price)+'</strong></div></div>'+
-   '<div class="boss-qty"><span>Open</span>'+[1,2,3,4,5].map(n=>'<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+'" '+(n>maxQty||Boolean(batch)?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
-   (batch
-     ? button('Resume Opening','resume','',true)
-     : button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty));
+   '<div class="boss-qty"><span>Open</span>'+[1,2,3,4,5].map(n=>
+     '<button type="button" aria-pressed="'+(quantity===n)+'" data-act="boss-qty" data-id="'+n+
+     '" '+(n>maxQty||Boolean(batch)?'disabled':'')+'>'+n+'×</button>').join('')+'</div>'+
+   (batch?button('Resume Opening','resume','',true):
+     button('Open '+(quantity>1?quantity+' Packs':'Pack')+' · '+price(quantity*entry.price),'purchase','',true,!maxQty));
  const details=el('boss-details');
  const previousCase=details.dataset.motionCase;
  details.dataset.motionCase=entry.id;
@@ -694,33 +734,39 @@ function renderBossDetails() {
    details.animate([{opacity:.62,transform:'translate3d(0,8px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
      {duration:350,easing:'cubic-bezier(.22,1,.36,1)'});
  }
- const buy=details.querySelector('[data-act="purchase"],[data-act="resume"]');if(buy)buy.classList.add('boss-open');
+ const buy=details.querySelector('[data-act="purchase"],[data-act="resume"]');
+ if(buy)buy.classList.add('boss-open');
  document.querySelectorAll('.boss-slide').forEach((slide,i)=>slide.classList.toggle('is-active',i===bossIndex));
 }
-function renderBossShop(resume) {
- const items=bossCases();
- if(!items.length){el('shop').innerHTML=empty('Boss Loot packs are not available.');return;}
+function renderBossShop(){
+ const items=packCases();
+ const brand=packs.find(p=>p.id===category)?.name||'Mystery Packs';
+ if(!items.length){el('shop').innerHTML=empty(brand+' packs are not available.');return;}
  bossIndex=Math.max(0,Math.min(items.length-1,bossIndex));
- el('shop').innerHTML='<div class="boss-shell"><div class="boss-top">'+button('← Explore Packs','categories')+'</div>'+
-   '<h2 class="boss-heading">BOSS LOOT</h2>'+
-   '<div class="boss-carousel" role="region" aria-label="Boss loot packs">'+
+ const quickNav='<div class="premium-pack-nav" role="group" aria-label="Switch pack category">'+
+   packs.map(p=>'<button type="button" data-act="category" data-id="'+p.id+
+     '" aria-pressed="'+(p.id===category)+'">'+safe(p.name)+'</button>').join('')+'</div>';
+ el('shop').innerHTML='<div class="boss-shell" data-pack="'+safe(category)+'">'+
+   '<div class="boss-top">'+button('← Explore Packs','categories')+'</div>'+
+   '<h2 class="boss-heading">'+safe(brand.toUpperCase())+'</h2>'+quickNav+
+   '<div class="boss-carousel" role="region" aria-label="'+safe(brand)+' packs">'+
    items.map((entry,i)=>'<div class="boss-slide '+(i===bossIndex?'is-active':'')+'" data-index="'+i+'">'+
-   '<button type="button" data-act="boss-choose" data-id="'+entry.id+'" aria-label="Select '+safe(entry.name)+'">'+foilArt(entry)+'</button></div>').join('')+
+   '<button type="button" data-act="boss-choose" data-id="'+safe(entry.id)+'" aria-label="Select '+safe(entry.name)+'">'+foilArt(entry)+'</button></div>').join('')+
    '</div><div class="boss-details" id="boss-details"></div></div>';
  const carousel=el('shop').querySelector('.boss-carousel');
  const snap=(i,smooth=true)=>{
    i=Math.max(0,Math.min(items.length-1,i));
    const slide=carousel.children[i];
+   if(!slide)return;
    carousel.scrollTo({left:slide.offsetLeft-carousel.offsetLeft-(carousel.clientWidth-slide.clientWidth)/2,behavior:smooth?'smooth':'instant'});
    bossIndex=i;renderBossDetails();
  };
  renderBossDetails();
- requestAnimationFrame(()=>snap(bossIndex,false));
+ requestAnimationFrame(()=>{if(carousel.isConnected)snap(bossIndex,false);});
  let drag=null,suppress=false,scrollTimer=0;
  carousel.addEventListener('pointerdown',e=>{
    if(e.pointerType!=='mouse'||e.button!==0)return;
-   drag={x:e.clientX,left:carousel.scrollLeft,id:e.pointerId};
-   suppress=false;
+   drag={x:e.clientX,left:carousel.scrollLeft,id:e.pointerId};suppress=false;
  });
  carousel.addEventListener('pointermove',e=>{
    if(!drag||!e.buttons)return;
@@ -736,15 +782,13 @@ function renderBossShop(resume) {
      return d<best.d?{i,d}:best;
    },{i:0,d:Infinity}).i;
  };
- const finish=(event)=>{
+ const finish=e=>{
    if(!drag)return;
-   const delta=(event.clientX??drag.x)-drag.x;
+   const delta=(e.clientX??drag.x)-drag.x;
    drag=null;carousel.classList.remove('dragging');
    if(suppress){
      let target=nearest();
-     if(Math.abs(delta)>45 && target===bossIndex){
-       target=bossIndex+(delta<0?1:-1);
-     }
+     if(Math.abs(delta)>45&&target===bossIndex)target=bossIndex+(delta<0?1:-1);
      snap(target);
    }
  };
@@ -756,7 +800,10 @@ function renderBossShop(resume) {
  },true);
  carousel.addEventListener('scroll',()=>{
    clearTimeout(scrollTimer);
-   scrollTimer=setTimeout(()=>{const i=nearest();if(i!==bossIndex){bossIndex=i;renderBossDetails();}},80);
+   scrollTimer=setTimeout(()=>{
+     if(!carousel.isConnected)return;
+     const i=nearest();if(i!==bossIndex){bossIndex=i;renderBossDetails();}
+   },80);
  },{passive:true});
  carousel.selectCase=snap;
 }
@@ -1025,42 +1072,23 @@ function navigateToCategory(packId){
   notice();render();
 }
 function renderShop(ready){
-  el('shop').classList.toggle('boss-shop',category==='boss');
+  el('shop').classList.toggle('boss-shop',Boolean(category));
   const resume=batch?'<div class="case-toolbar">'+button('Resume opening','resume','','true')+'</div>':'';
   if(!category){
     const intro='<div class="premium-categories-heading"><h2>Choose your adventure</h2></div>';
     el('shop').innerHTML='<div class="premium-categories">'+intro+'<div class="premium-category-grid">'+
       packs.map(pack=>'<button type="button" class="premium-category" data-act="category" data-id="'+pack.id+'" aria-label="Open '+safe(pack.name)+'" '+(!ready?'disabled':'')+'>'+
-        '<span class="premium-category-art">'+(pack.id==='boss' && bossCases().length?foilArt(bossCases()[0]):packArt(pack))+'</span>'+
+        '<span class="premium-category-art">'+(packCases(pack.id).length?foilArt(packCases(pack.id)[0]):packArt(pack))+'</span>'+
         '<span class="premium-category-info"><strong>'+safe(pack.name)+'</strong><small>'+safe(pack.note)+'</small><span class="premium-category-link">Explore packs →</span></span></button>').join('')+
       '</div></div>';return;
   }
-  if(category==='boss'){renderBossShop(resume);return;}
-  el('shop').innerHTML='<div class="other-case-heading">'+button('← Explore Packs','categories')+
-    '<h2>'+safe(packs.find(p=>p.id===category)?.name||'Packs')+'</h2></div>'+
-    '<div class="other-case-grid">'+cases.filter(entry=>entry.pack===category).map(entry=>'<article class="other-case-item">'+packArt(caseArt(entry))+
-    '<h3>'+safe(entry.name)+'</h3><p>'+price(entry.price)+'</p>'+button('View case','case',entry.id,true)+'</article>').join('')+'</div>';
+  renderBossShop();
 }
 function caseArt(entry){
   return {...packs.find(pack=>pack.id===entry.pack),...entry};
 }
 function estimate(item){return Number(item?.guide)||0;}
 
-function showCase(){
-  const entry=selected;
-  const cap=Math.min(5,Math.floor(state.gp/entry.price));
-  quantity=Math.min(quantity,Math.max(cap,1));
-  showModal('<h2 id="modalTitle">'+safe(entry.name)+' case · '+price(entry.price)+'</h2>'+
-    '<div class="actions case-buy">'+[1,2,3,4,5].map(n=>button(String(n),'quantity',String(n),n===quantity,n>cap)).join('')+
-    (batch?button('Resume Opening','resume','',true):button('Buy '+quantity+' · '+price(entry.price*quantity),'purchase','',true,!cap))+
-    button('Close','close')+'</div>'+
-    '<ul class="odds">'+[...entry.rewards].sort((a,b)=>b.weight-a.weight||estimate(catalog.get(a.id))-estimate(catalog.get(b.id))||a.id.localeCompare(b.id)).map(reward=>{
-      const item=catalog.get(reward.id);
-      return '<li><div><strong>'+safe(item.name)+(reward.chase?' · Ultra-rare chase':'')+'</strong><br><small>'+
-        safe(guideValue(item))+'<br>Found: '+item.found.toLocaleString()+' · In circulation: '+item.circulation.toLocaleString()+
-        '</small></div><strong>'+(reward.weight/10000)+'%</strong></li>';
-    }).join('')+'</ul>');
-}
 function showBatch(current){
   if(!window.PremiumReveal){
     notice('The updated opening screen could not load. Refresh this page to retry.');
@@ -1350,7 +1378,7 @@ document.addEventListener('click',event=>{
   if(act==='close') {modal.close();modal.classList.remove('boss-inside');return;}
    if(act==='inside'){showInside();return;}
    if(act==='boss-qty'){quantity=Number(id);renderBossDetails();return;}
-   if(act==='boss-choose'){const entries=bossCases(),index=entries.findIndex(c=>c.id===id);const c=el('shop').querySelector('.boss-carousel');if(c&&index>=0)c.selectCase(index);return;}
+   if(act==='boss-choose'){const entries=packCases(),index=entries.findIndex(c=>c.id===id);const c=el('shop').querySelector('.boss-carousel');if(c&&index>=0)c.selectCase(index);return;}
    if(act==='keep-reward'){
      if(currentBatchShown?.rewards.some(x=>!x.item))moveCarousel(Math.min(currentBatchShown.rewards.length,Number(id)+1));
      else {modal.close();view='inventory';render();}
@@ -1375,8 +1403,13 @@ document.addEventListener('click',event=>{
   if(act==='game'){if(id==='runescape')navigateToRuneScape();return;}
   if(act==='categories'){navigateToCategories();return;}
   if(act==='category'){navigateToCategory(id);return;}
-  if(act==='case'){selected=cases.find(c=>c.id===id);quantity=1;run(async()=>{await loadCatalog();showCase();});return;}
-  if(act==='quantity'){quantity=Number(id);showCase();return;}
+  if(act==='case'){
+    const entry=cases.find(c=>c.id===id);
+    if(entry){navigateToCategory(entry.pack);const index=packCases().findIndex(c=>c.id===id);
+      el('shop').querySelector('.boss-carousel')?.selectCase(index);}
+    return;
+  }
+  if(act==='quantity'){quantity=Number(id);renderBossDetails();return;}
   if(act==='purchase'){run(purchase);return;}
   if(act==='resume'){activeSlot=1;showBatch(batch);return;}
   if(act==='select-slot'){activeSlot=Number(id);moveCarousel(activeSlot);return;}
