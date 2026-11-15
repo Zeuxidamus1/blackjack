@@ -1106,7 +1106,7 @@ function showBatch(current){
   }
   if(modal.open) modal.close();
   window.PremiumReveal.open(current,{
-    rpc,load,render,notice,catalog,cases,foilArt,
+    rpc,load,render,notice,catalog,cases,foilArt,packVisual,
     getBalance:()=>state?.gp,
     onWalletChange:(before,kind)=>window.ChallengerWallet?.record(before,state?.gp,kind)
   });
