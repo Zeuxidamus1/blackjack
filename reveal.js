@@ -72,7 +72,7 @@
       this.ripped=false;
       this.renderedPhase=null;
       root.style.setProperty('--cr-rip-progress','0');
-      root.classList.remove('cr-rip-dragging','cr-rip-progress');
+      root.classList.remove('cr-rip-dragging','cr-rip-progress','cr-rip-reverse');
       const allRevealed=batch.rewards.every(r=>r.revealed || r.item);
       const anythingRevealed=batch.rewards.some(r=>r.revealed || r.item);
       this.phase=allRevealed?(batch.rewards.length===1?'single':'results'):(anythingRevealed?'cards':'opening');
@@ -106,9 +106,11 @@
     }
     ripMove(e){
       if(!this.rip||this.rip.id!==e.pointerId)return;
-      const progress=Math.min(1,Math.abs(e.clientX-this.rip.startX)/this.rip.required);
+      const delta=e.clientX-this.rip.startX;
+      const progress=Math.min(1,Math.abs(delta)/this.rip.required);
       this.rip.progress=progress;
       root.style.setProperty('--cr-rip-progress',progress.toFixed(3));
+      root.classList.toggle('cr-rip-reverse',delta<0);
       root.classList.toggle('cr-rip-progress',progress>.03);
       if(e.cancelable)e.preventDefault();
     }
@@ -119,6 +121,7 @@
       root.classList.remove('cr-rip-dragging','cr-rip-progress');
       if(!cancelled&&progress>=.8){this.completeRip();return;}
       root.style.setProperty('--cr-rip-progress','0');
+      root.classList.remove('cr-rip-reverse');
     }
     completeRip(){
       if(root.hidden||this.phase!=='opening'||this.ripped||this.busy)return;
@@ -127,9 +130,9 @@
       root.style.setProperty('--cr-rip-progress','1');
       root.classList.remove('cr-rip-dragging','cr-rip-progress');
       root.querySelector('.cr-opening')?.classList.add('cr-ripped');
-      const note=root.querySelector('.cr-opening-note');
-      if(note)note.textContent='Pack torn open!';
-      this.schedule(()=>this.advanceOpening(),620);
+      // Let the light sweep, metallic seal peel, and soft reveal play without
+      // recalculating or drawing any reward on the client.
+      this.schedule(()=>this.advanceOpening(),reduced()?5:820);
     }
     advanceOpening(){
       if(this.busy)return;
@@ -149,7 +152,7 @@
       root.hidden=true;
       root.replaceChildren();
       root.style.setProperty('--cr-rip-progress','0');
-      root.classList.remove('cr-rip-dragging','cr-rip-progress');
+      root.classList.remove('cr-rip-dragging','cr-rip-progress','cr-rip-reverse');
       this.rip=null;
       this.ripped=false;
       document.body.classList.remove('cr-reveal-active');
@@ -194,13 +197,16 @@
         const packs=Array.from({length:count},(_,i)=>{
           const delta=(i-(count-1)/2);
           return '<div class="cr-pack-piece" style="--dx:'+Math.round(delta*15)+'px;--dy:'+Math.round(-i*11)+'px;--rotate:'+Math.round(delta*3)+'deg;--delay:'+i*95+'ms">'+
-            this.ctx.foilArt(entry)+'<div class="cr-tear" aria-hidden="true"></div>'+
-            (i===count-1?'<button type="button" class="cr-rip-target" data-cr="rip" aria-label="Swipe left or right across the pack to rip it open. Press Enter or Space to open using a keyboard."><span class="cr-swipe-cue" aria-hidden="true">⇠ &nbsp; SWIPE TO RIP &nbsp; ⇢</span></button>':'')+'</div>';
+            this.ctx.foilArt(entry)+
+            '<div class="cr-rip-assembly" aria-hidden="true">'+
+            '<span class="cr-rip-seam"></span><span class="cr-rip-light"></span>'+
+            '<span class="cr-rip-flap"></span><span class="cr-rip-flare"></span>'+
+            '<span class="cr-rip-sparks"><i></i><i></i><i></i><i></i><i></i><i></i></span>'+
+            '</div>'+
+            (i===count-1?'<button type="button" class="cr-rip-target" data-cr="rip" aria-label="Swipe horizontally to open pack. Press Enter or Space to open with a keyboard."></button>':'')+'</div>';
         }).join('');
         inside='<section class="cr-stage cr-opening">'+
-          '<div class="cr-burst"></div><div class="cr-stack">'+packs+'</div>'+
-          '<div class="cr-opening-title">Rip open '+(count===1?'your pack':count+' packs')+'</div>'+
-          '<p class="cr-opening-note">Swipe across the pack to tear the seal</p></section>';
+          '<div class="cr-burst"></div><div class="cr-stack">'+packs+'</div></section>';
       }else if(this.phase==='cards'){
         const cards=this.batch.rewards.map(r=>{
           const flipped=Boolean(r.revealed||r.item);
@@ -248,7 +254,6 @@
           this.actions(targets,true);
       }
       root.innerHTML=this.ambient()+'<div class="cr-shell">'+top+inside+
-        (this.phase==='opening'?'<p class="cr-progress">Rewards were securely selected when you purchased.</p>':'')+
         this.info()+(this.toast?'<div class="cr-toast" role="status">'+h(this.toast)+'</div>':'')+'</div>';
       if(phaseChanged)root.querySelector('.cr-stage')?.classList.add('cr-phase-enter');
       if(this.phase==='cards' && this.newFlips.size){
