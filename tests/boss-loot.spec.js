@@ -57,7 +57,7 @@ async function setup(page,gp=1000000000,{large=false,pulls={},orphan=false}={}){
        const state={id:'test',name:'Playwright',gp,items:[],market:[],pulls,
          nextDailyAt:new Date(Date.now()+86400000).toISOString(),serverTime:new Date().toISOString()};
        const values={
-         catalog,cases,state,case_batch:null,reward_batch:null,
+         catalog,cases:window.__mockCasesOverride||cases,state,case_batch:null,reward_batch:null,
          case_purchase:{id:'11111111-1111-4111-8111-111111111111',case:payload?.case??'boss-starter',
            paid:1000,rewards:[{slot:1,item:null}]}
        };
@@ -303,6 +303,26 @@ test('More Info does not invent pack sources for items absent from all active re
  await expect(dialog.getByRole('heading',{name:'Found in 0 packs'})).toBeVisible();
  await expect(dialog).toContainText('not currently obtainable from an active pack');
  await expect(dialog.locator('.collection-source')).toHaveCount(0);
+ expect(errors).toEqual([]);
+});
+
+test('Collection details refresh stale pack data before showing a zero-source result',async({page})=>{
+ const errors=await setup(page,1000000000,{orphan:true});
+ await page.getByRole('button',{name:'Collection log'}).click();
+ const item=page.locator('#items .collection-locked').filter({hasText:'Unassigned collectible'});
+ await expect(item).toBeVisible();
+ await page.evaluate(async()=>{
+   const {data}=await window.supabase.createClient().rpc('rips_command',{action:'cases'});
+   window.__mockCasesOverride=data.map((entry,index)=>index===0?
+     {...entry,rewards:[...entry.rewards,{id:'orphan_item',weight:1,chase:false}]}:entry);
+ });
+ await item.getByRole('button',{name:'More Info'}).click();
+ const dialog=page.locator('#modal');
+ await expect(dialog.getByRole('heading',{name:'Found in 1 pack'})).toBeVisible();
+ await expect(dialog.locator('.collection-source')).toHaveCount(1);
+ await expect(dialog).toContainText('Starter Loot');
+ await expect(dialog).toContainText('Drop chance');
+ await expect(dialog).not.toContainText('not currently obtainable');
  expect(errors).toEqual([]);
 });
 
