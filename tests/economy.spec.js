@@ -68,6 +68,7 @@ test('low GP recovery and milestone bonuses are independently claimable once',as
   await page.locator('[data-act="earn-recover"]').click();
   await expect(page.locator('#balance')).toHaveText('5,000 GP');
   await expect(page.locator('[data-act="earn-recover"]')).toBeDisabled();
+  await expect(page.locator('[data-act="earn-recover"]')).toHaveText('Claimed');
   await expect(page.locator('[data-countdown="recovery"]')).toContainText('Next available claim in');
   await expect(page.locator('[data-countdown="recovery"] strong')).toContainText(/^23:59:/);
   await expect(page.locator('[data-act="earn-milestone"]')).toBeEnabled();
