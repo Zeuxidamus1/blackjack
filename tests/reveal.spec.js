@@ -1019,3 +1019,82 @@ for(const viewport of [{width:1680,height:900},{width:1280,height:720},{width:10
     expect(errors).toEqual([]);
   });
 }
+
+
+for(const viewport of [{width:1280,height:720},{width:375,height:812}]){
+  test('no background reset or opacity flash when cards become results ('+viewport.width+'px)',async({page})=>{
+    const errors=await setup(page,{viewport});
+    await purchase(page,5);
+    await page.evaluate(()=>{
+      const root=document.querySelector('#cr-reveal');
+      window.__revealBeforeResults={
+        sky:root.querySelector('.cr-sky'),
+        glow:root.querySelector('.cr-light'),
+        shell:root.querySelector('.cr-shell'),
+        toolbar:root.querySelector('.cr-toolbar'),
+        layerCount:root.querySelectorAll('.cr-sky,.cr-light').length
+      };
+    });
+    await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
+    await expect(page.locator('#cr-reveal .cr-turn[disabled]')).toHaveCount(5);
+    // Capture the shell immediately after the final card flip, before
+    // the scheduled transition. Earlier card updates may legitimately rerender.
+    await page.evaluate(()=>{
+      const root=document.querySelector('#cr-reveal');
+      window.__sceneImmediatelyBeforeResults={
+        shell:root.querySelector('.cr-shell'),
+        toolbar:root.querySelector('.cr-toolbar')
+      };
+    });
+    await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+    const state=await page.evaluate(()=>{
+      const root=document.querySelector('#cr-reveal');
+      const before=window.__revealBeforeResults;
+      const stage=root.querySelector('.cr-results');
+      return {
+        sameSky:root.querySelector('.cr-sky')===before.sky,
+        sameGlow:root.querySelector('.cr-light')===before.glow,
+        sameShell:root.querySelector('.cr-shell')===window.__sceneImmediatelyBeforeResults.shell,
+        sameToolbar:root.querySelector('.cr-toolbar')===window.__sceneImmediatelyBeforeResults.toolbar,
+        layerCount:root.querySelectorAll('.cr-sky,.cr-light').length,
+        stageAnimation:stage.classList.contains('cr-phase-enter'),
+        opacity:getComputedStyle(stage).opacity,
+        cards:root.querySelectorAll('.cr-result-card').length,
+        sellVisible:!!root.querySelector('[data-cr="sell"]'),
+        vaultVisible:!!root.querySelector('[data-cr="vault"]')
+      };
+    });
+    expect(state).toMatchObject({
+      sameSky:true,sameGlow:true,sameShell:true,sameToolbar:true,
+      layerCount:2,stageAnimation:false,opacity:'1',
+      cards:5,sellVisible:true,vaultVisible:true
+    });
+    expect(errors).toEqual([]);
+  });
+}
+
+test('individual last-card reveal transitions without reconstructing ambient scene',async({page})=>{
+  const errors=await setup(page,{viewport:{width:1280,height:720}});
+  await purchase(page,5);
+  await page.evaluate(()=>{
+    const root=document.querySelector('#cr-reveal');
+    window.__ambientBeforeLast={sky:root.querySelector('.cr-sky'),shell:root.querySelector('.cr-shell')};
+  });
+  for(let i=0;i<5;i++){
+    const card=page.locator('#cr-reveal .cr-turn:not([disabled])').first();
+    await card.click();
+    if(i<4)await expect(page.locator('#cr-reveal .cr-turn:not([disabled])')).toHaveCount(4-i);
+  }
+  await expect(page.locator('#cr-reveal .cr-turn[disabled]')).toHaveCount(5);
+  await page.evaluate(()=>{
+    window.__shellBeforeLastResult=document.querySelector('#cr-reveal .cr-shell');
+  });
+  await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+  expect(await page.evaluate(()=>{
+    const root=document.querySelector('#cr-reveal');
+    return root.querySelector('.cr-sky')===window.__ambientBeforeLast.sky &&
+      root.querySelector('.cr-shell')===window.__shellBeforeLastResult &&
+      !root.querySelector('.cr-results').classList.contains('cr-phase-enter');
+  })).toBe(true);
+  expect(errors).toEqual([]);
+});
