@@ -407,8 +407,8 @@
         '<button data-cr="sell"'+(this.busy||!saleEligible?' disabled':'')+
         ' title="'+(saleEligible?'Sell for current server-authoritative GP value':'Selling unavailable for these rewards')+
         '" aria-label="Sell '+count+' rewards">SELL'+suffix+'</button>'+
-        '<button data-cr="vault"'+(this.busy||!count?' disabled':'')+' aria-label="Vault '+count+' rewards">VAULT'+suffix+'</button></div>'+
-        (!saleEligible&&count?'<p class="cr-sale-note">Selling is unavailable for this selection. You can keep these rewards in your vault.</p>':'');
+        '<button data-cr="vault"'+(this.busy||!count?' disabled':'')+' aria-label="Bank '+count+' rewards">BANK'+suffix+'</button></div>'+
+        (!saleEligible&&count?'<p class="cr-sale-note">Selling is unavailable for this selection. You can keep these rewards in your Bank.</p>':'');
     }
     async revealSlot(slot=null){
       if(this.busy || root.hidden)return;
@@ -464,12 +464,12 @@
         await this.ctx.load();
         if(decision==='sell')this.ctx.onWalletChange?.(previousGp,'sell');
         if(result.remaining===0){
-          this.close(decision==='sell'?'Sold rewards for '+gp(amount)+'.':'Rewards saved in your inventory.');
+          this.close(decision==='sell'?'Sold rewards for '+gp(amount)+'.':'Rewards saved in your Bank.');
           return;
         }
         this.phase='results';
         this.toast=decision==='sell'?'Sold '+slots.length+' reward(s) for '+gp(amount)+'.':
-          'Vaulted '+slots.length+' reward(s).';
+          'Banked '+slots.length+' reward(s).';
         this.busy=false;
         this.render();
       }catch(error){
