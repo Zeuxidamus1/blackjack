@@ -1002,6 +1002,7 @@ for(const viewport of [{width:1680,height:900},{width:1280,height:720},{width:10
         scrollNeeded:scroll.scrollHeight>scroll.clientHeight+2
       };
     });
+    console.log('DESKTOP_RESULTS_GEOMETRY '+JSON.stringify(layout));
     expect(layout.cards).toHaveLength(5);
     for(const card of layout.cards){
       expect(Math.abs(card.top-layout.cards[0].top)).toBeLessThan(3);
