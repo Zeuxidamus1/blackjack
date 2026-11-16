@@ -59,7 +59,7 @@ select coalesce(jsonb_agg(jsonb_build_object(
 ) order by case s.tier when 'starter' then 1 when 'intermediate' then 2
  when 'advanced' then 3 else 4 end,s.name),'[]'::jsonb)
 from rips.equipment_sets s join grouped g on g.set_id=s.id
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION rips.equipment_award(uid uuid, sets jsonb)
  RETURNS void
@@ -105,4 +105,4 @@ begin
    insert into rips.equipment_achievements(owner,code)
      values(uid,'legendary_piece') on conflict do nothing;
  end if;
-end $function$
+end $function$;
