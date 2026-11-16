@@ -72,6 +72,7 @@ async function setup(page,{gp=100000,viewport,customPet=false,staleGeHours=null}
         if(_method==='rips_equipment_command'){
           backend.equipmentSlots ||= {};
           backend.achievements ||= [];
+          backend.visibility ||= {gear:false,badges:false};
           backend.goal ||= 'test_set';
           const choices=mockCatalog.filter(c=>c.ge!=null);
           const defs=choices.map((c,i)=>({
@@ -115,13 +116,15 @@ async function setup(page,{gp=100000,viewport,customPet=false,staleGeHours=null}
               fullyEquipped:pieces.every(p=>p.equipped)};
             save();
             return {definitions:defs,slots:equipped,sets:[set],goal:backend.goal,
-              achievements:badges,title:backend.titleCode||null,eligibleTitles:badges};
+              achievements:badges,title:backend.titleCode||null,eligibleTitles:badges,visibility:{...backend.visibility}};
           };
           if(action==='showcase'){
             const snapshot=makeState();
-            return ok({name:'Playwright Tester',
-              title:backend.titleCode?'First Steps':null,
-              slots:snapshot.slots,badges:snapshot.achievements});
+            const own=payload?.owner==='11111111-1111-4111-8111-111111111111';
+            return ok({name:'Playwright Tester',visibility:{...backend.visibility},
+              title:own||backend.visibility.badges?(backend.titleCode?'First Steps':null):null,
+              slots:own||backend.visibility.gear?snapshot.slots:[],
+              badges:own||backend.visibility.badges?snapshot.achievements:[]});
           }
           if(action==='equip'){
             const asset=ownedItem(payload?.id);
@@ -145,6 +148,12 @@ async function setup(page,{gp=100000,viewport,customPet=false,staleGeHours=null}
           if(action==='goal'){
             if(payload?.set!=='test_set')return fail('Unknown set.');
             backend.goal=payload.set;
+          }
+          if(action==='visibility'){
+            for(const k of ['gear','badges'])if(Object.hasOwn(payload||{},k)){
+              if(typeof payload[k]!=='boolean')return fail('Invalid privacy setting.');
+              backend.visibility[k]=payload[k];
+            }
           }
           if(action==='title'){
             if(payload?.code&&!backend.achievements.includes(payload.code))
@@ -1281,5 +1290,32 @@ test('Equipment and sets fit on a 375px mobile screen without horizontal overflo
  await page.locator('#equipment-root [data-act="gear-tab"][data-id="sets"]').click();
  await expect(page.locator('#equipment-root .gear-piece')).toHaveCount(2);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
+ expect(errors).toEqual([]);
+});
+
+test('Showroom equipment and badges are private by default until explicitly shared',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,1);
+ await page.locator('#owned [data-act="gear-equip"]').click();
+ await page.locator('nav.tabs [data-view="showcase"]').click();
+ await expect(page.locator('#showcase-gear-controls')).toContainText('Share equipped gear: Off');
+ await expect(page.locator('#showcase-gear-controls')).toContainText('Share badges and title: Off');
+ const result=await page.evaluate(async()=>{
+   const api=window.supabase.createClient();
+   const get=()=>api.rpc('rips_equipment_command',{action:'showcase',payload:{owner:'another-user'}});
+   const before=(await get()).data;
+   await api.rpc('rips_equipment_command',{action:'visibility',payload:{gear:true}});
+   const withGear=(await get()).data;
+   await api.rpc('rips_equipment_command',{action:'visibility',payload:{badges:true}});
+   const withBadges=(await get()).data;
+   return {before,withGear,withBadges};
+ });
+ expect(result.before.slots).toHaveLength(0);
+ expect(result.before.badges).toHaveLength(0);
+ expect(result.withGear.slots).toHaveLength(1);
+ expect(result.withGear.badges).toHaveLength(0);
+ expect(result.withBadges.badges.length).toBeGreaterThan(0);
+ await page.locator('#showcase-gear-controls [data-id="gear"]').click();
+ await expect(page.locator('#showcase-gear-controls')).toContainText('Share equipped gear: Off');
  expect(errors).toEqual([]);
 });
