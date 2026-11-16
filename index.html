@@ -1222,7 +1222,7 @@ function renderInventory(){
     '<div class="gear-active-goal"><div><span class="gear-eyebrow">ACTIVE EQUIPMENT GOAL</span><strong>'+
     safe(goal.name)+'</strong><small>'+goal.owned+' / '+goal.required+' owned · '+
     goal.discovered+' / '+goal.required+' discovered</small></div>'+
-    button('See missing pieces','gear-main','equipment',true)+'</div>':'';
+    button('See missing pieces','gear-open-goal','',true)+'</div>':'';
   const query=el('inventory-search').value.trim().toLowerCase();
   const filter=el('inventory-filter').value;
   const sort=el('inventory-sort').value;
@@ -1729,7 +1729,7 @@ document.addEventListener('click',event=>{
   }
   if(act==='gear-main'){
     if(view!=='inventory'||!['bank','equipment'].includes(id))return;
-    bankPanel=id;if(id==='equipment')gearTab='sets';inventoryMode=false;inventorySelected.clear();
+    bankPanel=id;inventoryMode=false;inventorySelected.clear();
     if(!equipmentStatus&&!equipmentLoading){equipmentError=null;void loadEquipment();}
     render();return;
   }
