@@ -671,13 +671,32 @@ async function equipmentRpc(action='status',payload={}){
   if(error)throw error;
   return data;
 }
+function celebrateGearAchievements(previous,next){
+  if(!previous||!next||!Array.isArray(next.achievements))return;
+  const known=new Set((previous.achievements||[]).map(a=>a.code));
+  const unlocked=next.achievements.filter(a=>!known.has(a.code));
+  if(!unlocked.length)return;
+  const toast=document.createElement('div');
+  toast.className='gear-achievement-toast';
+  toast.setAttribute('role','status');
+  const symbol=document.createElement('span');symbol.textContent='🏆';
+  const copy=document.createElement('div');
+  const headline=document.createElement('strong');headline.textContent='Achievement unlocked!';
+  const details=document.createElement('small');
+  details.textContent=unlocked.map(a=>a.title).join(' · ');
+  copy.append(headline,details);toast.append(symbol,copy);document.body.append(toast);
+  window.setTimeout(()=>toast.remove(),5400);
+}
 async function loadEquipment(force=false){
   if(!session||equipmentLoading||(!force&&equipmentStatus))return;
   equipmentLoading=true;equipmentError=null;
   const ticket=++equipmentGeneration;
   try{
     const result=await equipmentRpc('status');
-    if(ticket===equipmentGeneration)equipmentStatus=result;
+    if(ticket===equipmentGeneration){
+      celebrateGearAchievements(equipmentStatus,result);
+      equipmentStatus=result;
+    }
   }catch(error){
     if(ticket===equipmentGeneration)equipmentError=error.message||'Equipment could not be loaded.';
   }finally{
@@ -855,8 +874,11 @@ async function load() {
     if(!cases.length) cases=await rpc('cases');
     batch=await rpc('reward_batch');
     if(equipmentStatus&&!equipmentLoading){
-      try{equipmentStatus=await equipmentRpc('status');}
-      catch(error){console.warn('Equipment refresh unavailable:',error);}
+      try{
+        const nextGear=await equipmentRpc('status');
+        celebrateGearAchievements(equipmentStatus,nextGear);
+        equipmentStatus=nextGear;
+      }catch(error){console.warn('Equipment refresh unavailable:',error);}
     }
   }
   if(session && sharedId){
@@ -1712,7 +1734,9 @@ document.addEventListener('click',event=>{
       'gear-title':['title',{code:id==='none'?null:id}]
     }[act];
     run(async()=>{
+      const beforeGear=equipmentStatus;
       equipmentStatus=await equipmentRpc(operation[0],operation[1]);
+      celebrateGearAchievements(beforeGear,equipmentStatus);
       await load();
       if(act==='gear-equip'){gearFocus=equipmentStatus?.slots?.find(x=>x.instance===id)?.slot||gearFocus;}
       if(act==='gear-title'&&state?.id)void loadShowroomGear(state.id);
