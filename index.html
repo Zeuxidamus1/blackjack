@@ -436,7 +436,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
     <button type="button" class="quiet" id="inventory-mode-button" data-act="inventory-mode" aria-pressed="false">Select items</button></div>
   <div id="inventory-overview" class="inventory-overview" aria-label="Bank value overview"></div>
   <div id="bank-goal"></div>
-  <div class="inventory-filters" role="group" aria-label="Inventory search and filters">
+  <div class="inventory-filters" role="group" aria-label="Bank search and filters">
     <label class="inventory-search-label">Search items<input id="inventory-search" type="search" autocomplete="off" placeholder="Search by item name…"></label>
     <label>Filter<select id="inventory-filter">
       <option value="all">All items</option><option value="sellable">Available to sell</option>
@@ -1162,7 +1162,7 @@ function inventoryBestChances(){
 }
 function inventorySummary(items,grouped){
   const total=items.reduce((sum,a)=>sum+Number(catalog.get(a.item)?.guide||0),0);
-  return '<div class="inventory-stat is-primary"><span>Inventory guide value</span><strong>'+price(total)+'</strong>'+
+  return '<div class="inventory-stat is-primary"><span>Bank guide value</span><strong>'+price(total)+'</strong>'+
     '<small>Estimated values, not guaranteed sale proceeds</small></div>'+
     '<div class="inventory-stat"><span>Total items</span><strong>'+items.length+'</strong><small>'+grouped.size+' unique types</small></div>';
 }
@@ -1284,7 +1284,7 @@ function renderInventory(){
   }
   if(!stack){
     el('owned').innerHTML=visible.map(a=>inventoryItemMarkup(a,counts,eligibleIds)).join('')||
-      empty(items.length?'No items match your inventory filters.':'Open a pack to fill your inventory.');
+      empty(items.length?'No items match your Bank filters.':'Open a pack to add items to your Bank.');
     return;
   }
   // Stack duplicates visually without merging or changing real item instances.
@@ -1300,7 +1300,7 @@ function renderInventory(){
       '<span class="inventory-stack-count">×'+group.length+'</span>'+cardContent+
       (open?'<div class="inventory-stack-copies">'+group.map(a=>inventoryItemMarkup(a,counts,eligibleIds)).join('')+'</div>':'')+
       '</div>';
-  }).join('')||empty(items.length?'No items match your inventory filters.':'Open a pack to fill your inventory.');
+  }).join('')||empty(items.length?'No items match your Bank filters.':'Open a pack to add items to your Bank.');
 }
 // Transition only when switching screens/categories, not during normal state redraws.
 let lastScreenKey=null;
