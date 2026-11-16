@@ -120,3 +120,13 @@
 .gear-share-controls button{background:#234b3f;border:1px solid #82bca0;color:#e0ffef;border-radius:10px;padding:10px 12px;font-size:.75rem;font-weight:800}
 .gear-share-controls button:focus-visible{outline:2px solid #92e6b5;outline-offset:2px}
 @media(max-width:520px){.gear-share-controls{flex-direction:column;align-items:stretch}.gear-share-controls button{width:100%}}
+
+/* The next equipment goal is visible alongside pack choices, without
+   affecting pack prices, odds, rewards, or the existing carousel. */
+.gear-home-goal{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:0 auto 20px;padding:15px 18px;border:1px solid #588570;border-radius:15px;background:linear-gradient(110deg,#1b443c,#0e242a);max-width:900px}
+.gear-home-goal>div{display:flex;flex-direction:column;gap:4px}
+.gear-home-goal strong{font-size:1.05rem;color:#e7fff2}
+.gear-home-goal small{font-size:.76rem;color:#a7d2c0}
+.gear-home-goal button{padding:10px 15px;background:#246b50;border:1px solid #80dfad;color:#edfff4;border-radius:10px;font-weight:850;cursor:pointer}
+.gear-home-goal button:focus-visible{outline:2px solid #d2ffde;outline-offset:3px}
+@media(max-width:520px){.gear-home-goal{align-items:stretch}.gear-home-goal button{width:100%}}
