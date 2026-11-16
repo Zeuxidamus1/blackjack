@@ -494,7 +494,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
   <p id="collection-count" class="collection-count" role="status" aria-live="polite"></p>
   <div class="grid" id="items"></div>
 </section>
-<section id="showcase" hidden><div class="section"><h2>Your showroom</h2><button id="share" class="primary">Copy showroom link</button></div><div id="showcase-equipment"></div><p class="empty" id="shareHint">Display up to five items from your Bank. Items remain yours until sold.</p><div class="grid" id="pins"></div></section>
+<section id="showcase" hidden><div class="section"><h2>Your showroom</h2><button id="share" class="primary">Copy showroom link</button></div><div id="showcase-gear-controls"></div><div id="showcase-equipment"></div><p class="empty" id="shareHint">Display up to five items from your Bank. Items remain yours until sold.</p><div class="grid" id="pins"></div></section>
 <section id="shared" hidden><div class="section"><h2>Shared showroom</h2></div><div id="shared-equipment"></div><p class="empty">Items displayed by another player.</p><div class="grid" id="sharedItems"></div></section>
 </main>
 <footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 100K starter GP · Daily claim resets 24 hours after each claim.</footer></div>
@@ -1398,7 +1398,14 @@ function render() {
   }
   if(view==='showcase') {
     const pinned=state?.items?.filter(i=>i.pinned)||[];
-    el('share').disabled=!pinned.length&&!showroomGear?.slots?.length&&!showroomGear?.badges?.length;
+    const vis=showroomGear?.visibility||equipmentStatus?.visibility||{gear:false,badges:false};
+    const showGear=Boolean(vis.gear),showBadges=Boolean(vis.badges);
+    el('share').disabled=!pinned.length&&!(showGear&&showroomGear?.slots?.length)&&
+      !(showBadges&&showroomGear?.badges?.length);
+    el('showcase-gear-controls').innerHTML='<div class="gear-share-controls">'+
+      '<div><strong>Equipment sharing</strong><small>Private unless you choose to share. Your own preview stays visible.</small></div>'+
+      button('Share equipped gear: '+(showGear?'On':'Off'),'gear-visibility','gear',false)+
+      button('Share badges and title: '+(showBadges?'On':'Off'),'gear-visibility','badges',false)+'</div>';
     el('showcase-equipment').innerHTML=window.ChallengerGear?.renderShowcase(showroomGear)||'';
     el('pins').innerHTML=pinned.map(i=>card(catalog.get(i.item),i.pulled?'Personally pulled':'Bought on the market')).join('');
   }
@@ -1699,6 +1706,16 @@ document.addEventListener('click',event=>{
     notice();render();return;
   }
   const {act,id}=b.dataset;
+  if(act==='gear-visibility'){
+    if(!['gear','badges'].includes(id)||view!=='showcase'||!state?.id)return;
+    const vis=showroomGear?.visibility||equipmentStatus?.visibility||{gear:false,badges:false};
+    run(async()=>{
+      equipmentStatus=await equipmentRpc('visibility',{[id]:!vis[id]});
+      await loadShowroomGear(state.id);
+      notice('Showroom sharing preferences saved.');
+    });
+    return;
+  }
   if(act==='gear-main'){
     if(view!=='inventory'||!['bank','equipment'].includes(id))return;
     bankPanel=id;inventoryMode=false;inventorySelected.clear();
