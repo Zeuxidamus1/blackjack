@@ -387,6 +387,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <link rel="stylesheet" href="./reveal.css?v=9">
 <link rel="stylesheet" href="./premium-packs.css?v=1">
 <link rel="stylesheet" href="./inventory-step5.css?v=2">
+<link rel="stylesheet" href="./equipment.css?v=1">
 <link rel="stylesheet" href="./moderator.css?v=1">
 <link rel="stylesheet" href="./wallet-feedback.css?v=2">
 <link rel="stylesheet" href="./motion.css?v=1">
@@ -423,17 +424,23 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <section id="games" class="game-library" aria-label="Choose a game" hidden><div class="game-library-grid" id="game-library-grid"></div></section>
 <div id="game-navigation" class="game-navigation" hidden><button type="button" class="game-back-link" data-act="all-games" aria-label="Back to all games"><span aria-hidden="true">←</span> All games</button></div>
 <section class="hero"><div><h1>Old School <span class="accent">RuneScape</span></h1></div><div><button class="primary" id="daily" hidden>Claim 50K GP</button></div></section>
-<nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="earn">Earn GP</button><button data-view="missions">Missions</button><button data-view="inventory">Inventory</button><button data-view="showcase">Showroom</button><button data-view="moderator" hidden>Moderator Tools</button></nav>
+<nav class="tabs" aria-label="Game views"><button data-view="shop" aria-current="page">Packs</button><button data-view="collection">Collection log</button><button data-view="earn">Earn GP</button><button data-view="missions">Missions</button><button data-view="inventory">Bank</button><button data-view="showcase">Showroom</button><button data-view="moderator" hidden>Moderator Tools</button></nav>
 <div id="game-status"></div>
 <section id="inventory" hidden>
-  <div class="section inventory-heading"><div><h2>Your inventory</h2><p class="inventory-subtitle">Browse, protect, and manage your collection.</p></div>
+  <div class="gear-main-nav" role="group" aria-label="Bank and equipment">
+    <button type="button" data-act="gear-main" data-id="bank" aria-pressed="true">Bank</button>
+    <button type="button" data-act="gear-main" data-id="equipment" aria-pressed="false">Equipment & Sets</button>
+  </div>
+  <div id="bank-panel">
+  <div class="section inventory-heading"><div><h2>Your Bank</h2><p class="inventory-subtitle">Browse, protect, equip and manage your collection.</p></div>
     <button type="button" class="quiet" id="inventory-mode-button" data-act="inventory-mode" aria-pressed="false">Select items</button></div>
-  <div id="inventory-overview" class="inventory-overview" aria-label="Inventory value overview"></div>
+  <div id="inventory-overview" class="inventory-overview" aria-label="Bank value overview"></div>
+  <div id="bank-goal"></div>
   <div class="inventory-filters" role="group" aria-label="Inventory search and filters">
     <label class="inventory-search-label">Search items<input id="inventory-search" type="search" autocomplete="off" placeholder="Search by item name…"></label>
     <label>Filter<select id="inventory-filter">
       <option value="all">All items</option><option value="sellable">Available to sell</option>
-      <option value="duplicates">Duplicates</option><option value="protected">Protected</option>
+      <option value="equippable">Equippable gear</option><option value="equipped">Equipped gear</option><option value="duplicates">Duplicates</option><option value="protected">Protected</option>
       <option value="unprotected">Unprotected</option><option value="listed">Listed</option>
       <option value="boss">Boss Loot</option><option value="clue">Clue Caskets</option><option value="pets">Pet Hunt</option>
     </select></label>
@@ -450,6 +457,8 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
     <button type="button" class="quiet" data-act="inventory-spares" title="Keep one copy of each item and select only eligible spare copies.">Select spare duplicates</button></div>
   <div id="inventory-toolbar" class="inventory-toolbar" hidden></div>
   <div class="grid" id="owned"></div>
+  </div>
+  <div id="equipment-panel" hidden><div id="equipment-root" role="region" aria-label="Equipment sets and achievements"></div></div>
 </section>
 <section id="shop" class="grid" aria-label="Packs"></section>
 <section id="earn" aria-label="Earn GP" hidden><div id="earn-dashboard"></div></section>
@@ -485,8 +494,8 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
   <p id="collection-count" class="collection-count" role="status" aria-live="polite"></p>
   <div class="grid" id="items"></div>
 </section>
-<section id="showcase" hidden><div class="section"><h2>Your showroom</h2><button id="share" class="primary">Copy showroom link</button></div><p class="empty" id="shareHint">Display up to five items from your inventory. Items remain yours until sold.</p><div class="grid" id="pins"></div></section>
-<section id="shared" hidden><div class="section"><h2>Shared showroom</h2></div><p class="empty">Items displayed by another player.</p><div class="grid" id="sharedItems"></div></section>
+<section id="showcase" hidden><div class="section"><h2>Your showroom</h2><button id="share" class="primary">Copy showroom link</button></div><div id="showcase-equipment"></div><p class="empty" id="shareHint">Display up to five items from your Bank. Items remain yours until sold.</p><div class="grid" id="pins"></div></section>
+<section id="shared" hidden><div class="section"><h2>Shared showroom</h2></div><div id="shared-equipment"></div><p class="empty">Items displayed by another player.</p><div class="grid" id="sharedItems"></div></section>
 </main>
 <footer>Free fan game. Drops are game collectibles only. Odds are specific to Challenger Rips. Multiplayer beta · 100K starter GP · Daily claim resets 24 hours after each claim.</footer></div>
 <dialog id="modal" aria-labelledby="modalTitle"></dialog>
@@ -495,6 +504,7 @@ header{background:#080f13f2;border-bottom:1px solid #ffffff1a}
 <script src="./progression.js?v=2"></script>
 <script src="./economy.js?v=6"></script>
 <script src="./missions.js?v=2"></script>
+<script src="./equipment.js?v=1"></script>
 <script src="./moderator.js?v=1"></script>
 <script src="./wallet-feedback.js?v=2"></script>
 <script defer src="./app-install.js"></script>
@@ -637,6 +647,10 @@ let inventoryMode=false;
 const inventorySelected=new Set();
 const inventoryExpanded=new Set();
 const inventoryMaxSelect=100;
+let bankPanel='bank', gearTab='equipment', gearFocus='head';
+let equipmentStatus=null,equipmentLoading=false,equipmentError=null,equipmentGeneration=0;
+let showroomGear=null,sharedGear=null,showroomGearLoading=false;
+window.ChallengerGearItemName=itemId=>catalog.get(itemId)?.name;
 const purchaseKey='challenger-pending-purchase';
 const safe = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sharedId = new URLSearchParams(location.search).get('shelf');
@@ -651,6 +665,36 @@ async function rpc(action,payload={}) {
   const {data,error}=await db.rpc('rips_command',{action,payload});
   if(error) throw error;
   return data;
+}
+async function equipmentRpc(action='status',payload={}){
+  const {data,error}=await db.rpc('rips_equipment_command',{action,payload});
+  if(error)throw error;
+  return data;
+}
+async function loadEquipment(force=false){
+  if(!session||equipmentLoading||(!force&&equipmentStatus))return;
+  equipmentLoading=true;equipmentError=null;
+  const ticket=++equipmentGeneration;
+  try{
+    const result=await equipmentRpc('status');
+    if(ticket===equipmentGeneration)equipmentStatus=result;
+  }catch(error){
+    if(ticket===equipmentGeneration)equipmentError=error.message||'Equipment could not be loaded.';
+  }finally{
+    if(ticket===equipmentGeneration){
+      equipmentLoading=false;
+      if(view==='inventory'||view==='showcase')render();
+    }
+  }
+}
+async function loadShowroomGear(owner){
+  if(!session||!owner)return;
+  try{
+    const result=await equipmentRpc('showcase',{owner});
+    if(owner===sharedId)sharedGear=result;
+    else if(owner===state?.id)showroomGear=result;
+    if(view==='showcase'||view==='shared')render();
+  }catch(error){console.warn('Equipment showroom is temporarily unavailable:',error);}
 }
 let clockOffset=0;
 let livePrices={};
@@ -810,8 +854,15 @@ async function load() {
     if(!catalog.size){await loadCatalog();void refreshServerPrices();}
     if(!cases.length) cases=await rpc('cases');
     batch=await rpc('reward_batch');
+    if(equipmentStatus&&!equipmentLoading){
+      try{equipmentStatus=await equipmentRpc('status');}
+      catch(error){console.warn('Equipment refresh unavailable:',error);}
+    }
   }
-  if(session && sharedId) shared=await rpc('showcase',{id:sharedId});
+  if(session && sharedId){
+    shared=await rpc('showcase',{id:sharedId});
+    await loadShowroomGear(sharedId);
+  }
 }
 
 async function refreshServerPrices() {
