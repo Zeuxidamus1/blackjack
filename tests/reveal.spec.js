@@ -945,3 +945,37 @@ test('GE quote older than 72 hours hides Sell and offers a refresh control',asyn
   await expect(page.locator('#owned .inventory-item-unavailable')).toContainText('Verified GE quote expired');
   expect(errors).toEqual([]);
 });
+
+
+for(const viewport of [{width:1680,height:900},{width:1280,height:720},{width:1024,height:600}]){
+  test('desktop five-card hand and Reveal All fit without scrolling at '+viewport.width+'x'+viewport.height,async({page})=>{
+    const errors=await setup(page,{viewport});
+    await purchase(page,5);
+    await expect(page.locator('#cr-reveal .cr-turn')).toHaveCount(5);
+    await expect(page.locator('#cr-reveal [data-cr="reveal-all"]')).toBeVisible();
+    const layout=await page.evaluate(()=>{
+      const cards=[...document.querySelectorAll('#cr-reveal .cr-turn')].map(el=>el.getBoundingClientRect());
+      const action=document.querySelector('#cr-reveal [data-cr="reveal-all"]').getBoundingClientRect();
+      const deck=document.querySelector('#cr-reveal .cr-deck');
+      return {
+        cards:cards.map(r=>({left:r.left,right:r.right,top:r.top,bottom:r.bottom})),
+        action:{top:action.top,bottom:action.bottom},
+        viewport:{width:innerWidth,height:innerHeight},
+        deckScrollable:deck.scrollHeight>deck.clientHeight+2
+      };
+    });
+    expect(layout.cards).toHaveLength(5);
+    const first=layout.cards[0];
+    for(const card of layout.cards){
+      expect(Math.abs(card.top-first.top)).toBeLessThan(3);
+      expect(card.left).toBeGreaterThanOrEqual(-1);
+      expect(card.right).toBeLessThanOrEqual(layout.viewport.width+1);
+      expect(card.bottom).toBeLessThan(layout.action.top+1);
+    }
+    expect(layout.action.bottom).toBeLessThanOrEqual(layout.viewport.height+1);
+    expect(layout.deckScrollable).toBe(false);
+    await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
+    await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+    expect(errors).toEqual([]);
+  });
+}

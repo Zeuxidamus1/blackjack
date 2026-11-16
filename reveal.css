@@ -173,3 +173,50 @@ body.cr-reveal-active{overflow:hidden!important}
 @media(prefers-reduced-motion:reduce){
  #cr-reveal *,#cr-reveal *::before,#cr-reveal *::after{animation:none!important;transition:none!important}
 }
+
+/* Desktop pack reveal: show the entire five-card hand and Reveal All without
+   needing to scroll. Mobile retains the original stacked two-column layout. */
+@media (min-width: 760px) and (pointer: fine) {
+  #cr-reveal .cr-shell {
+    max-width: 1260px;
+  }
+  #cr-reveal .cr-stage {
+    min-height: 0;
+  }
+  #cr-reveal .cr-deck {
+    max-width: 1140px;
+    width: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    justify-content: center;
+  }
+  #cr-reveal .cr-reveal-grid {
+    width: 100%;
+    max-width: 1120px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(9px, 1.3vw, 18px);
+    align-items: center;
+    padding: 8px;
+  }
+  #cr-reveal .cr-reveal-grid .cr-turn:nth-child(odd):last-child {
+    grid-column: auto;
+    width: 100%;
+    justify-self: stretch;
+  }
+  #cr-reveal .cr-reveal-grid .cr-turn {
+    width: 100%;
+    max-height: min(52dvh, 320px);
+    justify-self: center;
+  }
+  #cr-reveal .cr-subactions {
+    margin-top: 14px;
+    padding-bottom: 4px;
+  }
+}
+/* Short desktop/laptop windows remain usable without clipping controls. */
+@media (min-width: 760px) and (pointer: fine) and (max-height: 650px) {
+  #cr-reveal .cr-toolbar { height: 48px; }
+  #cr-reveal .cr-reveal-grid .cr-turn { max-height: 44dvh; }
+  #cr-reveal .cr-subactions { margin-top: 8px; }
+}
