@@ -220,3 +220,93 @@ body.cr-reveal-active{overflow:hidden!important}
   #cr-reveal .cr-reveal-grid .cr-turn { max-height: 44dvh; }
   #cr-reveal .cr-subactions { margin-top: 8px; }
 }
+
+
+/* Desktop results: fit all five rewards, total GP, and action bar in the
+   same viewport. This deliberately does not affect touch/mobile screens. */
+@media (min-width: 760px) and (pointer: fine) {
+  #cr-reveal .cr-results {
+    min-height: 0;
+    justify-content: flex-start;
+  }
+  #cr-reveal .cr-results .cr-summary {
+    padding: 5px 8px 12px;
+  }
+  #cr-reveal .cr-results .cr-summary-value {
+    font-size: clamp(2rem, 3.8vw, 3.3rem);
+    overflow-wrap: anywhere;
+  }
+  #cr-reveal .cr-results-scroll {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+  #cr-reveal .cr-results-grid {
+    display: grid;
+    width: 100%;
+    max-width: 1150px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: start;
+    gap: clamp(8px, 1.25vw, 18px);
+    margin: 8px auto;
+  }
+  #cr-reveal .cr-result-card {
+    min-width: 0;
+    width: 100%;
+    padding: 9px 3px 11px;
+    justify-content: flex-start;
+  }
+  #cr-reveal .cr-result-art {
+    height: clamp(108px, 21dvh, 195px);
+    max-width: 100%;
+  }
+  #cr-reveal .cr-result-art img {
+    width: min(100%, 165px);
+    height: min(19dvh, 170px);
+    max-width: 100%;
+    max-height: 88%;
+  }
+  #cr-reveal .cr-result-name {
+    font-size: clamp(.76rem, 1.05vw, .98rem);
+    line-height: 1.22;
+    min-height: 2.45em;
+    margin: 8px 0 5px;
+    overflow-wrap: anywhere;
+  }
+  #cr-reveal .cr-result-price {
+    font-size: clamp(.73rem, 1vw, 1rem);
+    padding: 7px 10px;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  #cr-reveal .cr-results + .cr-actions {
+    min-height: 58px;
+    margin-top: 6px;
+  }
+  #cr-reveal .cr-results + .cr-actions button {
+    padding: 11px 6px;
+  }
+}
+@media (min-width: 760px) and (pointer: fine) and (max-height: 650px) {
+  #cr-reveal .cr-results .cr-summary { padding: 0 8px 6px; }
+  #cr-reveal .cr-results-grid { margin: 3px auto; }
+  #cr-reveal .cr-result-art { height: clamp(90px, 19dvh, 135px); }
+  #cr-reveal .cr-result-art img { height: min(17dvh, 120px); }
+  #cr-reveal .cr-result-card { padding: 5px 2px 7px; }
+  #cr-reveal .cr-result-name { margin: 4px 0 3px; }
+  #cr-reveal .cr-results + .cr-actions { min-height: 50px; margin-top: 4px; }
+}
+
+/* Prevent browser click-to-focus from horizontally shifting the reveal scene
+   while switching from cards to final results. */
+@media (min-width: 760px) and (pointer: fine) {
+  #cr-reveal { overflow: clip; }
+  #cr-reveal .cr-results { width: 100%; max-width: 100%; }
+  #cr-reveal .cr-results-scroll { max-width: 100%; overflow-x: clip; }
+  #cr-reveal .cr-results-grid { min-width: 0; max-width: 100%; }
+}

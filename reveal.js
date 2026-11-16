@@ -265,6 +265,14 @@
       }
       root.innerHTML=this.ambient()+'<div class="cr-shell">'+top+inside+
         this.info()+(this.toast?'<div class="cr-toast" role="status">'+h(this.toast)+'</div>':'')+'</div>';
+      if(this.phase==='results'){
+        // A focused Reveal All button can leave the scrollable overlay offset
+        // horizontally when the five-item grid replaces the card backs.
+        // Reset only reveal-owned scroll positions; never touch reward data.
+        root.scrollLeft=0;
+        const resultsScroll=root.querySelector('.cr-results-scroll');
+        if(resultsScroll)resultsScroll.scrollLeft=0;
+      }
       if(phaseChanged)root.querySelector('.cr-stage')?.classList.add('cr-phase-enter');
       if(this.phase==='cards' && this.newFlips.size){
         const flipped=[...this.newFlips];

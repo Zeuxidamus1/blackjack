@@ -979,3 +979,43 @@ for(const viewport of [{width:1680,height:900},{width:1280,height:720},{width:10
     expect(errors).toEqual([]);
   });
 }
+
+
+for(const viewport of [{width:1680,height:900},{width:1280,height:720},{width:1024,height:600}]){
+  test('desktop final results and Sell All/Vault All fit at '+viewport.width+'x'+viewport.height,async({page})=>{
+    const errors=await setup(page,{viewport});
+    await purchase(page,5);
+    await revealAll(page,5);
+    await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+    const layout=await page.evaluate(()=>{
+      const cards=[...document.querySelectorAll('#cr-reveal .cr-result-card')].map(el=>el.getBoundingClientRect());
+      const sell=document.querySelector('#cr-reveal [data-cr="sell"]').getBoundingClientRect();
+      const vault=document.querySelector('#cr-reveal [data-cr="vault"]').getBoundingClientRect();
+      const scroll=document.querySelector('#cr-reveal .cr-results-scroll');
+      const summary=document.querySelector('#cr-reveal .cr-summary').getBoundingClientRect();
+      return {
+        cards:cards.map(r=>({left:r.left,right:r.right,top:r.top,bottom:r.bottom})),
+        sell:{top:sell.top,bottom:sell.bottom},
+        vault:{top:vault.top,bottom:vault.bottom},
+        summary:{top:summary.top,bottom:summary.bottom},
+        viewport:{width:innerWidth,height:innerHeight},
+        scrollNeeded:scroll.scrollHeight>scroll.clientHeight+2
+      };
+    });
+    console.log('DESKTOP_RESULTS_GEOMETRY '+JSON.stringify(layout));
+    expect(layout.cards).toHaveLength(5);
+    for(const card of layout.cards){
+      expect(Math.abs(card.top-layout.cards[0].top)).toBeLessThan(3);
+      expect(card.left).toBeGreaterThanOrEqual(-1);
+      expect(card.right).toBeLessThanOrEqual(layout.viewport.width+1);
+      expect(card.bottom).toBeLessThanOrEqual(layout.sell.top+1);
+    }
+    expect(layout.summary.bottom).toBeLessThan(layout.cards[0].top+1);
+    expect(layout.sell.bottom).toBeLessThanOrEqual(layout.viewport.height+1);
+    expect(layout.vault.bottom).toBeLessThanOrEqual(layout.viewport.height+1);
+    expect(layout.scrollNeeded).toBe(false);
+    await page.locator('#cr-reveal [data-cr="vault"]').click();
+    await expect(page.locator('#cr-reveal')).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+}
