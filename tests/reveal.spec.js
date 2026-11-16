@@ -1188,3 +1188,98 @@ test('individual last-card reveal transitions without reconstructing ambient sce
   })).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('Bank rename keeps existing settled inventory and shows equipment actions',async({page})=>{
+ const errors=await setup(page);
+ await purchase(page,1);
+ await expect(page.locator('#cr-reveal [data-cr="vault"]')).toContainText('BANK');
+ await page.locator('#cr-reveal [data-cr="vault"]').click();
+ await expect(page.locator('#cr-reveal')).toBeHidden();
+ await page.locator('nav.tabs [data-view="inventory"]').click();
+ await expect(page.locator('#inventory')).toContainText('Your Bank');
+ await expect(page.locator('#inventory .gear-main-nav')).toBeVisible();
+ await expect(page.locator('#owned [data-act="gear-equip"]')).toHaveCount(1);
+ const backend=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+ expect(backend.inventory[0].status).toBe('vaulted');
+ expect(errors).toEqual([]);
+});
+
+test('Equip, unequip and reload preserve gear and block accidental sale',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,2);
+ await expect(page.locator('#owned [data-act="gear-equip"]')).toHaveCount(2);
+ await page.locator('#owned [data-act="gear-equip"]').first().click();
+ await expect(page.locator('#owned .inventory-protected-tag')).toContainText('Equipped');
+ await expect(page.locator('#owned [data-act="gear-unequip"]')).toHaveCount(1);
+ await expect(page.locator('#owned [data-act="sell"]')).toHaveCount(1);
+ const blocked=await page.evaluate(async()=>{
+   const backend=JSON.parse(sessionStorage.getItem('reveal-mock'));
+   const instance=Object.values(backend.equipmentSlots)[0];
+   const api=window.supabase.createClient();
+   return Promise.all([
+     api.rpc('rips_command',{action:'sell',payload:{id:instance}}),
+     api.rpc('rips_command',{action:'sell_bulk',payload:{ids:[instance]}})
+   ]);
+ });
+ expect(blocked.every(x=>/unequip|equipped/i.test(x.error?.message||''))).toBe(true);
+ await page.reload();
+ await page.locator('#games [data-act="game"][data-id="runescape"]').click();
+ await page.locator('nav.tabs [data-view="inventory"]').click();
+ await expect(page.locator('#owned [data-act="gear-unequip"]')).toHaveCount(1);
+ await page.locator('#inventory .gear-main-nav [data-id="equipment"]').click();
+ await expect(page.locator('#equipment-root .gear-slot.has-item')).toHaveCount(1);
+ await page.locator('#equipment-root [data-act="gear-focus"][data-id="weapon"]').click();
+ await page.locator('#equipment-root [data-act="gear-unequip"][data-id="weapon"]').click();
+ await expect(page.locator('#equipment-root .gear-slot.has-item')).toHaveCount(0);
+ await page.locator('#inventory .gear-main-nav [data-id="bank"]').click();
+ await expect(page.locator('#owned [data-act="sell"]')).toHaveCount(2);
+ expect(errors).toEqual([]);
+});
+
+test('Equipment set goals distinguish discovered, banked and equipped pieces',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,1);
+ await page.locator('#inventory .gear-main-nav [data-id="equipment"]').click();
+ await page.locator('#equipment-root [data-act="gear-tab"][data-id="sets"]').click();
+ await expect(page.locator('#equipment-root .gear-set-card')).toHaveCount(1);
+ await expect(page.locator('#equipment-root .gear-set-card')).toContainText('Test Starter Kit');
+ await expect(page.locator('#equipment-root .gear-progress-label')).toContainText('1 / 2 owned');
+ await expect(page.locator('#equipment-root .gear-piece.is-missing')).toHaveCount(1);
+ await expect(page.locator('#equipment-root .gear-source-details')).toHaveCount(1);
+ await page.locator('#equipment-root .gear-source-details summary').click();
+ await expect(page.locator('#equipment-root .gear-source-details')).toContainText('2%');
+ await page.locator('#equipment-root [data-act="gear-goal"]').click();
+ await expect(page.locator('#equipment-root')).toContainText('Active goal');
+ await page.locator('#inventory .gear-main-nav [data-id="bank"]').click();
+ await expect(page.locator('#bank-goal')).toContainText('1 / 2 owned');
+ expect(errors).toEqual([]);
+});
+
+test('Equip earned titles and showcase only voluntary public gear and badges',async({page})=>{
+ const errors=await setup(page);
+ await prepareInventory(page,1);
+ await page.locator('#owned [data-act="gear-equip"]').click();
+ await page.locator('#inventory .gear-main-nav [data-id="equipment"]').click();
+ await page.locator('#equipment-root [data-act="gear-tab"][data-id="achievements"]').click();
+ await expect(page.locator('#equipment-root')).toContainText('First Steps');
+ await page.locator('#equipment-root [data-act="gear-title"][data-id="first_equip"]').click();
+ await expect(page.locator('#equipment-root')).toContainText('Title equipped');
+ await page.locator('nav.tabs [data-view="showcase"]').click();
+ await expect(page.locator('#showcase-equipment')).toContainText('First Steps');
+ await expect(page.locator('#showcase-equipment')).toContainText('Rune scimitar');
+ const mock=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+ expect(mock.titleCode).toBe('first_equip');
+ expect(errors).toEqual([]);
+});
+
+test('Equipment and sets fit on a 375px mobile screen without horizontal overflow',async({page})=>{
+ const errors=await setup(page,{viewport:{width:375,height:812}});
+ await prepareInventory(page,2);
+ await page.locator('#inventory .gear-main-nav [data-id="equipment"]').click();
+ await expect(page.locator('#equipment-root .gear-slots .gear-slot')).toHaveCount(11);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
+ await page.locator('#equipment-root [data-act="gear-tab"][data-id="sets"]').click();
+ await expect(page.locator('#equipment-root .gear-piece')).toHaveCount(2);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
+ expect(errors).toEqual([]);
+});
