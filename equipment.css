@@ -112,3 +112,11 @@
 .gear-achievement-toast small{font-size:.8rem;color:#bfe8ce}
 @keyframes gear-toast-enter{from{opacity:0;transform:translate(-50%,-25px) scale(.95)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 @media(prefers-reduced-motion:reduce){.gear-achievement-toast{animation:none}}
+
+.gear-share-controls{margin:12px 0;padding:14px;border:1px solid #54816e;border-radius:15px;background:#17312f;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.gear-share-controls>div{display:flex;flex-direction:column;gap:4px;margin-right:auto;min-width:170px}
+.gear-share-controls strong{color:#e1f6ec;font-size:.88rem}
+.gear-share-controls small{color:#a5c4b8;font-size:.73rem;line-height:1.4}
+.gear-share-controls button{background:#234b3f;border:1px solid #82bca0;color:#e0ffef;border-radius:10px;padding:10px 12px;font-size:.75rem;font-weight:800}
+.gear-share-controls button:focus-visible{outline:2px solid #92e6b5;outline-offset:2px}
+@media(max-width:520px){.gear-share-controls{flex-direction:column;align-items:stretch}.gear-share-controls button{width:100%}}
