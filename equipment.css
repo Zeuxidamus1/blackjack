@@ -103,3 +103,12 @@
  #inventory .gear-source-list{width:100%}
 }
 @media(prefers-reduced-motion:reduce){#inventory .gear-progress-track>span{transition:none}}
+
+/* Short, accessible achievement celebration; never blocks gameplay controls. */
+.gear-achievement-toast{position:fixed;z-index:2500;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%);display:flex;gap:12px;align-items:center;max-width:calc(100vw - 24px);width:max-content;padding:14px 20px;background:#194636;border:1px solid #94e9af;border-radius:16px;box-shadow:0 12px 35px #000b;color:#f1ffe8;pointer-events:none;animation:gear-toast-enter .4s ease-out both}
+.gear-achievement-toast>span{font-size:2rem}
+.gear-achievement-toast>div{display:flex;flex-direction:column;gap:4px}
+.gear-achievement-toast strong{font-size:1rem}
+.gear-achievement-toast small{font-size:.8rem;color:#bfe8ce}
+@keyframes gear-toast-enter{from{opacity:0;transform:translate(-50%,-25px) scale(.95)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.gear-achievement-toast{animation:none}}
