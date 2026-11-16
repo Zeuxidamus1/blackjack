@@ -335,14 +335,14 @@ test('reveal phase fades in once and selecting loot does not replay the entrance
   await page.locator('[data-cr="vault"]').click();
   expect(errors).toEqual([]);
 });
-test('single opening presents dominant item, exact GP and Sell/Vault',async({page})=>{
+test('single opening presents dominant item, exact GP and Sell/Bank',async({page})=>{
   const errors=await setup(page);
   await purchase(page,1);
   await expect(page.locator('.cr-single-name')).toHaveText('Rune scimitar');
   await expect(page.locator('.cr-single-info')).toContainText('12,000 GP');
   await page.locator('#cr-reveal [data-cr="vault"]').click();
   await expect(page.locator('#cr-reveal')).toBeHidden();
-  await page.getByRole('button',{name:'Inventory'}).click();
+  await page.locator('nav.tabs [data-view="inventory"]').click();
   await expect(page.locator('#owned')).toContainText('Rune scimitar');
   expect(errors).toEqual([]);
 });
@@ -463,7 +463,7 @@ test('selecting multi-pack rewards never remounts the scene or previously reveal
     expect(stable).toBe(true);
     await expect(page.locator('.cr-results')).not.toHaveClass(/cr-phase-enter/);
   }
-  await expect(page.locator('[data-cr="vault"]')).toHaveText('VAULT (1)');
+  await expect(page.locator('[data-cr="vault"]')).toHaveText('BANK (1)');
   await page.locator('[data-cr="vault"]').click();
   await expect(page.locator('.cr-result-card')).toHaveCount(3);
   await page.locator('[data-cr="vault"]').click();
@@ -483,7 +483,7 @@ test('four-packs: select 2, sell only selected, vault the rest atomically',async
   await expect(page.locator('.cr-result-card[aria-pressed="true"]')).toHaveCount(2);
   await page.locator('[data-cr="sell"]').click();
   await expect(page.locator('.cr-result-card')).toHaveCount(2);
-  await expect(page.locator('[data-cr="vault"]')).toContainText('VAULT ALL');
+  await expect(page.locator('[data-cr="vault"]')).toContainText('BANK ALL');
   await page.locator('[data-cr="vault"]').click();
   await expect(page.locator('#cr-reveal')).toBeHidden();
   const backend=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
@@ -648,7 +648,7 @@ async function prepareInventory(page,qty=4){
  await revealAll(page,qty);
  await page.locator('[data-cr="vault"]').click();
  await expect(page.locator('#cr-reveal')).toBeHidden();
- await page.getByRole('button',{name:'Inventory'}).click();
+ await page.locator('nav.tabs [data-view="inventory"]').click();
  await expect(page.locator('#owned .item')).toHaveCount(qty);
 }
 
@@ -699,7 +699,7 @@ test('Listed inventory items cannot be selected for bulk sale',async({page})=>{
  });
  await page.reload();
  await page.locator('#games [data-act="game"][data-id="runescape"]').click();
- await page.getByRole('button',{name:'Inventory'}).click();
+ await page.locator('nav.tabs [data-view="inventory"]').click();
  await page.locator('#inventory-mode-button').click();
  await expect(page.locator('#owned .inventory-entry.is-unavailable')).toHaveCount(1);
  await expect(page.locator('#owned .inventory-select-overlay')).toHaveCount(2);
@@ -818,7 +818,7 @@ test('Duplicate stacking, expansion and select-spares sell extra copies while pr
  });
  await page.reload();
  await page.locator('#games [data-act="game"][data-id="runescape"]').click();
- await page.getByRole('button',{name:'Inventory'}).click();
+ await page.locator('nav.tabs [data-view="inventory"]').click();
  await expect(page.locator('#inventory-overview')).toContainText('1');
  await expect(page.locator('#inventory-overview')).toContainText('3 unique types');
  await page.locator('#inventory-group').check();
@@ -871,7 +871,7 @@ test('assigned-value pet can be vaulted and later sold via inventory bulk select
   await purchase(page,1);
   await page.locator('#cr-reveal [data-cr="vault"]').click();
   await expect(page.locator('#cr-reveal')).toBeHidden();
-  await page.getByRole('button',{name:'Inventory'}).click();
+  await page.locator('nav.tabs [data-view="inventory"]').click();
   await expect(page.locator('#owned .item')).toHaveCount(1);
   await expect(page.locator('#owned .item-icon')).toHaveAttribute(
     'src','https://static.runelite.net/cache/item/icon/13262.png');
@@ -982,7 +982,7 @@ for(const viewport of [{width:1680,height:900},{width:1280,height:720},{width:10
 
 
 for(const viewport of [{width:1680,height:900},{width:1280,height:720},{width:1024,height:600}]){
-  test('desktop final results and Sell All/Vault All fit at '+viewport.width+'x'+viewport.height,async({page})=>{
+  test('desktop final results and Sell All/Bank All fit at '+viewport.width+'x'+viewport.height,async({page})=>{
     const errors=await setup(page,{viewport});
     await purchase(page,5);
     await revealAll(page,5);
