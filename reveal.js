@@ -198,7 +198,8 @@
     }
     render(){
       if(root.hidden||!this.batch)return;
-      const phaseChanged=this.phase!==this.renderedPhase;
+      const previousPhase=this.renderedPhase;
+      const phaseChanged=this.phase!==previousPhase;
       this.renderedPhase=this.phase;
       const entry=this.entry();
       const tone=/^#[0-9a-f]{3,8}$/i.test(entry.accent||'')?entry.accent:'#ce8954';
@@ -263,8 +264,45 @@
           '<div class="cr-results-scroll"><div class="cr-results-grid">'+cards+'</div></div></section>'+
           this.actions(targets,true);
       }
-      root.innerHTML=this.ambient()+'<div class="cr-shell">'+top+inside+
+      const shellMarkup='<div class="cr-shell">'+top+inside+
         this.info()+(this.toast?'<div class="cr-toast" role="status">'+h(this.toast)+'</div>':'')+'</div>';
+      let transitionedInPlace=false;
+      // The card-to-results transition must not tear down the animated sky,
+      // radial glow, shell or toolbar. Rebuilding the entire overlay replayed
+      // background animations and briefly faded the new scene, causing a flash.
+      if(previousPhase==='cards'&&this.phase==='results'){
+        const shell=root.querySelector('.cr-shell');
+        const oldStage=shell?.querySelector('.cr-stage');
+        const oldActions=shell?.querySelector('.cr-subactions');
+        if(shell&&oldStage&&oldActions){
+          const staged=document.createElement('template');
+          staged.innerHTML=shellMarkup;
+          const nextStage=staged.content.querySelector('.cr-stage');
+          const nextActions=staged.content.querySelector('.cr-actions');
+          if(nextStage&&nextActions){
+            oldStage.replaceWith(nextStage);
+            oldActions.replaceWith(nextActions);
+            const note=staged.content.querySelector('.cr-sale-note');
+            if(note)nextActions.after(note);
+            shell.querySelector('.cr-detail')?.remove();
+            shell.querySelector('.cr-toast')?.remove();
+            const info=staged.content.querySelector('.cr-detail');
+            const toast=staged.content.querySelector('.cr-toast');
+            if(info)shell.append(info);
+            if(toast)shell.append(toast);
+            transitionedInPlace=true;
+          }
+        }
+      }
+      if(!transitionedInPlace){
+        // Preserve both ambient layers on other redraws too; this avoids
+        // resetting the long-running starfield animation on routine updates.
+        if(!root.querySelector(':scope > .cr-sky')||!root.querySelector(':scope > .cr-light')){
+          root.innerHTML=this.ambient();
+        }
+        root.querySelector(':scope > .cr-shell')?.remove();
+        root.insertAdjacentHTML('beforeend',shellMarkup);
+      }
       if(this.phase==='results'){
         // A focused Reveal All button can leave the scrollable overlay offset
         // horizontally when the five-item grid replaces the card backs.
@@ -273,7 +311,9 @@
         const resultsScroll=root.querySelector('.cr-results-scroll');
         if(resultsScroll)resultsScroll.scrollLeft=0;
       }
-      if(phaseChanged)root.querySelector('.cr-stage')?.classList.add('cr-phase-enter');
+      // A phase-enter opacity animation fades the entire results panel from
+      // 55%, perceived as a white/dark flash. Keep results fully opaque.
+      if(phaseChanged&&!transitionedInPlace)root.querySelector('.cr-stage')?.classList.add('cr-phase-enter');
       if(this.phase==='cards' && this.newFlips.size){
         const flipped=[...this.newFlips];
         this.newFlips.clear();
