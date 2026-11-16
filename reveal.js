@@ -280,8 +280,11 @@
           const nextStage=staged.content.querySelector('.cr-stage');
           const nextActions=staged.content.querySelector('.cr-actions');
           if(nextStage&&nextActions){
+            // Subactions live *inside* the old stage. Once that stage is
+            // replaced, its descendants are disconnected. Insert the new
+            // action bar after the live replacement stage instead.
             oldStage.replaceWith(nextStage);
-            oldActions.replaceWith(nextActions);
+            nextStage.after(nextActions);
             const note=staged.content.querySelector('.cr-sale-note');
             if(note)nextActions.after(note);
             shell.querySelector('.cr-detail')?.remove();
