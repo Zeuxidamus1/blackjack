@@ -1,0 +1,105 @@
+/* Equipment, sets and achievements: OSRS-inspired, Challenger Rips dark mobile layout. */
+#inventory .gear-main-nav{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 15px}
+#inventory .gear-main-nav button{background:#12292e;border:1px solid #426860;border-radius:12px;color:#a9d7c7;padding:10px 18px;font-weight:800;font-size:.86rem}
+#inventory .gear-main-nav button.is-active{background:#245a49;border-color:#79dab0;color:#e0fff1}
+#inventory .gear-subtabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 15px;scrollbar-width:none}
+#inventory .gear-subtab{flex:0 0 auto;padding:10px 13px;border-radius:10px;background:#132c30;border:1px solid #365755;color:#b7d3ca;font-weight:800}
+#inventory .gear-subtab.is-active{color:#baf8d5;border-color:#6fd6a9;background:#1d5142}
+#inventory .gear-heading{display:flex;justify-content:space-between;align-items:start;gap:14px;margin:5px 0 18px;flex-wrap:wrap}
+#inventory .gear-heading h2{font-size:clamp(1.4rem,5vw,2rem);letter-spacing:-.04em}
+#inventory .gear-heading p{font-size:.82rem;color:#9fb8b4;margin-top:4px;line-height:1.5;max-width:620px}
+#inventory .gear-eyebrow{color:#89d8b5;font-size:.64rem;font-weight:850;letter-spacing:.14em}
+#inventory .gear-stat-pill{border:1px solid #497d6e;border-radius:999px;padding:8px 12px;color:#b6efd5;font-size:.75rem;font-weight:850}
+#inventory .gear-display{display:grid;grid-template-columns:minmax(255px,390px) minmax(0,1fr);align-items:start;gap:15px}
+#inventory .gear-slot-stage{padding:19px 12px 24px;border:1px solid #4b6a65;border-radius:20px;min-width:0;background:radial-gradient(ellipse at 50% 45%,#28554e90,transparent 74%),linear-gradient(160deg,#172e34,#09181c)}
+#inventory .gear-stage-title{text-align:center;font-weight:800;color:#a9c4ba;font-size:.75rem;margin-bottom:12px}
+#inventory .gear-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;max-width:330px;margin:0 auto}
+#inventory .gear-slot-space{aspect-ratio:1.14}
+#inventory .gear-slot{aspect-ratio:1.14;min-width:0;border:1px solid #54736d;border-radius:12px;background:#0e2228cc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;color:#c5d9d5;cursor:pointer}
+#inventory .gear-slot.has-item{border-color:#65b899;background:#23413a}
+#inventory .gear-slot.is-active{outline:2px solid #83eab7;outline-offset:2px}
+#inventory .gear-slot.is-blocked{opacity:.52}
+#inventory .gear-empty-glyph{font-size:clamp(1.4rem,4vw,2rem);line-height:1}
+#inventory .gear-slot small{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;color:#a8c2ba}
+#inventory .gear-sprite{width:51px;height:51px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 6px 7px #000a);max-width:100%}
+#inventory .gear-art-fallback{font-size:1.7rem}
+#inventory .gear-inspector{min-width:0;padding:18px;background:#11282d;border-radius:18px;border:1px solid #3b635b}
+#inventory .gear-inspector h3{font-size:1.4rem;margin:3px 0 11px}
+#inventory .gear-inspector p{font-size:.84rem}
+#inventory .gear-equipped-detail{display:flex;gap:12px;align-items:center;padding:12px;background:#193a37;border-radius:12px;margin-bottom:12px}
+#inventory .gear-equipped-detail div{display:flex;flex-direction:column;gap:4px}
+#inventory .gear-equipped-detail small{font-size:.75rem;color:#b0c9bf}
+#inventory .gear-choices-title{font-size:.81rem;color:#d9eee5;font-weight:850;margin:18px 0 10px}
+#inventory .gear-candidate-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;max-height:350px;overflow-y:auto}
+#inventory .gear-candidate{display:grid;justify-items:center;gap:7px;background:#0d2025;border:1px solid #355451;border-radius:13px;padding:13px;min-width:0}
+#inventory .gear-candidate-name{text-align:center;font-size:.72rem;font-weight:800;overflow-wrap:anywhere}
+#inventory .gear-candidate strong{color:#91ebba;font-size:.7rem}
+#inventory .gear-primary,#inventory .gear-secondary{border-radius:10px;font-size:.77rem;font-weight:800;padding:9px 12px;line-height:1.25}
+#inventory .gear-primary{border:1px solid #7fe4b1;background:#1b7357;color:#effff7}
+#inventory .gear-secondary{border:1px solid #568273;background:#17342e;color:#bdeed7}
+#inventory .gear-primary:focus-visible,#inventory .gear-secondary:focus-visible{outline:2px solid #b1f9d6;outline-offset:2px}
+#inventory .gear-empty-copy{font-size:.82rem;color:#a8c0b8;line-height:1.5;padding:8px 0}
+#inventory .gear-active-goal{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:17px;padding:16px;border:1px solid #618b76;border-radius:15px;background:linear-gradient(120deg,#1c453b,#12282c)}
+#inventory .gear-active-goal>div{display:flex;flex-direction:column;gap:5px}
+#inventory .gear-active-goal strong{font-size:1.12rem}
+#inventory .gear-active-goal small{font-size:.76rem;color:#a3c3b7}
+#inventory .gear-small-note{font-size:.75rem;color:#a8bcb7;line-height:1.5;margin:12px 0}
+#inventory .gear-set-card{padding:19px;margin-bottom:15px;background:linear-gradient(150deg,#183438,#0e2226);border-radius:18px;border:1px solid #456861;min-width:0}
+#inventory .gear-set-top{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#inventory .gear-set-top h3{margin:7px 0 4px;font-size:1.28rem}
+#inventory .gear-set-top p{font-size:.79rem;line-height:1.5}
+#inventory .gear-tier{display:inline-block;text-transform:uppercase;font-size:.62rem;letter-spacing:.11em;font-weight:850;color:#bcebd0}
+#inventory .gear-tier-prestige{color:#f9cd84}
+#inventory .gear-tier-advanced{color:#b7a5f5}
+#inventory .gear-done-pill,#inventory .gear-pinned-pill{border:1px solid #73b99e;padding:6px 10px;border-radius:30px;font-size:.7rem;color:#ccffdf}
+#inventory .gear-progress-label{display:flex;justify-content:space-between;align-items:center;font-size:.81rem;font-weight:850;margin-top:17px}
+#inventory .gear-progress-track{width:100%;height:9px;border-radius:99px;background:#07191c;overflow:hidden;margin-top:6px}
+#inventory .gear-progress-track>span{display:block;height:100%;background:#60d6a1;border-radius:99px}
+#inventory .gear-progress-minor{color:#a2c8b9;font-size:.73rem;margin:7px 0 15px}
+#inventory .gear-piece-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#inventory .gear-piece{min-width:0;border:1px solid #385750;border-radius:12px;padding:10px;background:#0a1f24;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+#inventory .gear-piece.is-missing{border-color:#354b4b}
+#inventory .gear-piece-art{position:relative;display:grid;place-items:center;width:76px;height:67px;max-width:100%}
+#inventory .gear-piece-art .gear-sprite{width:55px;height:55px}
+#inventory .gear-piece-lock{position:absolute;inset:0;display:grid;place-items:center;font-size:1.45rem;background:#06141974;border-radius:8px;text-shadow:0 2px 5px #000}
+#inventory .gear-piece.is-missing .gear-piece-art img{opacity:.65}
+#inventory .gear-piece strong{font-size:.76rem;line-height:1.35;overflow-wrap:anywhere}
+#inventory .gear-piece small{font-size:.65rem;color:#a6c1b8;line-height:1.3}
+#inventory .gear-source-details{width:100%;border-top:1px solid #334b4a;padding-top:7px;text-align:left;margin-top:auto}
+#inventory .gear-source-details summary{cursor:pointer;font-size:.67rem;font-weight:750;color:#9ce2bd;text-align:center}
+#inventory .gear-source-list{width:min(420px,80vw);max-width:100%;padding-top:7px}
+#inventory .gear-source{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:7px 0;border-top:1px solid #29403c}
+#inventory .gear-source div{display:flex;flex-direction:column;gap:3px}
+#inventory .gear-source strong{font-size:.68rem}
+#inventory .gear-source small{font-size:.63rem}
+#inventory .gear-source-right{align-items:flex-end!important}
+#inventory .gear-source-right button{font-size:.61rem;padding:5px 7px}
+#inventory .gear-set-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}
+#inventory .gear-badge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:12px}
+#inventory .gear-badge{background:#11272c;border:1px solid #4a7164;border-radius:15px;padding:17px;display:flex;align-items:start;flex-direction:column;gap:9px}
+#inventory .gear-badge-icon{font-size:1.8rem}
+#inventory .gear-badge strong{font-size:1.02rem}
+#inventory .gear-badge small,#inventory .gear-badge-date{color:#9fbab2;font-size:.73rem}
+#inventory .gear-showcase{padding:16px;border:1px solid #527c6b;border-radius:17px;background:#142f2d;margin:15px 0}
+#inventory .gear-showcase-items,.gear-showcase-items{display:flex;flex-wrap:wrap;gap:9px}
+#inventory .gear-showcase-item,.gear-showcase-item{background:#10272a;border:1px solid #42635f;border-radius:12px;padding:12px;display:flex;align-items:center;flex-direction:column;gap:5px;width:110px;max-width:47%}
+#inventory .gear-showcase-item strong,.gear-showcase-item strong{font-size:.72rem;line-height:1.2;text-align:center}
+#inventory .gear-showcase-item small,.gear-showcase-item small{color:#a5c9bd;font-size:.66rem}
+#inventory .gear-showcase-badges,.gear-showcase-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+#inventory .gear-showcase-badge,.gear-showcase-badge{border:1px solid #8cab6a;color:#dfeda7;border-radius:30px;padding:7px 10px;font-size:.73rem}
+.gear-showcase{margin:12px 0 18px;padding:15px;background:#11282b;border:1px solid #496f62;border-radius:16px}
+.gear-showcase .gear-heading{margin-bottom:12px}
+.gear-showcase h3{font-size:1.05rem}
+.gear-showcase .gear-sprite{width:44px;height:44px;image-rendering:pixelated;object-fit:contain}
+@media(max-width:780px){#inventory .gear-display{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){
+ #inventory .gear-piece-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #inventory .gear-slots{gap:6px;max-width:304px}
+ #inventory .gear-slot-stage{padding:14px 8px}
+ #inventory .gear-slot{border-radius:10px}
+ #inventory .gear-inspector,#inventory .gear-set-card{padding:13px}
+ #inventory .gear-set-actions{display:grid;grid-template-columns:1fr 1fr}
+ #inventory .gear-active-goal{flex-direction:column;align-items:stretch}
+ #inventory .gear-source-list{width:100%}
+}
+@media(prefers-reduced-motion:reduce){#inventory .gear-progress-track>span{transition:none}}
