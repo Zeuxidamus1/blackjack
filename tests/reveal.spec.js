@@ -1035,7 +1035,18 @@ for(const viewport of [{width:1280,height:720},{width:375,height:812}]){
         layerCount:root.querySelectorAll('.cr-sky,.cr-light').length
       };
     });
-    await revealAll(page,5);
+    await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
+    await expect(page.locator('#cr-reveal .cr-turn[disabled]')).toHaveCount(5);
+    // Capture the shell immediately after the final card flip, before
+    // the scheduled transition. Earlier card updates may legitimately rerender.
+    await page.evaluate(()=>{
+      const root=document.querySelector('#cr-reveal');
+      window.__sceneImmediatelyBeforeResults={
+        shell:root.querySelector('.cr-shell'),
+        toolbar:root.querySelector('.cr-toolbar')
+      };
+    });
+    await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
     const state=await page.evaluate(()=>{
       const root=document.querySelector('#cr-reveal');
       const before=window.__revealBeforeResults;
@@ -1043,8 +1054,8 @@ for(const viewport of [{width:1280,height:720},{width:375,height:812}]){
       return {
         sameSky:root.querySelector('.cr-sky')===before.sky,
         sameGlow:root.querySelector('.cr-light')===before.glow,
-        sameShell:root.querySelector('.cr-shell')===before.shell,
-        sameToolbar:root.querySelector('.cr-toolbar')===before.toolbar,
+        sameShell:root.querySelector('.cr-shell')===window.__sceneImmediatelyBeforeResults.shell,
+        sameToolbar:root.querySelector('.cr-toolbar')===window.__sceneImmediatelyBeforeResults.toolbar,
         layerCount:root.querySelectorAll('.cr-sky,.cr-light').length,
         stageAnimation:stage.classList.contains('cr-phase-enter'),
         opacity:getComputedStyle(stage).opacity,
@@ -1074,11 +1085,15 @@ test('individual last-card reveal transitions without reconstructing ambient sce
     await card.click();
     if(i<4)await expect(page.locator('#cr-reveal .cr-turn:not([disabled])')).toHaveCount(4-i);
   }
+  await expect(page.locator('#cr-reveal .cr-turn[disabled]')).toHaveCount(5);
+  await page.evaluate(()=>{
+    window.__shellBeforeLastResult=document.querySelector('#cr-reveal .cr-shell');
+  });
   await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
   expect(await page.evaluate(()=>{
     const root=document.querySelector('#cr-reveal');
     return root.querySelector('.cr-sky')===window.__ambientBeforeLast.sky &&
-      root.querySelector('.cr-shell')===window.__ambientBeforeLast.shell &&
+      root.querySelector('.cr-shell')===window.__shellBeforeLastResult &&
       !root.querySelector('.cr-results').classList.contains('cr-phase-enter');
   })).toBe(true);
   expect(errors).toEqual([]);
