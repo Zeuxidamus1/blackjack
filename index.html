@@ -702,7 +702,7 @@ async function loadEquipment(force=false){
   }finally{
     if(ticket===equipmentGeneration){
       equipmentLoading=false;
-      if(view==='inventory'||view==='showcase')render();
+      if(view==='inventory'||view==='showcase'||view==='shop')render();
     }
   }
 }
@@ -1324,7 +1324,7 @@ function render() {
   document.querySelector('nav.tabs').hidden=view==='games'||view==='shared';
   document.querySelectorAll('[data-view]').forEach(b=>b.dataset.view===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   if(view==='games')renderGameLibrary();
-  if(view==='shop') renderShop(ready);
+  if(view==='shop'){renderShop(ready);if(ready&&!equipmentStatus&&!equipmentLoading&&!equipmentError)void loadEquipment();}
   if(view==='earn') renderEarn();
   if(view==='missions')renderMissions();
   if(view==='moderator'){
@@ -1505,7 +1505,13 @@ function renderShop(ready){
   const resume=batch?'<div class="case-toolbar">'+button('Resume opening','resume','','true')+'</div>':'';
   if(!category){
     const intro='<div class="premium-categories-heading"><h2>Choose your adventure</h2></div>';
-    el('shop').innerHTML='<div class="premium-categories">'+intro+'<div class="premium-category-grid">'+
+    const goal=equipmentStatus?.sets?.find(x=>x.id===equipmentStatus.goal)||equipmentStatus?.sets?.find(x=>x.id==='rune');
+    const goalCta=goal?'<div class="gear-home-goal">'+
+      '<div><span class="gear-eyebrow">'+(equipmentStatus.goal?'ACTIVE EQUIPMENT GOAL':'SUGGESTED STARTER GOAL')+'</span>'+
+      '<strong>'+safe(goal.name)+'</strong><small>'+goal.owned+' / '+goal.required+
+      ' currently owned · '+goal.discovered+' / '+goal.required+' discovered</small></div>'+
+      button('View missing pieces','gear-open-goal')+'</div>':'';
+    el('shop').innerHTML='<div class="premium-categories">'+intro+goalCta+'<div class="premium-category-grid">'+
       packs.map(pack=>'<button type="button" class="premium-category" data-act="category" data-id="'+pack.id+'" aria-label="Open '+safe(pack.name)+'" '+(!ready?'disabled':'')+'>'+
         '<span class="premium-category-art">'+(packCases(pack.id).length?foilArt(packCases(pack.id)[0]):packArt(pack))+'</span>'+
         '<span class="premium-category-info"><strong>'+safe(pack.name)+'</strong><small>'+safe(pack.note)+'</small><span class="premium-category-link">Explore packs →</span></span></button>').join('')+
@@ -1716,9 +1722,14 @@ document.addEventListener('click',event=>{
     });
     return;
   }
+  if(act==='gear-open-goal'){
+    bankPanel='equipment';gearTab='sets';view='inventory';
+    if(!equipmentStatus&&!equipmentLoading){equipmentError=null;void loadEquipment();}
+    render();return;
+  }
   if(act==='gear-main'){
     if(view!=='inventory'||!['bank','equipment'].includes(id))return;
-    bankPanel=id;inventoryMode=false;inventorySelected.clear();
+    bankPanel=id;if(id==='equipment')gearTab='sets';inventoryMode=false;inventorySelected.clear();
     if(!equipmentStatus&&!equipmentLoading){equipmentError=null;void loadEquipment();}
     render();return;
   }
