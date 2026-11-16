@@ -1,5 +1,5 @@
 /* Network-first app navigation; no caching of Supabase or authenticated data. */
-const NAME='challenger-rips-shell-20261116-v24', PREFIX='challenger-rips-shell-';
+const NAME='challenger-rips-shell-20261116-v25', PREFIX='challenger-rips-shell-';
 const BASE=new URL(self.registration.scope),OFFLINE=new URL('offline.html',BASE).href;
 const ASSETS=['offline.html','manifest.json','app-install.js','reveal.js','reveal.css','motion.css','progression.js','progression.css','economy.js','economy.css','missions.js','missions.css','equipment.js','equipment.css','premium-packs.css','inventory-step5.css','moderator.js','moderator.css','wallet-feedback.js','wallet-feedback.css','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png'];
 const ASSET_PATHS=new Set(ASSETS.map(p=>new URL(p,BASE).pathname));
