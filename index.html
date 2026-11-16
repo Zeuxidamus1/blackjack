@@ -1107,9 +1107,15 @@ function button(label,action,id='',primary=false,disabled=false) {
   return '<button type="button" class="'+(primary?'primary':'quiet')+'" data-act="'+action+'" data-id="'+id+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
 }
 const empty = msg => '<p class="empty">'+msg+'</p>';
+function equippedSlotFor(instance){
+  return equipmentStatus?.slots?.find(x=>x.instance===instance)?.slot||null;
+}
+function equipDefinitionFor(itemId){
+  return equipmentStatus?.definitions?.find(d=>d.id===itemId)||null;
+}
 function eligibleForInventorySale(asset){
   const item=catalog.get(asset.item);
-  return Boolean(!asset.protected&&!asset.listing&&eligibleCatalogSale(item));
+  return Boolean(!asset.protected&&!asset.listing&&!equippedSlotFor(asset.id)&&eligibleCatalogSale(item));
 }
 function inventoryGroups(items){
   const grouped=new Map();
@@ -1144,15 +1150,20 @@ function inventoryItemMarkup(asset,counts,eligibility){
   const detail=(asset.pulled?'Personally pulled':'Bought on the market')+' · '+guideValue(item);
   const locked=Boolean(asset.protected);
   const duplicate=(counts.get(asset.item)||0)>1;
-  const tag=locked?'<span class="inventory-protected-tag">🔒 Protected</span>':'';
+  const equippedSlot=equippedSlotFor(asset.id);
+  const definition=equipDefinitionFor(asset.item);
+  const tag=(locked?'<span class="inventory-protected-tag">🔒 Protected</span>':'')+
+    (equippedSlot?'<span class="inventory-protected-tag">⚔ Equipped · '+safe(equippedSlot)+'</span>':'');
   if(!inventoryMode){
     const actions=asset.listing?button('Cancel existing listing','cancel',asset.listing):
       button(locked?'Unlock item':'Protect item','inventory-lock',asset.id)+
       button(asset.pinned?'Remove from showroom':'Display in showroom','pin',asset.id)+
-      (!locked&&eligibleCatalogSale(item)?button((fixedPetGuide(item)?'Sell for assigned GP · ':
+      (equippedSlot?button('Unequip','gear-unequip',equippedSlot):
+       definition?button('Equip','gear-equip',asset.id):'')+
+      (!locked&&!equippedSlot&&eligibleCatalogSale(item)?button((fixedPetGuide(item)?'Sell for assigned GP · ':
         (Date.now()-Date.parse(item.guideTime)>GE_QUOTE_PREFERRED_AGE_MS?'Sell at last GE quote · ':'Sell to GE · '))+
         price(estimate(item)),'sell',asset.id):'')+
-      (!locked&&!eligibleCatalogSale(item)&&item.ge?button('Refresh GE quote','inventory-refresh'):'')+
+      (!locked&&!equippedSlot&&!eligibleCatalogSale(item)&&item.ge?button('Refresh GE quote','inventory-refresh'):'')+
       (!locked&&duplicate&&asset.salvage?button('Salvage · '+price(asset.salvage),'salvage',asset.id):'');
     return card(item,detail,tag+'<div class="actions">'+actions+'</div>')
       .replace('<article class="item"','<article class="item'+(locked?' inventory-protected':'')+'"');
@@ -1161,6 +1172,7 @@ function inventoryItemMarkup(asset,counts,eligibility){
   const active=inventorySelected.has(asset.id);
   const reason=locked?'Protected — unlock this item to sell':
     asset.listing?'Listed — cancel the listing first':
+    equippedSlot?'Equipped — unequip before selling':
     item.ge?'Verified GE quote expired; refresh to sell':'No available sale value';
   const html=card(item,detail,tag+(canSell?'<p class="inventory-item-hint">'+
     (active?'Selected for sale':'Tap item to select')+'</p>':
@@ -1183,6 +1195,12 @@ function renderInventory(){
     if(!eligibleIds.has(id))inventorySelected.delete(id);
   }
   el('inventory-overview').innerHTML=inventorySummary(items,grouped);
+  const goal=equipmentStatus?.sets?.find(s=>s.id===equipmentStatus.goal);
+  el('bank-goal').innerHTML=goal?
+    '<div class="gear-active-goal"><div><span class="gear-eyebrow">ACTIVE EQUIPMENT GOAL</span><strong>'+
+    safe(goal.name)+'</strong><small>'+goal.owned+' / '+goal.required+' owned · '+
+    goal.discovered+' / '+goal.required+' discovered</small></div>'+
+    button('See missing pieces','gear-main','equipment',true)+'</div>':'';
   const query=el('inventory-search').value.trim().toLowerCase();
   const filter=el('inventory-filter').value;
   const sort=el('inventory-sort').value;
@@ -1192,6 +1210,8 @@ function renderInventory(){
     const item=catalog.get(a.item);
     if(!item)return false;
     if(query&&!item.name.toLowerCase().includes(query))return false;
+    if(filter==='equippable')return Boolean(equipDefinitionFor(a.item));
+    if(filter==='equipped')return Boolean(equippedSlotFor(a.id));
     if(filter==='duplicates')return (counts.get(a.item)||0)>1;
     if(filter==='sellable')return eligibleIds.has(a.id);
     if(filter==='protected')return Boolean(a.protected);
@@ -1337,12 +1357,30 @@ function render() {
       button('More Info','collection-info',safe(item.id)),!isCollected(item),true,chance(item))).join('')||
       empty('No items match these filters.');
   }
-  if(view==='inventory') renderInventory();
+  if(view==='inventory'){
+    el('bank-panel').hidden=bankPanel!=='bank';
+    el('equipment-panel').hidden=bankPanel==='bank';
+    el('inventory').querySelectorAll('.gear-main-nav button').forEach(b=>{
+      b.classList.toggle('is-active',b.dataset.id===bankPanel);
+      b.setAttribute('aria-pressed',String(b.dataset.id===bankPanel));
+    });
+    if(bankPanel==='bank')renderInventory();
+    else{
+      const root=el('equipment-root');
+      if(equipmentError)root.innerHTML='<p class="gear-empty-copy">'+safe(equipmentError)+
+         '</p>'+button('Retry','gear-refresh');
+      else if(equipmentStatus)window.ChallengerGear?.render(root,equipmentStatus,state?.items||[],gearTab,gearFocus);
+      else root.innerHTML='<p class="gear-empty-copy">Loading equipment and collection progress…</p>';
+      if(!equipmentStatus&&!equipmentLoading&&!equipmentError)void loadEquipment();
+    }
+  }
   if(view==='showcase') {
     const pinned=state?.items?.filter(i=>i.pinned)||[];
-    el('share').disabled=!pinned.length;
+    el('share').disabled=!pinned.length&&!showroomGear?.slots?.length&&!showroomGear?.badges?.length;
+    el('showcase-equipment').innerHTML=window.ChallengerGear?.renderShowcase(showroomGear)||'';
     el('pins').innerHTML=pinned.map(i=>card(catalog.get(i.item),i.pulled?'Personally pulled':'Bought on the market')).join('');
   }
+  if(view==='shared')el('shared-equipment').innerHTML=window.ChallengerGear?.renderShowcase(sharedGear)||'';
   if(view==='shared') el('sharedItems').innerHTML=shared?
     '<h3>'+safe(shared.name)+'</h3>'+(shared.items.map(i=>card(catalog.get(i.item),i.pulled?'Personally pulled':'Bought on the market')).join('')||empty('This shelf is empty.')):
     empty('Sign in to view this showcase.');
@@ -1633,9 +1671,61 @@ document.addEventListener('click',event=>{
       inventoryMode=false;inventorySelected.clear();
     }
     if(b.dataset.view==='missions'){missionsGeneration++;missionsStatus=null;missionsError=false;}
-    view=b.dataset.view;notice();render();return;
+    view=b.dataset.view;
+    if(view==='inventory'&&!equipmentStatus&&!equipmentLoading)void loadEquipment();
+    if(view==='showcase'&&state?.id)void loadShowroomGear(state.id);
+    notice();render();return;
   }
   const {act,id}=b.dataset;
+  if(act==='gear-main'){
+    if(view!=='inventory'||!['bank','equipment'].includes(id))return;
+    bankPanel=id;inventoryMode=false;inventorySelected.clear();
+    if(!equipmentStatus&&!equipmentLoading){equipmentError=null;void loadEquipment();}
+    render();return;
+  }
+  if(act==='gear-tab'){
+    if(!['equipment','sets','achievements'].includes(id))return;
+    gearTab=id;render();return;
+  }
+  if(act==='gear-focus'){
+    if(!window.ChallengerGear?.slots[id])return;
+    gearFocus=id;render();return;
+  }
+  if(act==='gear-refresh'){
+    equipmentError=null;equipmentStatus=null;
+    void loadEquipment(true);render();return;
+  }
+  if(act==='gear-pack'){
+    const found=cases.find(c=>c.id===id);
+    if(!found)return;
+    navigateToCategory(found.pack);
+    bossIndex=Math.max(0,packCases().findIndex(c=>c.id===id));
+    render();return;
+  }
+  if(['gear-equip','gear-unequip','gear-equip-set','gear-goal','gear-title'].includes(act)){
+    if(!session)return;
+    const operation={
+      'gear-equip':['equip',{id}],
+      'gear-unequip':['unequip',{slot:id}],
+      'gear-equip-set':['equip_set',{set:id}],
+      'gear-goal':['goal',{set:id}],
+      'gear-title':['title',{code:id==='none'?null:id}]
+    }[act];
+    run(async()=>{
+      equipmentStatus=await equipmentRpc(operation[0],operation[1]);
+      await load();
+      if(act==='gear-equip'){gearFocus=equipmentStatus?.slots?.find(x=>x.instance===id)?.slot||gearFocus;}
+      if(act==='gear-title'&&state?.id)void loadShowroomGear(state.id);
+      notice({
+        'gear-equip':'Equipment updated.',
+        'gear-unequip':'Item returned to your Bank.',
+        'gear-equip-set':'Available set pieces equipped.',
+        'gear-goal':'Equipment goal pinned.',
+        'gear-title':'Showroom title updated.'
+      }[act]);
+    });
+    return;
+  }
   if(act==='mod-preset'){
     if(!moderatorStatus?.canAddGp||view!=='moderator')return;
     const field=el('mod-gp-amount');
@@ -1858,7 +1948,8 @@ document.addEventListener('click',event=>{
     if(act==='reveal-slot'&&activeSlot!==Number(id)){activeSlot=Number(id);moveCarousel(activeSlot);return;}
     run(()=>reveal(act==='reveal-slot'?Number(id):null));return;
   }
-  if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;view=sharedId?'shared':'games';category=null;selected=null;await load();});
+  if(act==='logout') run(async()=>{const result=await db.auth.signOut();if(result.error)throw result.error;session=null;shared=null;equipmentStatus=null;showroomGear=null;sharedGear=null;equipmentError=null;
+    view=sharedId?'shared':'games';category=null;selected=null;await load();});
   if(['cancel','pin','salvage','sell'].includes(act)) {
      if(act==='sell'){
         const item=catalog.get(state?.items?.find(a=>a.id===id)?.item);
