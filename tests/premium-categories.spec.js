@@ -206,7 +206,7 @@ test('Category switching preserves premium design and live selected GP informati
  await expect(page.locator('#boss-details h2')).toHaveText('Starter Loot');
  expect(errors).toEqual([]);
 });
-test('Clue purchase enters the same full-screen pack reveal and supports Vault',async({page})=>{
+test('Clue purchase enters the same full-screen pack reveal and supports Bank',async({page})=>{
  const errors=await setup(page);
  await go(page,'clue');
  await page.locator('#boss-details [data-act="purchase"]').click();
@@ -220,7 +220,7 @@ test('Clue purchase enters the same full-screen pack reveal and supports Vault',
  await expect(page.locator('#cr-reveal')).toBeHidden();
  expect(errors).toEqual([]);
 });
-test('Pet purchase enters the same premium reveal and offers Vault without an invalid GE sale',async({page})=>{
+test('Pet purchase enters the same premium reveal and offers Bank without an invalid GE sale',async({page})=>{
  const errors=await setup(page);
  await go(page,'pets');
  await page.locator('#boss-details [data-act="purchase"]').click();
