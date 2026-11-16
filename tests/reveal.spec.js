@@ -67,6 +67,92 @@ async function setup(page,{gp=100000,viewport,customPet=false,staleGeHours=null}
       rpc:async(_method,{action,payload}={})=>{
         const ok=data=>({data,error:null});
         const fail=msg=>({data:null,error:{message:msg}});
+        // Mock the separate, owner-authoritative Equipment RPC. The production
+        // database also has dedicated transaction and RLS checks.
+        if(_method==='rips_equipment_command'){
+          backend.equipmentSlots ||= {};
+          backend.achievements ||= [];
+          backend.goal ||= 'test_set';
+          const choices=mockCatalog.filter(c=>c.ge!=null);
+          const defs=choices.map((c,i)=>({
+            id:c.id,geId:c.ge,slot:i===0?'weapon':i===1?'legs':
+              i===2?'shield':i===3?'feet':'body',twoHanded:false
+          }));
+          const definition=item=>defs.find(d=>d.id===item);
+          const ownedItem=instance=>backend.inventory.find(i=>i.instance===instance&&i.status==='vaulted');
+          const equippedArray=()=>Object.entries(backend.equipmentSlots).map(([slot,instance])=>{
+            const item=ownedItem(instance),data=item?mockCatalog.find(c=>c.id===item.item):null;
+            return item&&data?{slot,instance,item:item.item,geId:data.ge,name:data.name,
+              value:data.guide,twoHanded:definition(item.item)?.twoHanded||false}:null;
+          }).filter(Boolean);
+          const pieces=choices.slice(0,2).map(c=>{
+            const asset=backend.inventory.find(i=>i.item===c.id&&i.status==='vaulted');
+            const selected=asset?Object.entries(backend.equipmentSlots).find(([k,v])=>v===asset.instance):null;
+            return {geId:c.ge,slot:definition(c.id).slot,name:c.name,
+              discovered:backend.inventory.some(i=>i.item===c.id),
+              owned:Boolean(asset),equipped:Boolean(selected),instance:asset?.instance||null,
+              sources:[{case:boss.id,name:boss.name,pack:'boss',price:boss.price,chance:.02}]};
+          });
+          const makeState=()=>{
+            const equipped=equippedArray();
+            if(equipped.length&&!backend.achievements.includes('first_equip'))
+              backend.achievements.push('first_equip');
+            if(pieces.every(p=>p.discovered)&&!backend.achievements.includes('first_set'))
+              backend.achievements.push('first_set');
+            const achievementName={first_equip:'First Steps',first_set:'Set Collector'};
+            const badges=backend.achievements.map(code=>({
+              code,title:achievementName[code]||code,description:'Earned by playing.',
+              earnedAt:now
+            }));
+            const set={id:'test_set',name:'Test Starter Kit',tier:'starter',
+              description:'Test collection using two real fixture reward items.',
+              pieces,required:pieces.length,
+              discovered:pieces.filter(p=>p.discovered).length,
+              owned:pieces.filter(p=>p.owned).length,
+              equipped:pieces.filter(p=>p.equipped).length,
+              completed:pieces.every(p=>p.owned),
+              historicalComplete:pieces.every(p=>p.discovered),
+              fullyEquipped:pieces.every(p=>p.equipped)};
+            save();
+            return {definitions:defs,slots:equipped,sets:[set],goal:backend.goal,
+              achievements:badges,title:backend.titleCode||null,eligibleTitles:badges};
+          };
+          if(action==='showcase'){
+            const snapshot=makeState();
+            return ok({name:'Playwright Tester',
+              title:backend.titleCode?'First Steps':null,
+              slots:snapshot.slots,badges:snapshot.achievements});
+          }
+          if(action==='equip'){
+            const asset=ownedItem(payload?.id);
+            if(!asset)return fail('This item is not owned or banked.');
+            const def=definition(asset.item);
+            if(!def)return fail('This item cannot be equipped.');
+            if(asset.listing)return fail('Cancel listing first.');
+            for(const slot of Object.keys(backend.equipmentSlots))
+              if(slot===def.slot||backend.equipmentSlots[slot]===asset.instance)
+                delete backend.equipmentSlots[slot];
+            if(def.twoHanded)delete backend.equipmentSlots.shield;
+            backend.equipmentSlots[def.slot]=asset.instance;
+          }
+          if(action==='unequip')delete backend.equipmentSlots[payload?.slot];
+          if(action==='equip_set'){
+            for(const piece of pieces){
+              const asset=ownedItem(piece.instance);
+              if(asset)backend.equipmentSlots[definition(asset.item).slot]=asset.instance;
+            }
+          }
+          if(action==='goal'){
+            if(payload?.set!=='test_set')return fail('Unknown set.');
+            backend.goal=payload.set;
+          }
+          if(action==='title'){
+            if(payload?.code&&!backend.achievements.includes(payload.code))
+              return fail('You have not earned this title.');
+            backend.titleCode=payload?.code||null;
+          }
+          return ok(makeState());
+        }
         if(action==='catalog')return ok(mockCatalog);
         if(action==='cases')return ok([boss]);
         if(action==='state')return ok({
@@ -85,6 +171,8 @@ async function setup(page,{gp=100000,viewport,customPet=false,staleGeHours=null}
           if(!owned)return fail('Item not owned');
           if(owned.protected)return fail('Unlock this protected item before selling it.');
           if(owned.listing)return fail('Cancel listing first');
+          if(Object.values(backend.equipmentSlots||{}).includes(owned.instance))
+            return fail('Unequip before selling.');
           owned.status='sold';
           backend.gp+=mockCatalog.find(c=>c.id===owned.item).guide;
           save();return ok(null);
@@ -102,7 +190,9 @@ async function setup(page,{gp=100000,viewport,customPet=false,staleGeHours=null}
           if(!Array.isArray(ids)||!ids.length||ids.length>100||new Set(ids).size!==ids.length)
             return fail('Invalid bulk sale selection');
           const owned=ids.map(id=>backend.inventory.find(i=>i.instance===id && i.status==='vaulted'));
-          if(owned.some(item=>!item || item.listing || item.protected))return fail('Your selection includes protected or unavailable items.');
+          if(owned.some(item=>!item || item.listing || item.protected||
+            Object.values(backend.equipmentSlots||{}).includes(item.instance)))
+            return fail('Your selection includes protected, equipped or unavailable items.');
           if(window.__mockRejectBulkSale){
             window.__mockRejectBulkSale=false;
             return fail('Server rejected the sale; inventory unchanged.');
