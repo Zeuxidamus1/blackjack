@@ -161,3 +161,34 @@ The inventory summary displays only Inventory guide value and Total items. The E
 Some OSRS Grand Exchange items, including Light tuxedo cuffs (item 19976), have no trade in the prior 24 hours despite a valid last traded value. These are now sellable for their **last verified, server-stored GE quote** for up to 72 hours. The inventory labels quotes older than 24 hours and the sale confirmation explicitly discloses their age. Beyond 72 hours the interface offers Refresh GE quote, while sales remain blocked at the backend. No fake timestamps, fallback market values, client-submitted GP amounts or ownership bypasses are used.
 
 Database: `supabase/migrations/20261115102000_allow_verified_ge_sales_within_72_hours.sql` updates reward settlement, individual selling and bulk selling using the same 72-hour rule. Frontend: `index.html` and `inventory-step5.css`. Tests: `tests/reveal.spec.js` includes both an eligible 34-hour trade and an ineligible 80-hour trade.
+
+## Equipment and goal progression (2026-11-16)
+
+The equipment update adds purposeful collecting **without changing accounts, player GP, case prices, odds, or the original inventory records**. The former `Vault` control reads **Bank** to players, but the database retains its historical `reward_status='vaulted'` enum and the public reveal `decision:'vault'` command for backward compatibility. The old Inventory navigation now reads **Bank**, with a new internal **Equipment & Sets** subpage. The existing inventory instance UUID, owner and protection settings persist.
+
+**Phase 1: audited catalog.** See `docs/equipment-catalog-audit.csv`. All 877 catalog rewards have a recorded OSRS GE ID where applicable and source pack count. A conservative named-slot classifier provisionally categorizes 584 records into OSRS-style equipment slots; 293 are intentionally left unclassified (e.g. pets, consumables, decorative or ambiguous entries). These classifications are designed to be extended only after validation, not treated as a definitive substitute for an authoritative OSRS equipment registry. Items with multiple catalog IDs, such as `boss_1163` and `clue_1163`, share one canonical OSRS GE identity.
+
+**Phases 2–4: Bank and equipment.** The Bank supports existing search/filter/sort, protection, stacking, Showroom, per-instance Sell and server-verified bulk selling. Compatible equipment adds Equip/Unequip actions and an indicator when worn. Eleven slots are supported: head, cape, neck, ammunition, weapon, body, shield, legs, hands, feet and ring. Two-handed weapons displace shields, and equipping a shield displaces a two-handed weapon. Gear uses authentic RuneLite inventory sprites in a familiar, responsive slot layout. It is a visual collection feature; no hidden drop bonuses or combat simulation. Equipped items must be unequipped before selling, listing, salvaging, or transferring. Database triggers enforce protection even outside the normal client RPC.
+
+**Phases 5–6: progression and goals.** Five fully obtainable launch sets are Rune Armour, Dragon Armour, Ancestral Robes, Armadyl Armour and Third Age Melee. Every required OSRS item has an active source pack. Incomplete Barrows and Bandos sets are excluded rather than falsely claiming they can be completed. Progress shows independently: historically discovered, currently owned and currently equipped pieces. Missed pieces appear as faded authentic artwork with locks and disclose each existing pack, price and **live server-defined drop chance**. Players may pin an active goal, see its status on the pack selection screen and Bank, navigate to missing pieces, and equip currently owned compatible set pieces.
+
+**Phase 7: permanent achievements.** First equip, first set, three sets, individual set completions, fully equipped set, and discovering Third Age equipment all generate one-time **cosmetic** achievements. A short reduced-motion-friendly toast celebrates new badges. Players can select an earned public profile title, with server validation. Badges never mint GP.
+
+**Phase 8: Showroom and privacy.** Gear and earned badges may appear on public Showroom profiles, but are both **private by default**. The player's own preview remains visible. Two separate opt-in controls allow sharing equipped gear or achievements/title independently. The server filters every shared profile based on the owner's stored settings. Private item instance UUIDs, inventory balances, addresses, and ownership tables are not exposed to other users.
+
+**Phase 9: economy and security.** All equipment writes are server-authoritative and serialized with the existing economy advisory lock, using owner-specific item UUIDs, unique active slots, slot compatibility, pending-reward exclusion, authentic collection identities, and protected/title-safe grants. Unrevealed pack rewards are excluded from historical collection progress until revealed, avoiding a spoiler side channel. Data tables have RLS and revoked direct client writes. The public RPC facade is SECURITY INVOKER and only authenticated users can call it. Existing pack odds and sale quote integrity remain unchanged.
+
+**Phase 10: testing and deployment.** SQL tests executed inside rolling-back transactions verified owner-only equip, gear protection during sells and listings, two-handed sword/shield swaps, goal selection, badges, canonical duplicate GE IDs, privacy opt-in and hidden-reward privacy. JS syntax and isolated renderer smoke checks passed. Browser regression tests were expanded in `tests/reveal.spec.js` for Bank wording, equipment persistence, pack finder, achievement titles, private Showroom and mobile overflow. `.github/workflows/equipment-playwright.yml` installs Chromium and runs the full Playwright suite on GitHub pushes or PRs. **The complete Playwright browser suite has not yet been confirmed passing**, and external browser/device validation should be treated as a release verification requirement, not as accomplished.
+
+### Equipment migrations
+
+- `supabase/migrations/20261116093000_equipment_collections_progression.sql`
+- `supabase/migrations/20261116094500_equipment_command_variable_fix.sql`
+- `supabase/migrations/20261116101500_equipment_legendary_badge.sql`
+- `supabase/migrations/20261116103500_equipment_reveal_privacy.sql`
+- `supabase/migrations/20261116111000_equipment_rpc_security_and_indexes.sql`
+- `supabase/migrations/20261116114000_equipment_showroom_explicit_privacy.sql`
+
+### Usage measurements
+
+Use `rips.equipment_events` to count equipping, unequipping, switching a goal and choosing a profile title; `rips.equipment_achievements` tracks permanent badge unlocks, and `rips.equipment_goals` tracks pinned goals. `docs/equipment-release-checks.sql` provides read-only audits and aggregate metrics. Metrics do not expose private account data to other players.
