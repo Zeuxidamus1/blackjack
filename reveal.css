@@ -301,3 +301,12 @@ body.cr-reveal-active{overflow:hidden!important}
   #cr-reveal .cr-result-name { margin: 4px 0 3px; }
   #cr-reveal .cr-results + .cr-actions { min-height: 50px; margin-top: 4px; }
 }
+
+/* Prevent browser click-to-focus from horizontally shifting the reveal scene
+   while switching from cards to final results. */
+@media (min-width: 760px) and (pointer: fine) {
+  #cr-reveal { overflow: clip; }
+  #cr-reveal .cr-results { width: 100%; max-width: 100%; }
+  #cr-reveal .cr-results-scroll { max-width: 100%; overflow-x: clip; }
+  #cr-reveal .cr-results-grid { min-width: 0; max-width: 100%; }
+}
