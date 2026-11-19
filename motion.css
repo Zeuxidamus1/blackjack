@@ -94,6 +94,15 @@ dialog[open]::backdrop{
 #cr-reveal .cr-phase-enter{
   animation:cr-stage-enter .37s var(--cr-motion-ease) both;
 }
+/* Multi-pack reveals swap stages atomically. Fading the fullscreen overlay,
+   stage, or five result cards between phases causes a black/white flash on
+   mobile compositors. Keep them fully visible; retain individual card flips. */
+#cr-reveal.cr-multi-batch:not([hidden]),
+#cr-reveal.cr-multi-batch .cr-phase-enter,
+#cr-reveal.cr-multi-batch .cr-phase-enter .cr-result-card{
+  animation:none!important;
+  opacity:1!important;
+}
 #cr-reveal .cr-phase-enter .cr-result-card{
   animation:cr-card-enter .35s var(--cr-motion-ease) both;
 }
