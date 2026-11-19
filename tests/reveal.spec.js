@@ -1493,3 +1493,49 @@ for(const viewport of [{width:375,height:812},{width:1280,height:850}]){
     expect(errors).toEqual([]);
   });
 }
+
+test('purchase does not redraw Resume Opening behind the active reward screen',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await page.locator('.boss-qty [data-id="5"]').click();
+  await page.evaluate(()=>{
+    window.__shopBeforeReveal={
+      element:document.getElementById('boss-details'),
+      html:document.getElementById('boss-details').innerHTML
+    };
+  });
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  await expect(page.locator('#cr-reveal .cr-opening')).toBeVisible();
+  const during=await page.evaluate(()=>{
+    const shop=document.getElementById('boss-details'),before=window.__shopBeforeReveal;
+    // Exercise the ordinary storefront render callback while the overlay owns
+    // the screen: it must only synchronize GP, not rebuild the pack picker.
+    if(typeof window.render==='function')window.render();
+    return {
+      sameNode:shop===before.element,
+      unchangedMarkup:shop.innerHTML===before.html,
+      underlyingResume:!!shop.querySelector('[data-act="resume"]'),
+      shopHidden:getComputedStyle(document.getElementById('storefront')).visibility==='hidden',
+      overlayActive:document.body.classList.contains('cr-reveal-active')
+    };
+  });
+  expect(during).toEqual({
+    sameNode:true,unchangedMarkup:true,underlyingResume:false,
+    shopHidden:true,overlayActive:true
+  });
+  // Back must restore the actual pending-purchase UI and make it clickable.
+  await page.locator('#cr-reveal [data-cr="back"]').click();
+  await expect(page.locator('#cr-reveal')).toBeHidden();
+  await expect(page.locator('#boss-details [data-act="resume"]')).toBeVisible();
+  await expect(page.locator('#storefront')).toHaveCSS('visibility','visible');
+  await page.locator('#boss-details [data-act="resume"]').click();
+  await expect(page.locator('#cr-reveal .cr-opening')).toBeVisible();
+  await ripPack(page);
+  await expect(page.locator('#cr-reveal .cr-turn')).toHaveCount(5);
+  await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
+  await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  await expect(page.locator('#cr-reveal')).toBeHidden();
+  const backend=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+  expect(backend.purchases).toBe(1);
+  expect(errors).toEqual([]);
+});
