@@ -79,6 +79,8 @@
       const allRevealed=batch.rewards.every(r=>r.revealed || r.item);
       const anythingRevealed=batch.rewards.some(r=>r.revealed || r.item);
       this.phase=allRevealed?(batch.rewards.length===1?'single':'results'):(anythingRevealed?'cards':'opening');
+      // On multi-pack sessions, do not animate the entire fullscreen overlay.
+      root.classList.toggle('cr-multi-batch',batch.rewards.length>1);
       root.hidden=false;
       document.body.classList.add('cr-reveal-active');
       this.render();
@@ -161,7 +163,7 @@
       root.hidden=true;
       root.replaceChildren();
       root.style.setProperty('--cr-rip-progress','0');
-      root.classList.remove('cr-rip-dragging','cr-rip-progress','cr-rip-reverse');
+      root.classList.remove('cr-rip-dragging','cr-rip-progress','cr-rip-reverse','cr-multi-batch');
       this.rip=null;
       this.ripped=false;
       document.body.classList.remove('cr-reveal-active');
@@ -267,32 +269,35 @@
       const shellMarkup='<div class="cr-shell">'+top+inside+
         this.info()+(this.toast?'<div class="cr-toast" role="status">'+h(this.toast)+'</div>':'')+'</div>';
       let transitionedInPlace=false;
-      // The card-to-results transition must not tear down the animated sky,
-      // radial glow, shell or toolbar. Rebuilding the entire overlay replayed
-      // background animations and briefly faded the new scene, causing a flash.
-      if(previousPhase==='cards'&&this.phase==='results'){
-        const shell=root.querySelector('.cr-shell');
+      // Keep the same fullscreen shell, toolbar, drifting stars, and glow
+      // across BOTH multi-pack phase changes. Only the stage itself changes.
+      // Removing and recreating the whole scene produces a dark compositor
+      // frame on some Android browsers when five animated cards are involved.
+      if(this.batch.rewards.length>1&&
+         ((previousPhase==='opening'&&this.phase==='cards')||
+          (previousPhase==='cards'&&this.phase==='results'))){
+        const shell=root.querySelector(':scope > .cr-shell');
         const oldStage=shell?.querySelector('.cr-stage');
-        const oldActions=shell?.querySelector('.cr-subactions');
-        if(shell&&oldStage&&oldActions){
+        if(shell&&oldStage){
           const staged=document.createElement('template');
           staged.innerHTML=shellMarkup;
           const nextStage=staged.content.querySelector('.cr-stage');
           const nextActions=staged.content.querySelector('.cr-actions');
-          if(nextStage&&nextActions){
-            // Subactions live *inside* the old stage. Once that stage is
-            // replaced, its descendants are disconnected. Insert the new
-            // action bar after the live replacement stage instead.
+          if(nextStage&&(this.phase==='cards'||nextActions)){
+            // One synchronous DOM replacement; no intermediate empty scene,
+            // no replay of the ambient or toolbar animations.
             oldStage.replaceWith(nextStage);
-            nextStage.after(nextActions);
-            const note=staged.content.querySelector('.cr-sale-note');
-            if(note)nextActions.after(note);
+            if(nextActions){
+              nextStage.after(nextActions);
+              const note=staged.content.querySelector('.cr-sale-note');
+              if(note)nextActions.after(note);
+            }
             shell.querySelector('.cr-detail')?.remove();
             shell.querySelector('.cr-toast')?.remove();
-            const info=staged.content.querySelector('.cr-detail');
-            const toast=staged.content.querySelector('.cr-toast');
-            if(info)shell.append(info);
-            if(toast)shell.append(toast);
+            for(const selector of ['.cr-detail','.cr-toast']){
+              const node=staged.content.querySelector(selector);
+              if(node)shell.append(node);
+            }
             transitionedInPlace=true;
           }
         }
@@ -314,9 +319,10 @@
         const resultsScroll=root.querySelector('.cr-results-scroll');
         if(resultsScroll)resultsScroll.scrollLeft=0;
       }
-      // A phase-enter opacity animation fades the entire results panel from
-      // 55%, perceived as a white/dark flash. Keep results fully opaque.
-      if(phaseChanged&&!transitionedInPlace)root.querySelector('.cr-stage')?.classList.add('cr-phase-enter');
+      // Only single-pack reveals use the stage entrance. In a multi-pack
+      // session all cards/results must be fully opaque on the first frame.
+      if(phaseChanged&&!transitionedInPlace&&this.batch.rewards.length===1)
+        root.querySelector('.cr-stage')?.classList.add('cr-phase-enter');
       if(this.phase==='cards' && this.newFlips.size){
         const flipped=[...this.newFlips];
         this.newFlips.clear();
@@ -381,9 +387,15 @@
       const value=stage?.querySelector('.cr-summary-value');
       const actions=root.querySelector('.cr-actions');
       const rows=this.available().filter(r=>r.revealed||r.item);
-      if(!stage||!cards||cards.length!==rows.length||!labels||!value||!actions)return false;
+      if(!stage||!cards||!labels||!value||!actions)return false;
+      const wanted=new Set(rows.map(r=>Number(r.slot)));
+      if(rows.some(r=>!Array.from(cards).some(card=>Number(card.dataset.slot)===r.slot)))
+        return false;
       const selectedRows=this.selected.size?rows.filter(r=>this.selected.has(r.slot)):rows;
       for(const card of cards){
+        // A partial Sell/Bank must remove only settled cards, not remount the
+        // entire result screen or restart five item entrance animations.
+        if(!wanted.has(Number(card.dataset.slot))){card.remove();continue;}
         card.setAttribute('aria-pressed',String(this.selected.has(Number(card.dataset.slot))));
       }
       labels.textContent=this.selected.size?
@@ -394,6 +406,31 @@
       stage.classList.remove('cr-phase-enter');
       root.querySelector('.cr-sale-note')?.remove();
       actions.outerHTML=this.actions(selectedRows,true);
+      this.updateToastInPlace();
+      return true;
+    }
+    updateToastInPlace(){
+      const shell=root.querySelector(':scope > .cr-shell');
+      if(!shell)return;
+      let toast=shell.querySelector(':scope > .cr-toast');
+      if(!this.toast){toast?.remove();return;}
+      if(!toast){
+        toast=document.createElement('div');
+        toast.className='cr-toast';
+        toast.setAttribute('role','status');
+        shell.append(toast);
+      }
+      toast.textContent=this.toast;
+    }
+    updateInfoInPlace(){
+      const shell=root.querySelector(':scope > .cr-shell');
+      if(!shell)return false;
+      shell.querySelector(':scope > .cr-detail')?.remove();
+      if(this.detail){
+        const node=document.createElement('template');
+        node.innerHTML=this.info();
+        shell.append(node.content);
+      }
       return true;
     }
     actions(rows,multiple){
@@ -451,7 +488,8 @@
       const slots=targets.map(r=>r.slot);
       const previousGp=this.ctx.getBalance?.();
       this.busy=true;this.toast='';
-      this.render();
+      // Disabling controls should not tear down the rendered reward cards.
+      if(this.phase!=='results'||!this.updateResultsInPlace())this.render();
       try{
         const result=await this.ctx.rpc('reward_settle',{batch:this.batch.id,slots,decision});
         if(!result?.rewards)throw Error('Unable to settle these rewards.');
@@ -471,11 +509,11 @@
         this.toast=decision==='sell'?'Sold '+slots.length+' reward(s) for '+gp(amount)+'.':
           'Banked '+slots.length+' reward(s).';
         this.busy=false;
-        this.render();
+        if(!this.updateResultsInPlace())this.render();
       }catch(error){
         this.busy=false;
         this.toast=error.message||'Unable to manage rewards.';
-        this.render();
+        if(this.phase!=='results'||!this.updateResultsInPlace())this.render();
       }
     }
     click(e){
@@ -483,7 +521,11 @@
       if(!target || root.hidden)return;
       const action=target.dataset.cr;
       if(action==='back'){this.close();return;}
-      if(action==='info'){this.detail=!this.detail;this.render();return;}
+      if(action==='info'){
+        this.detail=!this.detail;
+        if(!this.updateInfoInPlace())this.render();
+        return;
+      }
       if(this.busy)return;
       if(action==='rip'){
         // Native keyboard/assistive-tech activation is available without making a tap open the pack.
