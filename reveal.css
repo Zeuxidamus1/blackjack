@@ -310,3 +310,16 @@ body.cr-reveal-active{overflow:hidden!important}
   #cr-reveal .cr-results-scroll { max-width: 100%; overflow-x: clip; }
   #cr-reveal .cr-results-grid { min-width: 0; max-width: 100%; }
 }
+
+/* During a multiple-pack opening, foil artwork is visible from frame one.
+   The regular stack entrance starts at opacity:0 and created a black flash
+   between consecutive pack sessions on some mobile GPU compositors. */
+#cr-reveal.cr-multi-batch .cr-pack-piece{
+  animation-name:cr-multi-stack-in;
+  animation-duration:.46s;
+  animation-timing-function:cubic-bezier(.22,1,.36,1);
+}
+@keyframes cr-multi-stack-in{
+  from{opacity:1;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px) + 12px)) rotate(var(--rotate,0deg)) scale(.97)}
+  to{opacity:1;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px))) rotate(var(--rotate,0deg)) scale(1)}
+}
