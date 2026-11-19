@@ -1441,3 +1441,55 @@ test('five-pack opening keeps visible foil artwork from the first animation fram
   await page.locator('#cr-reveal [data-cr="vault"]').click();
   expect(errors).toEqual([]);
 });
+
+for(const viewport of [{width:375,height:812},{width:1280,height:850}]){
+  test('active five-pack opening never displays the Resume Opening shop underneath ('+viewport.width+'px)',async({page})=>{
+    const errors=await setup(page,{viewport});
+    await page.locator('.boss-qty [data-id="5"]').click();
+    await page.locator('#boss-details [data-act="purchase"]').click();
+    await expect(page.locator('#cr-reveal .cr-opening')).toBeVisible();
+    await expect(page.locator('#storefront')).toHaveCSS('visibility','hidden');
+    await expect(page.locator('#cr-reveal')).toHaveCSS('opacity','1');
+    expect(await page.locator('#storefront').evaluate(el=>el.inert)).toBe(true);
+    // Inspect successive painted animation frames, not only the final state.
+    const sample=()=>page.evaluate(()=>new Promise(resolve=>{
+      const frames=[];
+      const read=()=>{
+        const overlay=document.getElementById('cr-reveal');
+        const shop=document.getElementById('storefront');
+        frames.push({
+          active:document.body.classList.contains('cr-reveal-active'),
+          shopVisibility:getComputedStyle(shop).visibility,
+          shopInert:shop.inert,
+          overlayVisibility:getComputedStyle(overlay).visibility,
+          overlayOpacity:parseFloat(getComputedStyle(overlay).opacity),
+          overlayPosition:getComputedStyle(overlay).position,
+          overlayHidden:overlay.hidden
+        });
+        if(frames.length<16)requestAnimationFrame(read);
+        else resolve(frames);
+      };
+      requestAnimationFrame(read);
+    }));
+    const assertIsolated=frames=>expect(frames.every(f=>
+      f.active&&f.shopVisibility==='hidden'&&f.shopInert&&
+      f.overlayVisibility==='visible'&&f.overlayOpacity===1&&
+      f.overlayPosition==='fixed'&&!f.overlayHidden
+    )).toBe(true);
+    assertIsolated(await sample());
+    await ripPack(page);
+    await expect(page.locator('#cr-reveal .cr-turn')).toHaveCount(5);
+    assertIsolated(await sample());
+    await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
+    await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+    assertIsolated(await sample());
+    await page.locator('#cr-reveal [data-cr="vault"]').click();
+    await expect(page.locator('#cr-reveal')).toBeHidden();
+    await expect(page.locator('#storefront')).toHaveCSS('visibility','visible');
+    expect(await page.locator('#storefront').evaluate(el=>el.inert)).toBe(false);
+    const backend=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('reveal-mock')));
+    expect(backend.purchases).toBe(1);
+    expect(backend.batch.rewards.every(r=>r.status==='vaulted')).toBe(true);
+    expect(errors).toEqual([]);
+  });
+}
