@@ -143,7 +143,10 @@
       root.querySelector('.cr-opening')?.classList.add('cr-ripped');
       // Let the light sweep, metallic seal peel, and soft reveal play without
       // recalculating or drawing any reward on the client.
-      this.schedule(()=>this.advanceOpening(),reduced()?5:820);
+      // With a multi-pack stack, show the card backs before the foil fully
+      // vanishes. Waiting until the last opacity=0 frame caused a dark gap.
+      this.schedule(()=>this.advanceOpening(),reduced()?5:
+        (this.batch.rewards.length>1?720:820));
     }
     advanceOpening(){
       if(this.busy)return;
