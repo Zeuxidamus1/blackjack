@@ -81,8 +81,14 @@
       this.phase=allRevealed?(batch.rewards.length===1?'single':'results'):(anythingRevealed?'cards':'opening');
       // On multi-pack sessions, do not animate the entire fullscreen overlay.
       root.classList.toggle('cr-multi-batch',batch.rewards.length>1);
-      root.hidden=false;
+      // Keep the underlying pack picker completely out of the rendering and
+      // interaction tree while this fullscreen, server-backed reveal is active.
+      // Otherwise Android can flash the "Resume Opening" shop through GPU
+      // compositing layers while the five foil packs animate.
       document.body.classList.add('cr-reveal-active');
+      const storefront=document.getElementById('storefront');
+      if(storefront)storefront.inert=true;
+      root.hidden=false;
       this.render();
     }
     stopTimer(){
@@ -170,6 +176,8 @@
       this.rip=null;
       this.ripped=false;
       document.body.classList.remove('cr-reveal-active');
+      const storefront=document.getElementById('storefront');
+      if(storefront)storefront.inert=false;
       this.detail=false;
       this.busy=false;
       this.selected.clear();
