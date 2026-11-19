@@ -422,14 +422,16 @@ test('keyboard activation is an accessible alternative to the swipe',async({page
   await page.locator('[data-cr="vault"]').click();
   expect(errors).toEqual([]);
 });
-test('reveal phase fades in once and selecting loot does not replay the entrance',async({page})=>{
+test('multi-pack reveal keeps every stage fully opaque with no phase fade',async({page})=>{
   const errors=await setup(page,{viewport:{width:375,height:812}});
   await purchase(page,3);
-  await expect(page.locator('#cr-reveal .cr-stage.cr-phase-enter')).toBeVisible();
+  await expect(page.locator('#cr-reveal')).toHaveClass(/cr-multi-batch/);
+  await expect(page.locator('#cr-reveal')).toHaveCSS('animation-name','none');
+  await expect(page.locator('#cr-reveal .cr-stage')).not.toHaveClass(/cr-phase-enter/);
   await revealAll(page,3);
-  await expect(page.locator('.cr-results.cr-phase-enter')).toBeVisible();
-  await page.locator('.cr-result-card').first().click();
   await expect(page.locator('.cr-results')).not.toHaveClass(/cr-phase-enter/);
+  await expect(page.locator('.cr-results')).toHaveCSS('opacity','1');
+  await page.locator('.cr-result-card').first().click();
   await expect(page.locator('.cr-result-card[aria-pressed="true"]')).toHaveCount(1);
   await page.locator('[data-cr="vault"]').click();
   expect(errors).toEqual([]);
@@ -1318,4 +1320,102 @@ test('Showroom equipment and badges are private by default until explicitly shar
  await page.locator('#showcase-gear-controls [data-id="gear"]').click();
  await expect(page.locator('#showcase-gear-controls')).toContainText('Share equipped gear: Off');
  expect(errors).toEqual([]);
+});
+
+for(const viewport of [{width:375,height:812},{width:1280,height:850}]){
+  test('five-pack swaps opening to cards to results without remounting sky or fullscreen shell ('+viewport.width+'px)',async({page})=>{
+    const errors=await setup(page,{viewport});
+    await page.locator('.boss-qty [data-id="5"]').click();
+    await page.locator('#boss-details [data-act="purchase"]').click();
+    await expect(page.locator('#cr-reveal .cr-opening')).toBeVisible();
+    await page.evaluate(()=>{
+      const r=document.getElementById('cr-reveal');
+      window.__noFlashScene={
+        sky:r.querySelector('.cr-sky'),
+        glow:r.querySelector('.cr-light'),
+        shell:r.querySelector('.cr-shell'),
+        toolbar:r.querySelector('.cr-toolbar')
+      };
+    });
+    await ripPack(page);
+    await expect(page.locator('#cr-reveal .cr-turn')).toHaveCount(5);
+    const afterOpening=await page.evaluate(()=>{
+      const r=document.getElementById('cr-reveal'),previous=window.__noFlashScene;
+      return {
+        sameSky:r.querySelector('.cr-sky')===previous.sky,
+        sameGlow:r.querySelector('.cr-light')===previous.glow,
+        sameShell:r.querySelector('.cr-shell')===previous.shell,
+        sameToolbar:r.querySelector('.cr-toolbar')===previous.toolbar,
+        hasFiveCards:r.querySelectorAll('.cr-turn').length===5,
+        phaseFaded:Boolean(r.querySelector('.cr-phase-enter'))
+      };
+    });
+    expect(afterOpening).toEqual({
+      sameSky:true,sameGlow:true,sameShell:true,sameToolbar:true,
+      hasFiveCards:true,phaseFaded:false
+    });
+    await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
+    await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+    const afterResults=await page.evaluate(()=>{
+      const r=document.getElementById('cr-reveal'),previous=window.__noFlashScene;
+      const result=r.querySelector('.cr-results');
+      return {
+        sameSky:r.querySelector('.cr-sky')===previous.sky,
+        sameGlow:r.querySelector('.cr-light')===previous.glow,
+        sameShell:r.querySelector('.cr-shell')===previous.shell,
+        sameToolbar:r.querySelector('.cr-toolbar')===previous.toolbar,
+        resultOpacity:parseFloat(getComputedStyle(result).opacity),
+        resultAnimation:getComputedStyle(result).animationName,
+        cardAnimations:[...r.querySelectorAll('.cr-result-card')].map(el=>getComputedStyle(el).animationName)
+      };
+    });
+    expect(afterResults.sameSky).toBe(true);
+    expect(afterResults.sameGlow).toBe(true);
+    expect(afterResults.sameShell).toBe(true);
+    expect(afterResults.sameToolbar).toBe(true);
+    expect(afterResults.resultOpacity).toBe(1);
+    expect(afterResults.resultAnimation).toBe('none');
+    expect(afterResults.cardAnimations.every(a=>a==='none')).toBe(true);
+    await page.locator('#cr-reveal [data-cr="vault"]').click();
+    await expect(page.locator('#cr-reveal')).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+}
+test('partial multi-pack Bank/Sell and info toggles retain the result cards and background',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await purchase(page,5);
+  await revealAll(page,5);
+  await page.evaluate(()=>{
+    const r=document.getElementById('cr-reveal');
+    window.__steadyResults={
+      shell:r.querySelector('.cr-shell'),
+      sky:r.querySelector('.cr-sky'),
+      stage:r.querySelector('.cr-results'),
+      cards:[...r.querySelectorAll('.cr-result-card')]
+    };
+  });
+  await page.locator('#cr-reveal [data-cr="info"]').click();
+  await expect(page.locator('#cr-reveal .cr-detail')).toHaveCount(1);
+  await page.locator('#cr-reveal [data-cr="info"]').click();
+  await expect(page.locator('#cr-reveal .cr-detail')).toHaveCount(0);
+  await page.locator('#cr-reveal .cr-result-card').first().click();
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(4);
+  const stable=await page.evaluate(()=>{
+    const r=document.getElementById('cr-reveal'),previous=window.__steadyResults;
+    return {
+      sky:r.querySelector('.cr-sky')===previous.sky,
+      shell:r.querySelector('.cr-shell')===previous.shell,
+      results:r.querySelector('.cr-results')===previous.stage,
+      sameRemaining:[...r.querySelectorAll('.cr-result-card')].every((c,i)=>c===previous.cards[i+1]),
+      toast:!!r.querySelector('.cr-toast'),
+      isOpaque:getComputedStyle(r.querySelector('.cr-results')).opacity==='1'
+    };
+  });
+  expect(stable).toEqual({
+    sky:true,shell:true,results:true,sameRemaining:true,toast:true,isOpaque:true
+  });
+  await page.locator('#cr-reveal [data-cr="sell"]').click();
+  await expect(page.locator('#cr-reveal')).toBeHidden();
+  expect(errors).toEqual([]);
 });
