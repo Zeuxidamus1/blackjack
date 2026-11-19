@@ -1419,3 +1419,25 @@ test('partial multi-pack Bank/Sell and info toggles retain the result cards and 
   await expect(page.locator('#cr-reveal')).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test('five-pack opening keeps visible foil artwork from the first animation frame',async({page})=>{
+  const errors=await setup(page,{viewport:{width:375,height:812}});
+  await page.locator('.boss-qty [data-id="5"]').click();
+  await page.locator('#boss-details [data-act="purchase"]').click();
+  await expect(page.locator('#cr-reveal .cr-pack-piece')).toHaveCount(5);
+  await expect(page.locator('#cr-reveal')).toHaveClass(/cr-multi-batch/);
+  const initial=await page.locator('#cr-reveal .cr-pack-piece').evaluateAll(nodes=>
+    nodes.map(n=>({
+      opacity:parseFloat(getComputedStyle(n).opacity),
+      animation:getComputedStyle(n).animationName,
+      isVisible:n.getBoundingClientRect().width>0
+    }))
+  );
+  expect(initial.every(n=>n.opacity===1&&n.animation==='cr-multi-stack-in'&&n.isVisible)).toBe(true);
+  await ripPack(page);
+  await expect(page.locator('#cr-reveal .cr-turn')).toHaveCount(5);
+  await page.locator('#cr-reveal [data-cr="reveal-all"]').click();
+  await expect(page.locator('#cr-reveal .cr-result-card')).toHaveCount(5);
+  await page.locator('#cr-reveal [data-cr="vault"]').click();
+  expect(errors).toEqual([]);
+});
