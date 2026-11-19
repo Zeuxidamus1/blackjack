@@ -1,5 +1,20 @@
 /* Challenger Rips: fullscreen premium reward opening. Only active after purchase. */
+/* Never allow the purchasable pack screen to paint through an active reward
+   opening. Mobile GPU compositors could blend it into the animated foil stack;
+   this is what made "Resume Opening" flicker underneath the five-pack reveal. */
 body.cr-reveal-active{overflow:hidden!important}
+body.cr-reveal-active #storefront,
+body.cr-reveal-active #login-screen{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+body.cr-reveal-active #cr-reveal:not([hidden]){
+  visibility:visible!important;
+  opacity:1!important;
+  animation:none!important;
+  transition:none!important;
+  background-color:#030609;
+}
 #cr-reveal[hidden]{display:none!important}
 #cr-reveal{position:fixed;inset:0;z-index:9999;isolation:isolate;color:#f5f8f9;background:radial-gradient(ellipse at 50% 15%,#2b4146 0%,#142228 38%,#030609 85%);font-family:Inter,system-ui,-apple-system,sans-serif;overflow:hidden}
 #cr-reveal *{box-sizing:border-box}
