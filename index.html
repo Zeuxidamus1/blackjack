@@ -1325,6 +1325,15 @@ function renderInventory(){
 // Transition only when switching screens/categories, not during normal state redraws.
 let lastScreenKey=null;
 function render() {
+  // Reward reveal owns the screen while open. The purchase workflow calls
+  // render() in its finally block immediately after opening the overlay;
+  // rebuilding the shop and "Resume Opening" underneath five animated foils
+  // can cause alternating compositor frames on Android. Wait for the reveal
+  // to close, then redraw the storefront once with the settled server state.
+  if(document.body.classList.contains('cr-reveal-active')){
+    if(session&&state)window.ChallengerWallet?.sync(state.gp);
+    return;
+  }
   const canModerate=Boolean(session&&moderatorStatus?.isModerator&&moderatorStatus?.canAddGp);
   const moderatorTab=document.querySelector('[data-view="moderator"]');
   if(moderatorTab)moderatorTab.hidden=!canModerate;
